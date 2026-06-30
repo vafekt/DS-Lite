@@ -1,0 +1,5 @@
+		iif "eth-wan" tcp dport 1024 dnat to 10.0.2.100:4640
+		iif "eth-wan" tcp dport 1025 dnat to 10.0.2.100:15553
+		iif "eth-wan" tcp dport 1026 dnat to 10.0.2.100:27284
+		iif "eth-wan" tcp dport 1027 dnat to 10.0.2.100:59596
+		iif "eth-wan" tcp dport 1028 dnat to 10.0.2.100:63759

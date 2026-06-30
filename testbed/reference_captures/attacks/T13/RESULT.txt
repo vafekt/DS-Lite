@@ -1,0 +1,24 @@
+================================================================
+  DS-Lite live attack  T13  —  Transparent AFTR Hijack
+  saving to  ./pcaps/runs/20260630T163230Z_T13/
+  ground truth (reference) in  ./pcaps/per_attack/T13/
+================================================================
+
+  [1] Surface: DHCPv6 + DNS. Keep the legit AFTR name but make it resolve to the attacker.
+      before: B4 softwire remote = 2001:db8:cafe::10 (the real AFTR), name = aftr.dslite.example.com.
+  [2] Attack: rogue server keeps name aftr.dslite.example.com but binds it to the attacker (2001:db8:cafe:0:dc70:efff:fea1:249d).
+  [3] Measure: the legit name is KEPT, but the softwire is rebuilt to the attacker.
+      B4 cached name = aftr.dslite.example.com. (still legit)   softwire remote: 2001:db8:cafe::10 -> 2001:db8:cafe:0:dc70:efff:fea1:249d
+  [4] Impact: the victim now tunnels its IPv4 to the attacker though the name looks legit.
+      victim client1 internet = HTTP 000 (attacker is not a real AFTR -> denial)
+      1-rogue-dns (attacker/eth-isp)     T13_1-rogue-dns.pcap               13 pkts
+      2-b4-receives (b4-1/eth-isp)       T13_2-b4-receives.pcap             11 pkts
+      3-victim-tunnels-to-attacker (attacker/eth-isp) T13_3-victim-tunnels-to-attacker.pcap 4 pkts
+      victim softwire frames captured arriving at the attacker = 4
+
+  --------------------------------------------------------------
+  reference: name stays aftr.dslite.example.com (legit) but the softwire is rebuilt to the attacker (2001:db8:cafe:0:dc70:efff:fea1:249d); victim traffic diverted to the attacker
+  this run:  name=aftr.dslite.example.com. (kept legit), softwire remote 2001:db8:cafe::10->2001:db8:cafe:0:dc70:efff:fea1:249d, victim HTTP=000, frames-to-attacker=4
+  verdict:   MATCH   (attack reproduced the stored result)
+  --------------------------------------------------------------
+  saved: ./pcaps/runs/20260630T163230Z_T13/  (pcaps + config.txt + RESULT.txt)

@@ -1,0 +1,25 @@
+# Runtime pcap output (also a mounted volume)
+pcaps/
+
+# Python bytecode caches — regenerated inside the container; never ship host
+# copies (they were mixed py311/py313 and bloated the image via `COPY . /testbed`).
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Generated attack-tree diagrams + per-run results — attack_tree.py rebuilds
+# these at runtime; the Dockerfile recreates attack_trees/results/ itself.
+attack_trees/*.svg
+attack_trees/*.dot
+attack_trees/*.png
+attack_trees/results/
+attack_trees/SUMMARY.md
+
+# Editor / VCS noise
+.git/
+*~
+*.bak
+*.orig
+*.swp
+reference_captures/

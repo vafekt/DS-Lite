@@ -1,0 +1,5 @@
+ipid_feistel self-test OK:
+  (a) 2^16 ids form a permutation (zero collisions)
+  (b) same (s,d,p,id) -> same id' (reassembly preserved)
+  (c) distinct reassembly tuples stay separate
+  (d) sequential-prediction hits over 2000 ids = 0 (a counter would be 2000) -> band attack defeated

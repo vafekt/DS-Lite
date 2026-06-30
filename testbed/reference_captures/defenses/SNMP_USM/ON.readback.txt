@@ -1,0 +1,1 @@
+[usm-client] GET 1.3.6.1.2.1.240.1.3.1.8 OK (authenticated); response integer=-1

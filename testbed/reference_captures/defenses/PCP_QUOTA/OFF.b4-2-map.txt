@@ -1,0 +1,2 @@
+[*] PCP MAP request: internal_port=9090 proto=17 lifetime=3600s nonce=fe64f66ae919c2014b19e5e8 via 10.0.2.1
+[-] MAP refused: result_code=8 ext_port=0

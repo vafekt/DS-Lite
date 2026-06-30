@@ -1,0 +1,20 @@
+================================================================
+  DS-Lite live attack  T4  —  Unencrypted-Tunnel Interception
+  saving to  ./pcaps/runs/20260630T162949Z_T4/
+  ground truth (reference) in  ./pcaps/per_attack/T4/
+================================================================
+
+  [1] Surface: Softwire carries inner IPv4 in CLEARTEXT (no encryption).
+  [2] Attack: passive — attacker (2001:db8:cafe:0:dc70:efff:fea1:249d) sniffs the carrier; victim browses meanwhile.
+      1-victim-softwire (b4-1/eth-isp)   T4_1-victim-softwire.pcap          76 pkts
+      2-attacker-reads (attacker/eth-isp) T4_2-attacker-reads.pcap           76 pkts
+  [3] Measure: can the attacker read the victim's inner traffic off the unencrypted softwire?
+      victim inner web flows (10.0.1.100 -> 198.51.100.2:80/443) the attacker can read = 40
+      plaintext HTTP payload markers recovered = 30
+
+  --------------------------------------------------------------
+  reference: attacker reads the victim's inner web flow in cleartext off the softwire (>0)
+  this run:  readable inner web-flow packets = 40, plaintext HTTP markers = 30
+  verdict:   MATCH   (attack reproduced the stored result)
+  --------------------------------------------------------------
+  saved: ./pcaps/runs/20260630T162949Z_T4/  (pcaps + config.txt + RESULT.txt)

@@ -1,0 +1,23 @@
+# Python dependencies for the DS-Lite testbed and attack tools.
+#
+# The Docker image (testbed/Dockerfile) installs the runtime packages
+# (scapy, netifaces, psutil) from apt for system-wide availability inside
+# the container, and pulls the graphviz Python bindings from pip. This
+# requirements.txt is intended for users running the analysis scripts
+# (testbed/scripts/) on the host, outside Docker.
+#
+# Minimum versions are the ones the testbed has been verified against;
+# any later release in the same major line should work.
+
+# --- Attack tools (runtime, inside container or host) ---
+scapy>=2.5            # packet crafting for IPv6 / DHCPv6 / PCP / SNMP / fragment tools
+netifaces>=0.11       # local interface introspection in attack helpers
+psutil>=5.9           # process / CPU / memory accounting in the harness
+
+# --- Analysis scripts (host-side; testbed/scripts/) ---
+graphviz>=0.20        # attack-tree DOT rendering
+numpy>=1.21           # numerical support for sensitivity sweeps
+scipy>=1.7            # Spearman correlation, permutation tests, copula draws
+
+# --- Tests (optional) ---
+pytest>=7.0

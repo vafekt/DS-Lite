@@ -1,0 +1,20 @@
+================================================================
+  DS-Lite live attack  T9  —  PCP ANNOUNCE Spoof (Epoch Reset)
+  saving to  ./pcaps/runs/20260630T163104Z_T9/
+  ground truth (reference) in  ./pcaps/per_attack/T9/
+================================================================
+
+  [1] Surface: PCP ANNOUNCE / restart signal. A reset makes clients believe the server rebooted.
+  [2] Seed: create a batch of legit mappings so there is something to renew.
+  [3] Attack: attacker forges PCP ANNOUNCE (server-restart signal) from the AFTR address.
+      1-attacker-announce (attacker/eth-isp) T9_1-attacker-announce.pcap        1211 pkts
+      2-b4-renew-storm (b4-1/eth-isp)    T9_2-b4-renew-storm.pcap           1211 pkts
+  [4] Measure: how much MAP-renew traffic did the single ANNOUNCE provoke?
+      PCP MAP traffic on the B4 uplink after the ANNOUNCE = 1211 packets (from 10 announces)
+
+  --------------------------------------------------------------
+  reference: one ANNOUNCE triggers a renew storm (MAP packets >> announce count)
+  this run:  MAP-renew packets = 1211 after 10 ANNOUNCE
+  verdict:   MATCH   (attack reproduced the stored result)
+  --------------------------------------------------------------
+  saved: ./pcaps/runs/20260630T163104Z_T9/  (pcaps + config.txt + RESULT.txt)

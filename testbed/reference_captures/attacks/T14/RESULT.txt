@@ -1,0 +1,21 @@
+================================================================
+  DS-Lite live attack  T14  —  SNMP Alarm-Table Write
+  saving to  ./pcaps/runs/20260630T163250Z_T14/
+  ground truth (reference) in  ./pcaps/per_attack/T14/
+================================================================
+
+  [1] Surface: SNMP/MIB OAM plane (DSLITE-MIB alarm thresholds, RFC 7870 §8).
+  [2] Baseline: dsliteAFTRAlarmPortNumber = 1000 (NOC's per-user NAT-port alarm).
+  [3] Attack: a mgmt-reachable host raises the port-usage alarm to Integer32 max so it never fires.
+      1-snmp-set (aftr/eth-mgmt)         T14_1-snmp-set.pcap                0 pkts
+      2-mgmt-station (mgmt/eth-mgmt)     T14_2-mgmt-station.pcap            0 pkts
+  [4] Measure: read the threshold back; confirm the agent enforces the RFC range on ConnectNumber.
+      port-usage alarm threshold now = 2147483647 (was 1000) -> NOC blind to port exhaustion
+      ConnectNumber out-of-range SET: tried 2147483647, value stayed 60 (RFC 60..90 enforced)
+
+  --------------------------------------------------------------
+  reference: attacker raises the per-user port alarm (PortNumber) to Integer32 max (never fires); ConnectNumber out-of-range SET rejected per RFC 60..90
+  this run:  PortNumber 1000->2147483647; ConnectNumber stayed 60 on out-of-range set
+  verdict:   MATCH   (attack reproduced the stored result)
+  --------------------------------------------------------------
+  saved: ./pcaps/runs/20260630T163250Z_T14/  (pcaps + config.txt + RESULT.txt)

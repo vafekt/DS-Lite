@@ -1,0 +1,24 @@
+================================================================
+  DS-Lite live attack  T1  —  NAT Binding-Table Exhaustion
+  saving to  ./pcaps/runs/20260630T162836Z_T1/
+  ground truth (reference) in  ./pcaps/per_attack/T1/
+================================================================
+
+  [1] Surface: AFTR NAT/CGN connection table (RFC 6888 per-subscriber limit).
+  [2] Baseline: real subscribers behind the two B4s reach the server.
+      client1 (behind victim B4-1) = HTTP 200   client2 (behind B4-2) = HTTP 200
+  [3] Phase 1 SHOCK: forge the victim B4 (2001:db8:cafe::b41), flood unique 4-in-6 connections to the per-subscriber limit.
+      connections=2000 (2000 half-open) -> client1=000.  Instant denial, but VOLATILE (half-open automatic cleanup ~300s).
+  [4] Phase 2 SIEGE: complete + hold real completed conns to the per-subscriber limit (survives cleanup).
+      connections=2002 (2000 completed held) -> client1=000, client2(control)=200.  DURABLE (completed survive automatic cleanup).
+      1-attacker-ISP (attacker/eth-isp)  T1_1-attacker-ISP.pcap             4000 pkts
+      2-AFTR-ISP-recv (aftr/eth-isp)     T1_2-AFTR-ISP-recv.pcap            4000 pkts
+      3-AFTR-WAN-postNAT (aftr/eth-wan)  T1_3-AFTR-WAN-postNAT.pcap         4000 pkts
+Terminated
+
+  --------------------------------------------------------------
+  reference: victim 200->000 in BOTH phases: SHOCK (half-open, volatile) + SIEGE (completed, durable); co-sub stays 200
+  this run:  SHOCK connections=2000/2000 half-open client1=000 ; SIEGE connections=2002/2000 completed client1=000 client2=200
+  verdict:   MATCH   (attack reproduced the stored result)
+  --------------------------------------------------------------
+  saved: ./pcaps/runs/20260630T162836Z_T1/  (pcaps + config.txt + RESULT.txt)

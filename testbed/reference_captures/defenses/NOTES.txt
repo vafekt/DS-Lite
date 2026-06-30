@@ -1,0 +1,9 @@
+Defence captures: <DEF>_OFF_*.pcap (attack succeeds) vs <DEF>_ON_*.pcap (blocked).
+SAVI: OFF shows spoofed softwire (src 2001:db8:cafe::b41) reaching the AFTR; ON shows zero
+(the carrier-bridge binding drops the spoof at the access port).
+ESP_AEAD: OFF shows cleartext inner IPv4/HTTP on the softwire; ON shows only ESP
+ciphertext (no readable inner packets).
+The full off/on result table for ALL 11 defences (with measured numbers, incl.
+the application-layer PCP/SNMP/DHCPv6/DNS controls) is in
+results/defense_verification/VERIFY_ALL.txt and is reproducible via
+testbed/defenses/verify_all.sh.

@@ -1,0 +1,8 @@
+Baseline reference capture — normal DS-Lite operation, NO attack running.
+Communication types exercised: HTTP through the 4-in-6 softwire + CGNAT, DNS via
+the B4 resolver, DHCPv6 (option-64 AFTR-Name), PCP MAP, SNMP GET (mgmt plane),
+ICMPv6 ping. Capture points:
+  baseline_b4-1_eth-isp.pcap  carrier side of B4-1 (softwire/DHCPv6/DNS/PCP/NDP)
+  baseline_aftr_eth-wan.pcap  AFTR public side (CGNAT egress as the shared IPv4)
+  baseline_aftr_mgmt.pcap     AFTR management plane (SNMP)
+  baseline_client1_eth-lan.pcap  subscriber LAN behind B4-1

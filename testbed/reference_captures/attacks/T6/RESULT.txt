@@ -1,0 +1,20 @@
+================================================================
+  DS-Lite live attack  T6  —  Softwire Reassembly Poisoning
+  saving to  ./pcaps/runs/20260630T163010Z_T6/
+  ground truth (reference) in  ./pcaps/per_attack/T6/
+================================================================
+
+  [1] Surface: Fragment. The AFTR must reassemble the victim's oversized inner IPv4.
+  [2] Attack: collider LOCKS onto the victim's live inner IP-ID and tiles offset-0 holes just ahead of it.
+  [3] Victim flow warms the collider's IP-ID lock (fragmented ping).
+  [4] Victim runs an oversized (fragmented) ping during ACTIVE seeding; we watch its loss.
+      1-attacker-preseed (attacker/eth-isp) T6_1-attacker-preseed.pcap         2008 pkts
+      2-aftr-collide (aftr/eth-isp)      T6_2-aftr-collide.pcap             2008 pkts
+      victim oversized-ping loss during the collision = 90%
+
+  --------------------------------------------------------------
+  reference: victim's fragmented flow collides on overlap and is dropped (high loss)
+  this run:  victim oversized-ping packet loss = 90%
+  verdict:   MATCH   (attack reproduced the stored result)
+  --------------------------------------------------------------
+  saved: ./pcaps/runs/20260630T163010Z_T6/  (pcaps + config.txt + RESULT.txt)

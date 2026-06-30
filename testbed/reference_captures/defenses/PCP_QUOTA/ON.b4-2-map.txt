@@ -1,0 +1,2 @@
+[*] PCP MAP request: internal_port=9090 proto=17 lifetime=3600s nonce=9826add53431b4271f1033bd via 10.0.2.1
+[+] Mapping created: 192.0.2.1:1044 (lifetime=3600s)

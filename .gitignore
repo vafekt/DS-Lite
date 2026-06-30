@@ -1,0 +1,17 @@
+# Runtime output produced by the container
+pcaps/
+testbed/pcaps/
+testbed/attack_trees/results/
+
+# Regenerable QuADTool intermediates (rebuild with attack_trees/export.sh)
+testbed/attack_trees/quadtool/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
