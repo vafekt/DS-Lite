@@ -141,6 +141,7 @@ ensure_attacker_isp() {
         ip link set eth-isp-atk mtu 1500; ip link set atk-br mtu 1500
         ip link set eth-isp-atk netns attacker
         nse attacker ip link set eth-isp-atk name eth-isp
+        nse attacker ip link set eth-isp address 2a:29:47:aa:9c:56   # pinned MAC -> reproducible rogue-resolver link-local/SLAAC (paper Fig.1 & T13 capture)
         ip link set atk-br master br-isp
         ip link set atk-br up
         nse attacker ip link set lo up

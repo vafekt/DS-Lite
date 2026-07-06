@@ -1,6 +1,6 @@
 ================================================================
   DS-Lite live attack  T7  —  PCP Port-Exhaustion DoS
-  saving to  ./pcaps/runs/20260630T163037Z_T7/
+  saving to  ./pcaps/runs/20260706T112546Z_T7/
   ground truth (reference) in  ./pcaps/per_attack/T7/
 ================================================================
 
@@ -9,12 +9,12 @@
       [+] Sent 600 PCP MAP requests, 400 mappings created
   [3] Measure: a legit co-resident on B4-1 now asks for a mapping (same UDP pool).
       [-] MAP refused: result_code=8 ext_port=0
-      1-pcp-uplink (b4-1/eth-isp)        T7_1-pcp-uplink.pcap               753 pkts
-      2-aftr-pcp (aftr/eth-isp)          T7_2-aftr-pcp.pcap                 753 pkts
+      1-pcp-uplink (b4-1/eth-isp)        T7_1-pcp-uplink.pcap               1203 pkts
+      2-aftr-pcp (aftr/eth-isp)          T7_2-aftr-pcp.pcap                 1203 pkts
 
   --------------------------------------------------------------
   reference: pool drained; a co-resident's legit MAP is refused (NO_RESOURCES)
   this run:  co-resident MAP REFUSED (frozen)
   verdict:   MATCH   (attack reproduced the stored result)
   --------------------------------------------------------------
-  saved: ./pcaps/runs/20260630T163037Z_T7/  (pcaps + config.txt + RESULT.txt)
+  saved: ./pcaps/runs/20260706T112546Z_T7/  (pcaps + config.txt + RESULT.txt)

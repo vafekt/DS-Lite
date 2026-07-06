@@ -26,9 +26,11 @@ find its AFTR.
 
 ## Per-run values (CHANGE every container start — do NOT hard-match these)
 
-- **MAC addresses** — Docker assigns random MACs per start (e.g. this run b4-1
-  eth-isp = `22:b7:0e:02:10:90`, aftr = `56:a7:d0:8c:19:61`). A capture from a
-  different run will have different MACs.
+- **MAC addresses** — pinned in `setup.sh` / `attack_lib.sh` so link-local and
+  SLAAC are reproducible and match Fig.1 of the paper: b4-1 `b6:7a:fa:cb:9a:72`,
+  b4-2 `42:a9:c9:d5:e4:d7`, aftr `d2:fb:f6:71:7d:2b`, dhcpv6 `f2:47:33:7c:d8:ac`,
+  dns `3e:fe:d4:fc:87:cb`, attacker `2a:29:47:aa:9c:56`. The DHCPv6-leased B4
+  address (e.g. `::134`) is still assigned dynamically and may vary.
 - **DHCPv6-leased / SLAAC IPv6 on the B4** — e.g. this run b4-1 also holds
   `::1da/128` (DHCPv6 lease) and `2001:db8:cafe:0:20b7:eff:fe02:1090/64` (SLAAC).
   These are *extra* addresses; the softwire is always sourced from the stable

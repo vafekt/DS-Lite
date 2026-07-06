@@ -9,8 +9,8 @@ The step-by-step narration, measured signal, and verdict are in
 
 | file | packets |
 |---|---|
-| `T7_1-pcp-uplink.pcap` | 1203 |
-| `T7_2-aftr-pcp.pcap` | 1203 |
+| `T7_1-pcp-uplink.pcap` | 1204 |
+| `T7_2-aftr-pcp.pcap` | 1204 |
 
 ## Verdict
 

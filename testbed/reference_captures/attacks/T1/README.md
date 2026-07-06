@@ -9,8 +9,8 @@ The step-by-step narration, measured signal, and verdict are in
 
 | file | packets |
 |---|---|
-| `T1_1-attacker-ISP.pcap` | 4000 |
-| `T1_2-AFTR-ISP-recv.pcap` | 4000 |
+| `T1_1-attacker-ISP.pcap` | 4002 |
+| `T1_2-AFTR-ISP-recv.pcap` | 4002 |
 | `T1_3-AFTR-WAN-postNAT.pcap` | 4000 |
 
 ## Verdict

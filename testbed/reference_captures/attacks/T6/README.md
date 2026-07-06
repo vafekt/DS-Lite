@@ -9,8 +9,8 @@ The step-by-step narration, measured signal, and verdict are in
 
 | file | packets |
 |---|---|
-| `T6_1-attacker-preseed.pcap` | 2042 |
-| `T6_2-aftr-collide.pcap` | 2042 |
+| `T6_1-attacker-preseed.pcap` | 2217 |
+| `T6_2-aftr-collide.pcap` | 2217 |
 
 ## Verdict
 

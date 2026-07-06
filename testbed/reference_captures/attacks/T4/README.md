@@ -16,6 +16,6 @@ The step-by-step narration, measured signal, and verdict are in
 
 ```
 reference: attacker reads the victim's inner web flow in cleartext off the softwire (>0)
-this run:  readable inner web-flow packets = 40, plaintext HTTP markers = 30
+this run:  readable inner web-flow packets = 41, plaintext HTTP markers = 30
 verdict:   MATCH   (attack reproduced the stored result)
 ```

@@ -21,5 +21,5 @@ T10|B1 PCP surface|Cross-Subscriber PCP PEER + THIRD_PARTY|LAN
 T11|B2 DNS surface|Softwire DNS-Discovery Hijack|ISP
 T12|B3 DHCPv6 surface|Rogue AFTR Substitution|ISP
 T13|B3 DHCPv6 surface|Transparent AFTR Hijack (DNS impersonation)|ISP
-T14|C1 SNMP surface|SNMP Alarm-Table Write|AFTR
-T15|C1 SNMP surface|SNMP MIB Information Disclosure|AFTR
+T14|C1 SNMP surface|SNMP Alarm-Table Write|MGMT
+T15|C1 SNMP surface|SNMP MIB Information Disclosure|MGMT

@@ -9,14 +9,14 @@ The step-by-step narration, measured signal, and verdict are in
 
 | file | packets |
 |---|---|
-| `T2_1-client-LAN.pcap` | 2178 |
-| `T2_2-B4-softwire-uplink.pcap` | 2181 |
-| `T2_3-AFTR-WAN-sharedIP.pcap` | 2177 |
+| `T2_1-client-LAN.pcap` | 2219 |
+| `T2_2-B4-softwire-uplink.pcap` | 2223 |
+| `T2_3-AFTR-WAN-sharedIP.pcap` | 2219 |
 
 ## Verdict
 
 ```
 reference: all abuse egresses as the shared 192.0.2.1 (collective reputation damage)
-this run:  abuse packets sourced from 192.0.2.1 on the WAN = 1211
+this run:  abuse packets sourced from 192.0.2.1 on the WAN = 1239
 verdict:   MATCH   (attack reproduced the stored result)
 ```

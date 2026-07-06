@@ -1,19 +1,19 @@
 ================================================================
   DS-Lite live attack  T10  —  Cross-Subscriber PCP PEER Enumeration
-  saving to  ./pcaps/runs/20260630T163129Z_T10/
+  saving to  ./pcaps/runs/20260706T112640Z_T10/
   ground truth (reference) in  ./pcaps/per_attack/T10/
 ================================================================
 
   [1] Surface: AFTR PCP PEER operation (returns external IP:port for a flow).
   [2] Attack: a B4-1 host abuses PEER to learn a DIFFERENT subscriber's external ports.
-      [T10] probes=102 elapsed=1.66s wildcard_leak=19471 TP=1 FP=0 FN=2
-      [T10] probes=102 elapsed=1.64s wildcard_leak=49639 TP=1 FP=0 FN=2
+      [T10] probes=102 elapsed=1.70s wildcard_leak=38393 TP=1 FP=0 FN=2
+      [T10] probes=102 elapsed=1.68s wildcard_leak=23073 TP=1 FP=0 FN=2
       ===== T10 verdict =====
       trials passed: 2/2
       aggregate TP=2 FP=0 FN=4, precision=100.00%, recall=33.33%
       *** T10 SUCCESS: cross-subscriber observation-isolation broken ***
-      1-cross-sub-peer-leak (b4-1/eth-isp) T10_1-cross-sub-peer-leak.pcap     345 pkts
-      2-aftr-pcp (aftr/eth-isp)          T10_2-aftr-pcp.pcap                345 pkts
+      1-cross-sub-peer-leak (b4-1/eth-isp) T10_1-cross-sub-peer-leak.pcap     337 pkts
+      2-aftr-pcp (aftr/eth-isp)          T10_2-aftr-pcp.pcap                337 pkts
   [3] Measure: did the tool confirm a cross-subscriber leak (leaked port == real port)?
 
   --------------------------------------------------------------
@@ -21,4 +21,4 @@
   this run:  trials passed: 2/2 aggregate TP=2 FP=0 FN=4, precision=100.00%, recall=33.33% 
   verdict:   MATCH   (attack reproduced the stored result)
   --------------------------------------------------------------
-  saved: ./pcaps/runs/20260630T163129Z_T10/  (pcaps + config.txt + RESULT.txt)
+  saved: ./pcaps/runs/20260706T112640Z_T10/  (pcaps + config.txt + RESULT.txt)

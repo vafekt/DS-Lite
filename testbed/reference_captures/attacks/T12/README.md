@@ -16,7 +16,7 @@ The step-by-step narration, measured signal, and verdict are in
 ## Verdict
 
 ```
-reference: B4 adopts attacker name (aftr-evil.attacker.example) AND rebuilds its softwire to the attacker (2001:db8:cafe:0:dc70:efff:fea1:249d); victim loses service
-this run:  name=aftr-evil.attacker.example., softwire remote 2001:db8:cafe::10->2001:db8:cafe:0:dc70:efff:fea1:249d, victim HTTP=000, frames-to-attacker=4
+reference: B4 adopts attacker name (aftr-evil.attacker.example) AND rebuilds its softwire to the attacker (2001:db8:cafe:0:2829:47ff:feaa:9c56); victim loses service
+this run:  name=aftr-evil.attacker.example., softwire remote 2001:db8:cafe::10->2001:db8:cafe:0:2829:47ff:feaa:9c56, victim HTTP=000, frames-to-attacker=4
 verdict:   MATCH   (attack reproduced the stored result)
 ```

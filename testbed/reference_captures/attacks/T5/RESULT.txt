@@ -1,6 +1,6 @@
 ================================================================
   DS-Lite live attack  T5  —  Downstream Softwire Injection
-  saving to  ./pcaps/runs/20260630T163001Z_T5/
+  saving to  ./pcaps/runs/20260706T112511Z_T5/
   ground truth (reference) in  ./pcaps/per_attack/T5/
 ================================================================
 
@@ -17,4 +17,4 @@
   this run:  spoofed-src packets delivered onto B4-1 LAN = 15
   verdict:   MATCH   (attack reproduced the stored result)
   --------------------------------------------------------------
-  saved: ./pcaps/runs/20260630T163001Z_T5/  (pcaps + config.txt + RESULT.txt)
+  saved: ./pcaps/runs/20260706T112511Z_T5/  (pcaps + config.txt + RESULT.txt)

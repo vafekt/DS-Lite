@@ -1,20 +1,20 @@
 ================================================================
   DS-Lite live attack  T2  —  Shared-IPv4 Reputation Poisoning
-  saving to  ./pcaps/runs/20260630T162914Z_T2/
+  saving to  ./pcaps/runs/20260706T112425Z_T2/
   ground truth (reference) in  ./pcaps/per_attack/T2/
 ================================================================
 
   [1] Surface: AFTR NAT/CGN. Every subscriber egresses under one shared IPv4 (192.0.2.1).
   [2] Attack: a malicious subscriber (client1 10.0.1.100) emits an abuse profile (spam/scan/flood).
-      1-client-LAN (b4-1/eth-lan)        T2_1-client-LAN.pcap               2178 pkts
-      2-B4-softwire-uplink (b4-1/eth-isp) T2_2-B4-softwire-uplink.pcap       2179 pkts
-      3-AFTR-WAN-sharedIP (aftr/eth-wan) T2_3-AFTR-WAN-sharedIP.pcap        2177 pkts
+      1-client-LAN (b4-1/eth-lan)        T2_1-client-LAN.pcap               2219 pkts
+      2-B4-softwire-uplink (b4-1/eth-isp) T2_2-B4-softwire-uplink.pcap       2221 pkts
+      3-AFTR-WAN-sharedIP (aftr/eth-wan) T2_3-AFTR-WAN-sharedIP.pcap        2219 pkts
   [3] Measure: on the AFTR WAN side, what source IP does the abuse carry?
-      abuse packets egressing as the SHARED 192.0.2.1 = 1211 (blame lands on every co-subscriber)
+      abuse packets egressing as the SHARED 192.0.2.1 = 1239 (blame lands on every co-subscriber)
 
   --------------------------------------------------------------
   reference: all abuse egresses as the shared 192.0.2.1 (collective reputation damage)
-  this run:  abuse packets sourced from 192.0.2.1 on the WAN = 1211
+  this run:  abuse packets sourced from 192.0.2.1 on the WAN = 1239
   verdict:   MATCH   (attack reproduced the stored result)
   --------------------------------------------------------------
-  saved: ./pcaps/runs/20260630T162914Z_T2/  (pcaps + config.txt + RESULT.txt)
+  saved: ./pcaps/runs/20260706T112425Z_T2/  (pcaps + config.txt + RESULT.txt)

@@ -15,7 +15,7 @@ The step-by-step narration, measured signal, and verdict are in
 ## Verdict
 
 ```
-reference: off-path flood poisons the B4 cache: aftr.dslite.example.com -> attacker (2001:db8:cafe:0:dc70:efff:fea1:249d)
-this run:  aftr.dslite.example.com resolved to 2001:db8:cafe:0:dc70:efff:fea1:249d at the B4 resolver
+reference: off-path flood poisons the B4 cache: aftr.dslite.example.com -> attacker (2001:db8:cafe:0:2829:47ff:feaa:9c56)
+this run:  aftr.dslite.example.com resolved to 2001:db8:cafe:0:2829:47ff:feaa:9c56 at the B4 resolver
 verdict:   MATCH   (attack reproduced the stored result)
 ```

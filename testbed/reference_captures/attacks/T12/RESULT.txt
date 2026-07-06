@@ -1,6 +1,6 @@
 ================================================================
   DS-Lite live attack  T12  —  Rogue AFTR Substitution
-  saving to  ./pcaps/runs/20260630T163210Z_T12/
+  saving to  ./pcaps/runs/20260706T112720Z_T12/
   ground truth (reference) in  ./pcaps/per_attack/T12/
 ================================================================
 
@@ -8,7 +8,7 @@
       before: B4 softwire remote = 2001:db8:cafe::10 (the real AFTR)
   [2] Attack: rogue DHCPv6 server advertises a NEW attacker AFTR name (aftr-evil.attacker.example).
   [3] Measure: did the B4 adopt the attacker name AND rebuild its softwire to the attacker?
-      B4 cached AFTR name = aftr-evil.attacker.example.   softwire remote: 2001:db8:cafe::10 -> 2001:db8:cafe:0:dc70:efff:fea1:249d
+      B4 cached AFTR name = aftr-evil.attacker.example.   softwire remote: 2001:db8:cafe::10 -> 2001:db8:cafe:0:2829:47ff:feaa:9c56
   [4] Impact: the victim now tunnels its IPv4 to the attacker and loses real service.
       victim client1 internet = HTTP 000 (attacker is not a real AFTR)
       1-rogue-dhcpv6 (attacker/eth-isp)  T12_1-rogue-dhcpv6.pcap            5 pkts
@@ -17,8 +17,8 @@
       victim softwire frames captured arriving at the attacker = 4
 
   --------------------------------------------------------------
-  reference: B4 adopts attacker name (aftr-evil.attacker.example) AND rebuilds its softwire to the attacker (2001:db8:cafe:0:dc70:efff:fea1:249d); victim loses service
-  this run:  name=aftr-evil.attacker.example., softwire remote 2001:db8:cafe::10->2001:db8:cafe:0:dc70:efff:fea1:249d, victim HTTP=000, frames-to-attacker=4
+  reference: B4 adopts attacker name (aftr-evil.attacker.example) AND rebuilds its softwire to the attacker (2001:db8:cafe:0:2829:47ff:feaa:9c56); victim loses service
+  this run:  name=aftr-evil.attacker.example., softwire remote 2001:db8:cafe::10->2001:db8:cafe:0:2829:47ff:feaa:9c56, victim HTTP=000, frames-to-attacker=4
   verdict:   MATCH   (attack reproduced the stored result)
   --------------------------------------------------------------
-  saved: ./pcaps/runs/20260630T163210Z_T12/  (pcaps + config.txt + RESULT.txt)
+  saved: ./pcaps/runs/20260706T112720Z_T12/  (pcaps + config.txt + RESULT.txt)

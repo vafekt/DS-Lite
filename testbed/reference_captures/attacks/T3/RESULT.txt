@@ -1,6 +1,6 @@
 ================================================================
   DS-Lite live attack  T3  —  Softwire Identity Takeover (NDP-poison MITM)
-  saving to  ./pcaps/runs/20260630T162925Z_T3/
+  saving to  ./pcaps/runs/20260706T112435Z_T3/
   ground truth (reference) in  ./pcaps/per_attack/T3/
 ================================================================
 
@@ -8,9 +8,9 @@
       whatever MAC its neighbor discovery cache maps the B4 IPv6 (2001:db8:cafe::b41) to. No neighbor discovery/RA guard.
   [2] Baseline: victim reaches the server; AFTR maps 2001:db8:cafe::b41 to the real B4.
       AFTR neighbor entry 2001:db8:cafe::b41 ->     client1 = HTTP 200
-  [3] Attack: attacker floods override neighbor-discovery messages (2001:db8:cafe::b41 -> attacker de:70:ef:a1:24:9d) to take
+  [3] Attack: attacker floods override neighbor-discovery messages (2001:db8:cafe::b41 -> attacker 2a:29:47:aa:9c:56) to take
       over the victim's softwire identity at the AFTR and steal its return path.
-  [4] Measure: AFTR neighbor entry 2001:db8:cafe::b41 -> de:70:ef:a1:24:9d (attacker=de:70:ef:a1:24:9d);  victim client1 = HTTP 000
+  [4] Measure: AFTR neighbor entry 2001:db8:cafe::b41 -> 2a:29:47:aa:9c:56 (attacker=2a:29:47:aa:9c:56);  victim client1 = HTTP 000
       1-poison-NAs (attacker/eth-isp)    T3_1-poison-NAs.pcap               276 pkts
       2-attacker-intercept (attacker/eth-isp) T3_2-attacker-intercept.pcap       7 pkts
       3-victim-cutoff (b4-1/eth-isp)     T3_3-victim-cutoff.pcap            11 pkts
@@ -18,7 +18,7 @@
 
   --------------------------------------------------------------
   reference: AFTR neighbor entry for 2001:db8:cafe::b41 flips to the attacker; victim 200->000; returns stolen
-  this run:  neighbor entry ->de:70:ef:a1:24:9d, client1 200->000, intercepted=7
+  this run:  neighbor entry ->2a:29:47:aa:9c:56, client1 200->000, intercepted=7
   verdict:   MATCH   (attack reproduced the stored result)
   --------------------------------------------------------------
-  saved: ./pcaps/runs/20260630T162925Z_T3/  (pcaps + config.txt + RESULT.txt)
+  saved: ./pcaps/runs/20260706T112435Z_T3/  (pcaps + config.txt + RESULT.txt)

@@ -83,6 +83,7 @@ ip link add eth-isp-dhcp6s type veth peer name dhcp6s-br
 ip link set eth-isp-dhcp6s mtu "${ISP_MTU:-1500}" && ip link set dhcp6s-br mtu "${ISP_MTU:-1500}"
 ip link set eth-isp-dhcp6s netns dhcpv6server
 ip netns exec dhcpv6server ip link set eth-isp-dhcp6s name eth-isp
+ip netns exec dhcpv6server ip link set eth-isp address f2:47:33:7c:d8:ac   # pinned MAC -> reproducible link-local/SLAAC (paper Fig.1 & reference captures)
 ip link set dhcp6s-br master br-isp
 ip link set dhcp6s-br up
 
@@ -93,6 +94,7 @@ ip link add eth-isp-dns type veth peer name dns-br
 ip link set eth-isp-dns mtu "${ISP_MTU:-1500}" && ip link set dns-br mtu "${ISP_MTU:-1500}"
 ip link set eth-isp-dns netns dns-server
 ip netns exec dns-server ip link set eth-isp-dns name eth-isp
+ip netns exec dns-server ip link set eth-isp address 3e:fe:d4:fc:87:cb   # pinned MAC -> reproducible link-local/SLAAC (paper Fig.1 & reference captures)
 ip link set dns-br master br-isp
 ip link set dns-br up
 
@@ -101,6 +103,7 @@ ip link add eth-isp-b41 type veth peer name b41-br
 ip link set eth-isp-b41 mtu "${ISP_MTU:-1500}" && ip link set b41-br mtu "${ISP_MTU:-1500}"
 ip link set eth-isp-b41 netns b4-1
 ip netns exec b4-1 ip link set eth-isp-b41 name eth-isp
+ip netns exec b4-1 ip link set eth-isp address b6:7a:fa:cb:9a:72   # pinned MAC -> reproducible link-local/SLAAC (paper Fig.1 & reference captures)
 ip link set b41-br master br-isp
 ip link set b41-br up
 # Subscriber-to-subscriber L2 isolation (private/"protected" port). Real
@@ -121,6 +124,7 @@ ip link add eth-isp-b42 type veth peer name b42-br
 ip link set eth-isp-b42 mtu "${ISP_MTU:-1500}" && ip link set b42-br mtu "${ISP_MTU:-1500}"
 ip link set eth-isp-b42 netns b4-2
 ip netns exec b4-2 ip link set eth-isp-b42 name eth-isp
+ip netns exec b4-2 ip link set eth-isp address 42:a9:c9:d5:e4:d7   # pinned MAC -> reproducible link-local/SLAAC (paper Fig.1 & reference captures)
 ip link set b42-br master br-isp
 ip link set b42-br up
 bridge link set dev b42-br isolated on   # subscriber L2 isolation (see b41-br note)
@@ -130,6 +134,7 @@ ip link add eth-isp-aftr type veth peer name aftr-br
 ip link set eth-isp-aftr mtu "${ISP_MTU:-1500}" && ip link set aftr-br mtu "${ISP_MTU:-1500}"
 ip link set eth-isp-aftr netns aftr
 ip netns exec aftr ip link set eth-isp-aftr name eth-isp
+ip netns exec aftr ip link set eth-isp address d2:fb:f6:71:7d:2b   # pinned MAC -> reproducible link-local/SLAAC (paper Fig.1 & reference captures)
 ip link set aftr-br master br-isp
 ip link set aftr-br up
 
@@ -143,6 +148,7 @@ ip link set eth-lan-b41 netns b4-1
 ip netns exec b4-1 ip link set eth-lan-b41 name eth-lan
 ip link set eth0-cl1 netns client1
 ip netns exec client1 ip link set eth0-cl1 name eth0
+ip netns exec client1 ip link set eth0 address da:a8:f1:9f:f0:b7   # pinned MAC -> reproducible for paper Fig.1 & captures
 
 # B4-2 <-> Client2 (IPv4 LAN)
 ip link add eth-lan-b42 type veth peer name eth0-cl2
@@ -150,6 +156,7 @@ ip link set eth-lan-b42 netns b4-2
 ip netns exec b4-2 ip link set eth-lan-b42 name eth-lan
 ip link set eth0-cl2 netns client2
 ip netns exec client2 ip link set eth0-cl2 name eth0
+ip netns exec client2 ip link set eth0 address a2:b6:c8:ac:f2:8a   # pinned MAC -> reproducible for paper Fig.1 & captures
 
 # AFTR <-> Server-Router (IPv4 WAN)
 ip link add eth-wan-aftr type veth peer name eth-aftr-sr
@@ -164,6 +171,7 @@ ip link set eth-srv-sr netns server-router
 ip netns exec server-router ip link set eth-srv-sr name eth-srv
 ip link set eth0-srv netns server
 ip netns exec server ip link set eth0-srv name eth0
+ip netns exec server ip link set eth0 address 8e:17:b6:5d:70:24   # pinned MAC -> reproducible for paper Fig.1 & captures
 
 ########################################################################
 # 3b. OAM / Management network (RFC 5706 §3.1)
@@ -939,6 +947,7 @@ if [ -n "${ATTACKER_PLACEMENT:-}" ]; then
             ip link set eth-isp-atk mtu "${ISP_MTU:-1500}" && ip link set atk-br mtu "${ISP_MTU:-1500}"
             ip link set eth-isp-atk netns attacker
             ip netns exec attacker ip link set eth-isp-atk name eth-isp
+ip netns exec attacker ip link set eth-isp address 2a:29:47:aa:9c:56   # pinned MAC -> reproducible link-local/SLAAC (paper Fig.1 & reference captures)
             ip link set atk-br master br-isp
             ip link set atk-br up
             ip netns exec attacker ip link set eth-isp up

@@ -1,22 +1,22 @@
 ================================================================
   DS-Lite live attack  T11  —  Softwire DNS-Discovery Hijack
-  saving to  ./pcaps/runs/20260630T163155Z_T11/
+  saving to  ./pcaps/runs/20260706T112706Z_T11/
   ground truth (reference) in  ./pcaps/per_attack/T11/
 ================================================================
 
   [1] Surface: off-path poisoning of the B4's AFTR-FQDN resolution (RFC 6334).
       0x20 case-randomisation at the B4 resolver = OFF
-/testbed/scripts/attack_lib.sh: line 32:  8067 Killed                  ip netns exec "$@"
+/testbed/scripts/attack_lib.sh: line 32: 260941 Killed                  ip netns exec "$@"
   [2] Victim B4 resolves the AFTR FQDN (query hangs on the slow upstream = wide window).
   [3] Attack: OFF-PATH attacker floods forged AAAA (granted port, brute 65536 TXIDs).
       1-offpath-flood (attacker/eth-isp) T11_1-offpath-flood.pcap           4000 pkts
       2-b4-resolver (b4-1/eth-isp)       T11_2-b4-resolver.pcap             4000 pkts
   [4] Measure: what AAAA did the B4 resolver cache for aftr.dslite.example.com?
-      B4 resolver answers aftr.dslite.example.com -> 2001:db8:cafe:0:dc70:efff:fea1:249d  (attacker = 2001:db8:cafe:0:dc70:efff:fea1:249d)
+      B4 resolver answers aftr.dslite.example.com -> 2001:db8:cafe:0:2829:47ff:feaa:9c56  (attacker = 2001:db8:cafe:0:2829:47ff:feaa:9c56)
 
   --------------------------------------------------------------
-  reference: off-path flood poisons the B4 cache: aftr.dslite.example.com -> attacker (2001:db8:cafe:0:dc70:efff:fea1:249d)
-  this run:  aftr.dslite.example.com resolved to 2001:db8:cafe:0:dc70:efff:fea1:249d at the B4 resolver
+  reference: off-path flood poisons the B4 cache: aftr.dslite.example.com -> attacker (2001:db8:cafe:0:2829:47ff:feaa:9c56)
+  this run:  aftr.dslite.example.com resolved to 2001:db8:cafe:0:2829:47ff:feaa:9c56 at the B4 resolver
   verdict:   MATCH   (attack reproduced the stored result)
   --------------------------------------------------------------
-  saved: ./pcaps/runs/20260630T163155Z_T11/  (pcaps + config.txt + RESULT.txt)
+  saved: ./pcaps/runs/20260706T112706Z_T11/  (pcaps + config.txt + RESULT.txt)

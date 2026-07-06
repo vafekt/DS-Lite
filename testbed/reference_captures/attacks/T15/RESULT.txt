@@ -1,14 +1,14 @@
 ================================================================
   DS-Lite live attack  T15  —  SNMP MIB Information Disclosure
-  saving to  ./pcaps/runs/20260630T163258Z_T15/
+  saving to  ./pcaps/runs/20260706T112808Z_T15/
   ground truth (reference) in  ./pcaps/per_attack/T15/
 ================================================================
 
   [1] Surface: SNMP/MIB management plane (DSLITE-MIB NAT bind table).
   [2] Seed: drive both subscribers so the AFTR holds bindings for each.
   [3] Attack: read the DSLITE-MIB, disclosing private NAT connections.
-      1-snmp-walk (aftr/eth-mgmt)        T15_1-snmp-walk.pcap               417 pkts
-      2-mgmt-station (mgmt/eth-mgmt)     T15_2-mgmt-station.pcap            417 pkts
+      1-snmp-walk (aftr/eth-mgmt)        T15_1-snmp-walk.pcap               405 pkts
+      2-mgmt-station (mgmt/eth-mgmt)     T15_2-mgmt-station.pcap            405 pkts
   [4] Measure: how many distinct subscribers' private addresses were disclosed?
       distinct subscriber inner IPs disclosed via the MIB = 2  [10.0.1.100 10.0.2.100 ]
 
@@ -17,4 +17,4 @@
   this run:  distinct subscriber inner IPs disclosed = 2
   verdict:   MATCH   (attack reproduced the stored result)
   --------------------------------------------------------------
-  saved: ./pcaps/runs/20260630T163258Z_T15/  (pcaps + config.txt + RESULT.txt)
+  saved: ./pcaps/runs/20260706T112808Z_T15/  (pcaps + config.txt + RESULT.txt)

@@ -17,6 +17,6 @@ The step-by-step narration, measured signal, and verdict are in
 
 ```
 reference: AFTR neighbor entry for 2001:db8:cafe::b41 flips to the attacker; victim 200->000; returns stolen
-this run:  neighbor entry ->de:70:ef:a1:24:9d, client1 200->000, intercepted=7
+this run:  neighbor entry ->2a:29:47:aa:9c:56, client1 200->000, intercepted=7
 verdict:   MATCH   (attack reproduced the stored result)
 ```

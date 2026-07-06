@@ -38,6 +38,7 @@ prov_attacker(){ nse attacker ip link show eth-isp >/dev/null 2>&1 || dx sh -c '
   ip link add eth-isp-atk type veth peer name atk-br 2>/dev/null
   ip link set eth-isp-atk netns attacker 2>/dev/null
   ip netns exec attacker ip link set eth-isp-atk name eth-isp 2>/dev/null
+  ip netns exec attacker ip link set eth-isp address 2a:29:47:aa:9c:56 2>/dev/null
   ip link set atk-br master br-isp 2>/dev/null; ip link set atk-br up 2>/dev/null
   ip netns exec attacker ip link set lo up 2>/dev/null
   ip netns exec attacker ip link set eth-isp up 2>/dev/null

@@ -1,6 +1,6 @@
 ================================================================
   DS-Lite live attack  T14  —  SNMP Alarm-Table Write
-  saving to  ./pcaps/runs/20260630T163250Z_T14/
+  saving to  ./pcaps/runs/20260706T112800Z_T14/
   ground truth (reference) in  ./pcaps/per_attack/T14/
 ================================================================
 
@@ -18,4 +18,4 @@
   this run:  PortNumber 1000->2147483647; ConnectNumber stayed 60 on out-of-range set
   verdict:   MATCH   (attack reproduced the stored result)
   --------------------------------------------------------------
-  saved: ./pcaps/runs/20260630T163250Z_T14/  (pcaps + config.txt + RESULT.txt)
+  saved: ./pcaps/runs/20260706T112800Z_T14/  (pcaps + config.txt + RESULT.txt)

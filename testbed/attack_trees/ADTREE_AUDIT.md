@@ -143,3 +143,49 @@ action sequence); the substance — which steps and which defences — is identi
 re-emits the `.dot`/`.prism`/`.xml` and the QuADTool-rendered `figures/tN.pdf`,
 and refreshes this bundle. The PRISM reachability check still passes 15/15 (each
 defence closes its attack), so the quantitative bridge is unaffected.
+
+## Update 2026-07-04 — reviewer sharpening (DS-Lite specificity + defense de-duplication)
+Two issues raised on review of the trees:
+1. **Duplicate defense across SAND/AND conjuncts.** 6 trees attached the SAME defense to
+   more than one *conjunctive* sibling (T1 D_trabelsi; T4 D_esp; T6 D_feistel; T11 D_0x20;
+   T12 D_dhcpauth; T13 D_dhcpauth). Per Kordy et al., a countermeasure attaches to the node it
+   *directly* neutralizes, and for a conjunction breaking ONE required step defeats the goal —
+   so the duplicate is redundant (and, e.g. for T13, semantically wrong: signed DHCPv6 is not a
+   DNS control). Fixed: each defense now sits on the single action it neutralizes
+   (T1->Phase1; T4->Capture; T6->Inject; T11->Flood; T12->rogue-Advertise; T13->rogue-DHCPv6).
+   Repeats across **OR-branches are kept** (T3 D_esp on the three escalate branches) — closing an
+   OR *requires* the defense on every branch; that is correct, not redundant.
+   Coverage matrix UNCHANGED (same defense still closes each attack), so the paper's coverage
+   claims are unaffected.
+2. **Too generic labels (T13).** "DHCPv6 race / rogue DNS" read as any-network. Relabeled to the
+   DS-Lite mechanisms: AFTR-Name option (Option 64), the B4's AFTR provisioning, the AFTR FQDN,
+   and softwire re-termination — so a reviewer sees it is unmistakably DS-Lite.
+Source of truth: results/adtool_trees/build_trees.py; re-rendered via render_with_quadtool.sh;
+paper fig_adtree_t13 + adtree.tex prose/caption updated; testbed figures re-exported.
+
+## Update 2026-07-04 (b) — QuADTool-style detail + layout + tool name
+Reviewer: our trees were too abstract (short SAND chains, fat nodes, wasted horizontal space)
+next to the QuADTool paper's example (branching AND/OR, short labels, concrete path). Fixes:
+- T13 decomposed to the concrete path: join provisioning segment -> AND(keep AFTR-Name Opt 64,
+  set attacker as resolver Opt 23, win the DHCPv6 race) -> rogue resolver maps AFTR FQDN. The AND
+  spreads it horizontally (aspect 2.24 -> 1.60).
+- T14/T15 gained an OR for reaching the agent (P3 management network / P1 softwire-to-mgmt gap),
+  both real; aspect fixed to landscape.
+- T2 "obtain sending position" -> OR(co-subscriber LAN host / own subscription).
+- T7, T9 kept short: they are genuinely 2 attacker actions; padding with "NO_RESOURCES returned" /
+  "B4 re-MAPs" would be SYSTEM-REACTION leaves, which this audit forbids.
+- Caption fixed: the tool is QuADTool (QRender drives QuADTool's GraphFrame), not ADTool.
+All 15 re-rendered; aspects now 0.5-1.6 except T7 (1.98, honest 2-step). Coverage matrix unchanged.
+
+## Correction 2026-07-04 (c) — reverted a fabricated refinement in T13
+On review against the QuADTool paper's formal ADT (Def.: leaves are BASIC ATTACK STEPS / basic
+events with a success valuation; OR = alternative methods; AND = distinct necessary sub-goals):
+the T13 "AND(keep Opt 64, set Opt 23, win race)" I had added was NON-canonical — "keep Option 64"
+and "set Option 23" are FIELDS of one crafted packet, not basic events (no independent
+success/failure). Reverted to the faithful SAND chain: join segment -> win the DHCPv6 race with a
+rogue Reply (Opt 64 kept, Opt 23 rogue resolver; details in the node LABEL) -> rogue resolver maps
+the AFTR FQDN. The 3-step SAND still spreads horizontally (aspect 1.70), so fidelity did not cost
+much layout. KEPT: T14/T15/T2 "obtain-X -> OR[alternative access/positions]" and T14/T15 separate
+"authenticate" node with the USM defense — both match the QuADTool example (obtain-credentials OR;
+authenticate node with the password-auth defense). Rule followed: no packet-field / system-reaction
+/ goal-restating leaves; only real basic attack steps.

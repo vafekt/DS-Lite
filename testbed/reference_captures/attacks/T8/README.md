@@ -17,6 +17,6 @@ The step-by-step narration, measured signal, and verdict are in
 
 ```
 reference: attacker opens an inbound port on the shared IP to a NON-OWNED co-sub; external traffic then reaches the victim
-this run:  forged inbound-forwarding rules=5 (192.0.2.1:1024->10.0.2.100:25017); external probe reached victim=yes
+this run:  forged inbound-forwarding rules=5 (192.0.2.1:1024->10.0.2.100:9447); external probe reached victim=yes
 verdict:   MATCH   (attack reproduced the stored result)
 ```

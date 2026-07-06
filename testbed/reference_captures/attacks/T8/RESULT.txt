@@ -1,13 +1,13 @@
 ================================================================
   DS-Lite live attack  T8  —  Unauthorized THIRD_PARTY Forwarding
-  saving to  ./pcaps/runs/20260630T163053Z_T8/
+  saving to  ./pcaps/runs/20260706T112603Z_T8/
   ground truth (reference) in  ./pcaps/per_attack/T8/
 ================================================================
 
   [1] Surface: AFTR PCP THIRD_PARTY option (no ownership check).
   [2] Attack: a B4-1 host installs a THIRD_PARTY MAP naming a DIFFERENT subscriber (10.0.2.100).
   [3] Measure: did the AFTR install a inbound forwarding rule pointing the shared IP at the non-owned victim?
-      AFTR installed 5 cross-subscriber inbound-forwarding rules (e.g. 192.0.2.1:1024 -> 10.0.2.100:25017)
+      AFTR installed 5 cross-subscriber inbound-forwarding rules (e.g. 192.0.2.1:1024 -> 10.0.2.100:9447)
   [4] Impact: an EXTERNAL host reaches the non-owned victim via 192.0.2.1:1024.
       1-thirdparty-map (b4-1/eth-isp)    T8_1-thirdparty-map.pcap           10 pkts
       2-aftr-pcp (aftr/eth-isp)          T8_2-aftr-pcp.pcap                 10 pkts
@@ -16,7 +16,7 @@
 
   --------------------------------------------------------------
   reference: attacker opens an inbound port on the shared IP to a NON-OWNED co-sub; external traffic then reaches the victim
-  this run:  forged inbound-forwarding rules=5 (192.0.2.1:1024->10.0.2.100:25017); external probe reached victim=yes
+  this run:  forged inbound-forwarding rules=5 (192.0.2.1:1024->10.0.2.100:9447); external probe reached victim=yes
   verdict:   MATCH   (attack reproduced the stored result)
   --------------------------------------------------------------
-  saved: ./pcaps/runs/20260630T163053Z_T8/  (pcaps + config.txt + RESULT.txt)
+  saved: ./pcaps/runs/20260706T112603Z_T8/  (pcaps + config.txt + RESULT.txt)
