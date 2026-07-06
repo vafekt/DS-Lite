@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+message: "If you use this testbed, please cite the article and this software archive."
+title: "DS-Lite Security Testbed: 15 Executed Attacks, a Five-Dimensional Taxonomy, and Verified Mitigations"
+type: software
+authors:
+  - family-names: Phan
+    given-names: Viet Anh
+    affiliation: "Brno University of Technology, Department of Telecommunications"
+  - family-names: Jerabek
+    given-names: Jan
+    affiliation: "Brno University of Technology, Department of Telecommunications"
+license: GPL-3.0
+repository-code: "https://github.com/vafekt/DS-Lite"
+keywords:
+  - DS-Lite
+  - IPv6 transition
+  - carrier-grade NAT
+  - attack taxonomy
+  - attack-defense trees
+  - reproducible testbed
+preferred-citation:
+  type: article
+  title: "Executed Security Analysis of Dual-Stack Lite: Full-Stack Attack Execution, a Five-Dimensional Taxonomy, and Mitigation Strategies"
+  authors:
+    - family-names: Phan
+      given-names: Viet Anh
+    - family-names: Jerabek
+      given-names: Jan
+  journal: "Computers & Security"
+  year: 2026
