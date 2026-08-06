@@ -441,9 +441,12 @@ client1 (victim traffic): $cmd"
 # T5 — Downstream Softwire Injection (forge AFTR->B4, land on victim LAN)
 # ─────────────────────────────────────────────────────────────────────────
 spec_T5() { echo "1-attacker-forges|attacker|eth-isp|ip6 proto 4;2-injected-into-LAN|b4-1|eth-lan|"; }
-knobs_T5() { echo "count:15|30; spoof:203.0.113.66"; }
+# count defaults to 120: the injection is one sub-second sendp burst; a 15-packet
+# burst can slip past the ~1.5s capture-attach window (start_caps) and read as a
+# spurious 0 on the LAN pcap (~18/20). 120 reliably overlaps the capture (20/20).
+knobs_T5() { echo "count:120|30; spoof:203.0.113.66"; }
 do_T5() {
-    local outdir="$1" cnt spoof; cnt=$(knob_val COUNT 15); spoof=$(knob_val SPOOF 203.0.113.66)
+    local outdir="$1" cnt spoof; cnt=$(knob_val COUNT 120); spoof=$(knob_val SPOOF 203.0.113.66)
     urpf off; ensure_attacker_isp
     step "Surface: Softwire downstream. AFTR->B4 direction is also unauthenticated."
     start_caps "$(spec_T5)" "$outdir" "T5"
