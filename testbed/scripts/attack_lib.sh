@@ -581,18 +581,24 @@ do_T9() {
     nse client1 sh -c "timeout 8 python3 $T/infra/pcp_attack.py exhaust --proxy-ip $GW1 --count 60 >/dev/null 2>&1"
     start_caps "$(spec_T9)" "$outdir" "T9"
     step "Attack: attacker forges PCP ANNOUNCE (server-restart signal) from the AFTR address."
+    # Count the renewal storm from a dedicated UNCAPPED, fixed-${win}s-window
+    # capture. The shared start_caps captures are packet-capped (CAP_MAX) to bound
+    # file size, which truncates the storm; the reported figure uses this uncapped
+    # window so it reflects the true renewal rate (thousands of packets in ${win}s).
+    local win=10 stormpcap; stormpcap="$outdir/T9_renew-window.pcap"
+    nse b4-1 timeout "$win" tcpdump -ni eth-isp -U -s0 "udp port 5351" -w "$stormpcap" >/dev/null 2>&1 &
+    local scap=$!; sleep 1
     local cmd="python3 $T/infra/pcp_attack.py announce --interface eth-isp --aftr-ip6 $AFTR --count $cnt"
     CMDS_RUN="attacker: $cmd"
-    nse attacker sh -c "timeout 10 $cmd >/dev/null 2>&1"
-    sleep 2
+    nse attacker sh -c "timeout $win $cmd >/dev/null 2>&1"
+    wait "$scap" 2>/dev/null   # the ${win}s storm window closes here
     stop_caps; cap_summary
-    step "Measure: how much MAP-renew traffic did the single ANNOUNCE provoke?"
-    local b4pcap storm; b4pcap="$outdir/T9_2-b4-renew-storm.pcap"
-    storm=$(pcap_count "$b4pcap" "udp port 5351")
-    info "PCP MAP traffic on the B4 uplink after the ANNOUNCE = $storm packets (from $cnt announces)"
+    step "Measure: how much MAP-renew traffic did the ANNOUNCE burst provoke in ${win}s?"
+    local storm; storm=$(pcap_count "$stormpcap" "udp port 5351")
+    info "PCP MAP-renew traffic on the B4 uplink in a ${win}s window = $storm packets (from $cnt announces)"
     restart_pcp 1024
-    REF_LINE="one ANNOUNCE triggers a renew storm (MAP packets >> announce count)"
-    RUN_LINE="MAP-renew packets = $storm after $cnt ANNOUNCE"
+    REF_LINE="one ANNOUNCE burst triggers a renew storm (thousands of MAP packets in a ${win}s window)"
+    RUN_LINE="MAP-renew packets = $storm in ${win}s after $cnt ANNOUNCE"
     [ "$storm" -gt "$cnt" ] && VERDICT_PASS=1 || VERDICT_PASS=0
 }
 
