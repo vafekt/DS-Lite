@@ -653,20 +653,28 @@ knobs_T11() { echo "rounds:2|4"; }
 # (a slow/unresponsive authoritative server). The B4 resolver here is the DNS-0x20
 # forwarder so the Dagon-0x20 defence can be toggled against the SAME attack. The
 # 0x20 state is read from /run/t11-0x20-mode (set by article_defenses.sh DNS_0X20).
-_t11_resolver_up() {  # <zerox20 0|1>
+_t11_resolver_up() {  # <zerox20 0|1> <cookies 0|1>
     nse dns-server ip -6 addr add ${C_PREFIX}::5/64 dev eth-isp 2>/dev/null
     nse dns-server pkill -9 -f dns_sink.py 2>/dev/null
     nsd dns-server python3 $T/dns/dns_sink.py ${C_PREFIX}::5 53
-    nse b4-1 sh -c "pkill -9 -F /var/run/dnsmasq-b4-1.pid 2>/dev/null; pkill -9 -f dns_0x20_forwarder 2>/dev/null"
+    nse b4-1 sh -c "pkill -9 -F /var/run/dnsmasq-b4-1.pid 2>/dev/null; pkill -9 -f 'dns_0x20_forwarder|dns_cookies_forwarder' 2>/dev/null"
     sleep 0.4
     nse b4-1 sysctl -qw net.core.rmem_max=33554432 2>/dev/null
-    nsd b4-1 python3 /testbed/defenses/dns_0x20_forwarder.py --listen-ip ::1 \
-        --listen-port 5354 --upstream ${C_PREFIX}::5 --src-ip $VB4 --src-port 33333 \
-        --zerox20 "$1" --timeout 9
+    if [ "${2:-0}" = 1 ]; then
+        # DNS Cookies (RFC 7873): reject any reply not echoing the Client Cookie.
+        nsd b4-1 python3 /testbed/defenses/dns_cookies_forwarder.py --listen-ip ::1 \
+            --listen-port 5354 --upstream ${C_PREFIX}::5 --src-ip $VB4 --src-port 33333 \
+            --cookies 1 --timeout 9
+    else
+        # DNS-0x20 (or, with $1=0, the vulnerable baseline).
+        nsd b4-1 python3 /testbed/defenses/dns_0x20_forwarder.py --listen-ip ::1 \
+            --listen-port 5354 --upstream ${C_PREFIX}::5 --src-ip $VB4 --src-port 33333 \
+            --zerox20 "$1" --timeout 9
+    fi
     sleep 1
 }
 _t11_resolver_down() {
-    nse b4-1 pkill -9 -f dns_0x20_forwarder 2>/dev/null
+    nse b4-1 pkill -9 -f 'dns_0x20_forwarder|dns_cookies_forwarder' 2>/dev/null
     nse dns-server pkill -9 -f dns_sink.py 2>/dev/null
     nse dns-server ip -6 addr del ${C_PREFIX}::5/64 dev eth-isp 2>/dev/null
     # restore the stock B4 resolver
@@ -679,9 +687,14 @@ do_T11() {
     local outdir="$1" rounds dom; rounds=$(knob_val ROUNDS 2); dom=aftr.dslite.example.com
     ensure_attacker_isp
     local zx; zx=$(nse b4-1 cat /run/t11-0x20-mode 2>/dev/null | tr -d '[:space:]'); zx="${zx:-0}"
+    local ck; ck=$(nse b4-1 cat /run/t11-cookies-mode 2>/dev/null | tr -d '[:space:]'); ck="${ck:-0}"
     step "Surface: off-path poisoning of the B4's AFTR-FQDN resolution (RFC 6334)."
-    info "0x20 case-randomisation at the B4 resolver = $([ "$zx" = 1 ] && echo ON || echo OFF)"
-    _t11_resolver_up "$zx"
+    if [ "$ck" = 1 ]; then
+        info "DNS Cookies (RFC 7873) at the B4 resolver = ON"
+    else
+        info "0x20 case-randomisation at the B4 resolver = $([ "$zx" = 1 ] && echo ON || echo OFF)"
+    fi
+    _t11_resolver_up "$zx" "$ck"
     start_caps "$(spec_T11)" "$outdir" "T11"
     step "Victim B4 resolves the AFTR FQDN (query hangs on the slow upstream = wide window)."
     nse b4-1 sh -c "dig AAAA $dom @::1 -p 5354 +time=9 +tries=1 >/dev/null 2>&1 &"

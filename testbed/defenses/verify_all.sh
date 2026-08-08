@@ -188,6 +188,19 @@ n=$(dx bash /testbed/scripts/run_attack_live.sh T11 2>&1 | grep -oE 'resolved to
 bash "$AP" DNS_0X20 off >/dev/null 2>&1
 { echo "$o"|grep -qiE '::13a|cafe:0:' && ! echo "$n"|grep -qiE '::13a|cafe:0:'; } && ok DNS_0X20 "OFF $o | ON $n" || no DNS_0X20 "OFF $o | ON $n"
 
+# ── T11 DNS_COOKIES (off-path AFTR-FQDN poisoning) - via runner ─────────────
+hdr "T11  DNS_COOKIES  (off-path DNS poisoning)"
+nse b4-1 pkill -9 -f 'dns_0x20_forwarder|dns_cookies_forwarder' 2>/dev/null
+nse dns-server pkill -9 -f dns_sink 2>/dev/null
+nse dns-server ip -6 addr del $CP::5/64 dev eth-isp 2>/dev/null
+nse b4-1 sysctl -qw net.core.rmem_max=33554432 2>/dev/null
+bash "$AP" DNS_COOKIES off >/dev/null 2>&1
+o=$(dx bash /testbed/scripts/run_attack_live.sh T11 2>&1 | grep -oE 'resolved to [0-9a-f:]+|resolved to <none>' | tail -1)
+bash "$AP" DNS_COOKIES on >/dev/null 2>&1
+n=$(dx bash /testbed/scripts/run_attack_live.sh T11 2>&1 | grep -oE 'resolved to [0-9a-f:]+|resolved to <none>' | tail -1)
+bash "$AP" DNS_COOKIES off >/dev/null 2>&1
+{ echo "$o"|grep -qiE '::13a|cafe:0:' && ! echo "$n"|grep -qiE '::13a|cafe:0:'; } && ok DNS_COOKIES "OFF $o | ON $n" || no DNS_COOKIES "OFF $o | ON $n"
+
 # ── summary ─────────────────────────────────────────────────────────────────
 printf '\n================ %d PASS, %d FAIL ================\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

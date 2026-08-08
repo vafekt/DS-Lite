@@ -49,6 +49,7 @@ DEFENSES = [
     ("PCP_OWNERSHIP", "PCP_OWNERSHIP  (closes T8, T10)", "THIRD_PARTY/PEER bound to requester prefix"),
     ("PCP_AUTH",      "PCP_AUTH  (closes T9)",        "authenticated ANNOUNCE; forged epoch reset ignored"),
     ("DNS_0X20",      "DNS_0X20  (closes T11)",       "0x20 case randomization at the B4 resolver"),
+    ("DNS_COOKIES",   "DNS_COOKIES  (closes T11)",    "RFC 7873 DNS cookies at the B4 resolver; forged replies dropped"),
     ("DHCPV6_AUTH",   "DHCPV6_AUTH  (closes T12, T13)", "Ed25519-signed DHCPv6; rogue ADVERTISE rejected"),
     ("SNMP_USM",      "SNMP_USM  (closes T14, T15)",  "SNMPv3 USM + engineID pin; v2c default denied"),
     ("__alloff__",    "Turn ALL defenses OFF",        "restore the vulnerable attack baseline"),

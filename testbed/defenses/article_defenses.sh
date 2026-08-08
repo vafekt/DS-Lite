@@ -256,6 +256,22 @@ dns_0x20() {
   echo "DNS_0X20 $1 (Dagon 0x20 case-randomisation at the B4 resolver: mode=$v)"
 }
 
+# ── DNS_COOKIES (T11): DNS Cookies at the B4 resolver (Eastlake & Andrews, RFC ──
+#    7873). on = run the cookie-validating forwarder (random 64-bit Client Cookie,
+#    the reply must echo it); off = no cookies (vulnerable baseline). Production
+#    equivalent: unbound/BIND with DNS cookies enabled (BIND default). The
+#    off-path poisoner cannot see the query, so its forged replies carry no valid
+#    cookie and are dropped. do_T11 reads /run/t11-cookies-mode on each B4 and
+#    starts dns_cookies_forwarder.py when it is 1 (else the 0x20/baseline path).
+dns_cookies() {
+  local v=0; [ "$1" = on ] && v=1
+  local e
+  for e in "${B4S[@]}"; do set -- $e
+    dx ip netns exec "$1" sh -c "echo $v > /run/t11-cookies-mode"
+  done
+  echo "DNS_COOKIES $1 (RFC 7873 DNS Cookies at the B4 resolver: mode=$v)"
+}
+
 # ═══════════════════════════════════════════════════════════════════════════
 # RFC-GROUNDED defenses (no deployable research-article mechanism exists for the
 # attack; the canonical control is the RFC). Kept honest + distinct from the
@@ -315,6 +331,7 @@ case "$DEF" in
   SAVI)          savi          "$STATE" ;;
   FEISTEL_IPID)  feistel_ipid  "$STATE" ;;
   DNS_0X20)      dns_0x20      "$STATE" ;;
+  DNS_COOKIES)   dns_cookies   "$STATE" ;;
   TRABELSI)      trabelsi      "$STATE" ;;
   ESP_AEAD)      esp_aead      "$STATE" ;;
   PCP_QUOTA)     pcp_quota     "$STATE" ;;   # T7  (RFC 6887)
