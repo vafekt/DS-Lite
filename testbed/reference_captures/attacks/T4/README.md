@@ -1,4 +1,4 @@
-# T4 — Unencrypted-Tunnel Interception
+# T4 - Unencrypted-Tunnel Interception
 
 Reference packet captures for T4, regenerated from the testbed by
 `testbed/scripts/capture_references.sh` (one capture point per file).

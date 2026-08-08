@@ -19,7 +19,7 @@
 #                                                         |
 #                                                       Server
 #
-# RFC 5706 §3.1 — management plane (SNMP / syslog) lives on a dedicated
+# RFC 5706 §3.1 - management plane (SNMP / syslog) lives on a dedicated
 # OAM network (br-mgmt) reachable only from the mgmt netns.  AFTR's SNMP
 # agent binds to 10.99.0.1:161 (not the data-plane interfaces); nftables
 # rules drop UDP/161 arriving on eth-wan and eth-isp.
@@ -38,7 +38,7 @@ PCAP_DIR="${PCAP_DIR:-$SCRIPT_DIR/pcaps}"
 mkdir -p "$PCAP_DIR"
 
 # Note: PCP server and proxy use SO_RCVBUFFORCE in-process to raise their UDP
-# receive buffers past net.core.rmem_max — that sysctl cannot be changed from
+# receive buffers past net.core.rmem_max - that sysctl cannot be changed from
 # a Linux container even with --privileged, so we cannot tune it here.
 
 ########################################################################
@@ -88,7 +88,7 @@ ip link set dhcp6s-br master br-isp
 ip link set dhcp6s-br up
 
 # DNS-Server <-> ISP bridge  (split out of dhcpv6server so that DNS
-# queries from ANY netns — including dhcpv6server itself — traverse
+# queries from ANY netns - including dhcpv6server itself - traverse
 # the ISP bridge and are visible in Wireshark)
 ip link add eth-isp-dns type veth peer name dns-br
 ip link set eth-isp-dns mtu "${ISP_MTU:-1500}" && ip link set dns-br mtu "${ISP_MTU:-1500}"
@@ -177,7 +177,7 @@ ip netns exec server ip link set eth0 address 8e:17:b6:5d:70:24   # pinned MAC -
 # 3b. OAM / Management network (RFC 5706 §3.1)
 #     br-mgmt connects the AFTR's management interface (eth-mgmt) to a
 #     dedicated mgmt host.  No subscriber, ISP-side, or Internet-side
-#     attacker can reach this segment — it models the out-of-band
+#     attacker can reach this segment - it models the out-of-band
 #     management VLAN used by real CGN/AFTR operators.
 ########################################################################
 echo "=== Creating OAM management bridge ==="
@@ -209,7 +209,7 @@ echo "=== Configuring IP addresses ==="
 ip netns exec dhcpv6server ip -6 addr add 2001:db8:cafe::1/64 dev eth-isp
 ip netns exec dhcpv6server ip link set eth-isp up
 
-# --- DNS Server (static IPv6 on ISP) — provides the AFTR-FQDN A/AAAA records ---
+# --- DNS Server (static IPv6 on ISP) - provides the AFTR-FQDN A/AAAA records ---
 ip netns exec dns-server ip -6 addr add 2001:db8:cafe::2/64 dev eth-isp
 ip netns exec dns-server ip link set eth-isp up
 
@@ -386,7 +386,7 @@ B4_1_SLAAC=$(ip netns exec b4-1 ip -6 addr show dev eth-isp scope global \
 if [ -n "$B4_1_SLAAC" ]; then
     echo "  B4-1 received SLAAC address: $B4_1_SLAAC"
 else
-    echo "  B4-1 no SLAAC – assigning static fallback"
+    echo "  B4-1 no SLAAC - assigning static fallback"
     ip netns exec b4-1 ip -6 addr add 2001:db8:cafe::b41/64 dev eth-isp
     B4_1_SLAAC="2001:db8:cafe::b41"
 fi
@@ -413,7 +413,7 @@ if [ -f /var/run/ds-lite-aftr-name ]; then
     echo "  B4-1 received AFTR FQDN via DHCPv6 option 64: $B4_1_AFTR_FQDN"
 fi
 [ -z "$B4_1_AFTR_FQDN" ] && B4_1_AFTR_FQDN="aftr.dslite.example.com" \
-    && echo "  B4-1 option 64 not received – using default: $B4_1_AFTR_FQDN"
+    && echo "  B4-1 option 64 not received - using default: $B4_1_AFTR_FQDN"
 
 echo "  B4-1: Resolving AFTR FQDN ($B4_1_AFTR_FQDN)"
 AFTR_IPV6=$(ip netns exec b4-1 host -t AAAA "$B4_1_AFTR_FQDN" 2001:db8:cafe::2 2>/dev/null \
@@ -449,7 +449,7 @@ B4_2_SLAAC=$(ip netns exec b4-2 ip -6 addr show dev eth-isp scope global \
 if [ -n "$B4_2_SLAAC" ]; then
     echo "  B4-2 received SLAAC address: $B4_2_SLAAC"
 else
-    echo "  B4-2 no SLAAC – assigning static fallback"
+    echo "  B4-2 no SLAAC - assigning static fallback"
     ip netns exec b4-2 ip -6 addr add 2001:db8:cafe::b42/64 dev eth-isp
     B4_2_SLAAC="2001:db8:cafe::b42"
 fi
@@ -470,7 +470,7 @@ if [ -f /var/run/ds-lite-aftr-name ]; then
     echo "  B4-2 received AFTR FQDN via DHCPv6 option 64: $B4_2_AFTR_FQDN"
 fi
 [ -z "$B4_2_AFTR_FQDN" ] && B4_2_AFTR_FQDN="aftr.dslite.example.com" \
-    && echo "  B4-2 option 64 not received – using default: $B4_2_AFTR_FQDN"
+    && echo "  B4-2 option 64 not received - using default: $B4_2_AFTR_FQDN"
 
 echo "  B4-2: Resolving AFTR FQDN ($B4_2_AFTR_FQDN)"
 AFTR_IPV6_2=$(ip netns exec b4-2 host -t AAAA "$B4_2_AFTR_FQDN" 2001:db8:cafe::2 2>/dev/null \
@@ -556,7 +556,7 @@ ip netns exec aftr \
     tcpdump -U -Z root -i ds-lite-open -w "$PCAP_DIR/aftr-tunnel-open.pcap" 2>/dev/null &
 
 ########################################################################
-# 11. AFTR NAT44 (CGNAT) – RFC 6333 Section 8
+# 11. AFTR NAT44 (CGNAT) - RFC 6333 Section 8
 ########################################################################
 echo "=== Configuring AFTR NAT44 (RFC 6333 Section 8) ==="
 
@@ -582,7 +582,7 @@ ip netns exec aftr sysctl -qw net.netfilter.nf_conntrack_icmp_timeout=120
 # liberal mode for performance / interop; this models that class. Set to
 # 0 for a strict deployment.
 ip netns exec aftr sysctl -qw net.netfilter.nf_conntrack_tcp_be_liberal="${TCP_BE_LIBERAL:-1}"
-# Max conntrack entries (sized for CGNAT) – system-wide parameter, set globally.
+# Max conntrack entries (sized for CGNAT) - system-wide parameter, set globally.
 # 262,144 entries: matches the value reported in the paper; large enough to
 # observe global-table-exhaustion attacks once subscriber multiplexing is
 # configured via N_SUBSCRIBERS.
@@ -608,7 +608,7 @@ echo "  per-subscriber cap 2000; RFC 6056 §3.3.1 + RFC 6888 REQ-2/4)"
 # behind multiple B4s as distinct entries. The de-NAT'd reply then has
 # an overlapping private destination, so it must be sent to the CORRECT
 # softwire. We policy-route it by the restored ct mark (= low 32 bits of
-# the B4's softwire IPv6, host byte order — identical to the traceability
+# the B4's softwire IPv6, host byte order - identical to the traceability
 # map). The "home" overlap range 192.168.0.0/16 is routed per-softwire;
 # the testbed's own non-overlapping subscriber /24s stay in the main
 # table and the per-B4 table lookup falls through, so default flows and
@@ -631,7 +631,7 @@ echo "  RFC 6333 §6.6 extended binding: per-softwire conntrack zones +"
 echo "  per-B4 reply routing for overlapping private space ($OVERLAP_RANGE)"
 
 ########################################################################
-# 12. PCP (Port Control Protocol) – RFC 6887 + draft-ietf-pcp-dslite-00
+# 12. PCP (Port Control Protocol) - RFC 6887 + draft-ietf-pcp-dslite-00
 ########################################################################
 echo "=== Starting PCP services (RFC 6887 plain mode) ==="
 
@@ -669,7 +669,7 @@ echo "  PCP proxy running on B4-2   UDP4/5351  b4=$B4_2_IPV6"
 echo "=== Starting Server HTTP test service ==="
 # Use a single-threaded Python HTTP server (TCPServer with allow_reuse_address).
 # Single-threaded + bounded listen() backlog (default 5 in Python's TCPServer) means
-# Slowloris can fill the backlog and block legitimate connections — T4b works correctly.
+# Slowloris can fill the backlog and block legitimate connections - T4b works correctly.
 # socat/nc fork modes handle connections independently and cannot be backlog-saturated.
 ip netns exec server python3 -c '
 import http.server, socket, os
@@ -718,7 +718,7 @@ srv.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 srv.serve_forever()
 ' >/dev/null 2>&1 &
 
-# T2 echo service – always started so port_prediction.py works without manual setup.
+# T2 echo service - always started so port_prediction.py works without manual setup.
 # Listens on TCP/9999 and UDP/9999; echoes back "PORT <peer_port>" to the caller.
 ip netns exec server socat \
     TCP-LISTEN:9999,fork,reuseaddr \
@@ -730,7 +730,7 @@ ip netns exec server socat \
     >/dev/null 2>&1 &
 echo "  T2 echo service running on server  TCP+UDP/9999"
 
-# Long-lived TCP connection-sink on port 6666 — accepts and HOLDS every
+# Long-lived TCP connection-sink on port 6666 - accepts and HOLDS every
 # connection in ONE process (no fork-per-connection). The T1 SIEGE phase opens
 # ~2000 simultaneous ESTABLISHED holds against it; a socat ...,fork sink crashes
 # under that load (thousands of child procs) and silently breaks the SIEGE.
@@ -738,7 +738,7 @@ ip netns exec server python3 /testbed/server/conn_sink.py 6666 >/dev/null 2>&1 &
 echo "  TCP connection-sink on server     TCP/6666  (single-proc hold)"
 
 # DNS server in the server namespace (IPv4, 198.51.100.2:53)
-# Authoritative for dslite.example.com – open resolver for amplification demo
+# Authoritative for dslite.example.com - open resolver for amplification demo
 ip netns exec server dnsmasq \
     -C "$SCRIPT_DIR/server/dnsmasq.conf" \
     --pid-file=/var/run/dnsmasq-server.pid
@@ -751,12 +751,12 @@ socat TCP-LISTEN:8080,fork,reuseaddr \
     EXEC:"ip netns exec server nc 127.0.0.1 80" 2>/dev/null &
 
 ########################################################################
-# 13b. SNMP agent on AFTR (RFC 7870 DSLITE-MIB – T14/T15 target)
+# 13b. SNMP agent on AFTR (RFC 7870 DSLITE-MIB - T14/T15 target)
 ########################################################################
 echo "=== Starting AFTR SNMP agent (RFC 7870 DSLITE-MIB) ==="
-# RFC 5706 §3.1 — bind to OAM management interface only.  The data-plane
+# RFC 5706 §3.1 - bind to OAM management interface only.  The data-plane
 # interfaces (eth-wan, eth-isp) are additionally protected by the nftables
-# rules below that drop udp/161 — defense in depth.
+# rules below that drop udp/161 - defense in depth.
 ip netns exec aftr python3 -u "$SCRIPT_DIR/aftr/snmp_agent.py" \
     --host 10.99.0.1 --port 161 --community public \
     > /var/log/snmp-agent.log 2>&1 &
@@ -854,7 +854,7 @@ if [ -n "${ATTACKER_PLACEMENT:-}" ]; then
             ip netns exec b4-1 ip addr add 10.0.1.1/24 dev br-lan
             ip netns exec b4-1 ip link set br-lan up
 
-            # eth-lan is now a bridge port — restart pcap on br-lan so attacker
+            # eth-lan is now a bridge port - restart pcap on br-lan so attacker
             # traffic (arriving on eth-atk-b41) is captured too.
             pkill -f "b4-1-lan.pcap" 2>/dev/null || true
             sleep 0.3
@@ -910,7 +910,7 @@ if [ -n "${ATTACKER_PLACEMENT:-}" ]; then
             ip netns exec b4-2 ip addr add 10.0.2.1/24 dev br-lan
             ip netns exec b4-2 ip link set br-lan up
 
-            # eth-lan is now a bridge port — restart pcap on br-lan.
+            # eth-lan is now a bridge port - restart pcap on br-lan.
             pkill -f "b4-2-lan.pcap" 2>/dev/null || true
             sleep 0.3
             ip netns exec b4-2 \
@@ -953,7 +953,7 @@ ip netns exec attacker ip link set eth-isp address 2a:29:47:aa:9c:56   # pinned 
             ip netns exec attacker ip link set eth-isp up
             # Attacker gets IPv6 via SLAAC from radvd + DHCPv6
             ip netns exec attacker sysctl -qw net.ipv6.conf.eth-isp.accept_ra=1
-            # Static IPv6 for attacker on ISP segment — required for T14 (AFTR
+            # Static IPv6 for attacker on ISP segment - required for T14 (AFTR
             # Discovery Hijack): the testbed DNS resolves aftr-rogue.dslite.example.com
             # to this address so the victim B4's tunnel-rebuild hook can complete.
             ip netns exec attacker ip -6 addr add 2001:db8:cafe::13a/64 dev eth-isp 2>/dev/null || true
@@ -966,7 +966,7 @@ ip netns exec attacker ip link set eth-isp address 2a:29:47:aa:9c:56   # pinned 
 
         mgmt)
             # IPv4-only attacker on the OAM/management network (10.99.0.0/24)
-            # Models an insider with management-plane access — the only
+            # Models an insider with management-plane access - the only
             # placement from which SNMP attacks (T14/T15) succeed when the
             # AFTR follows RFC 5706 §3.1 OAM segregation.
             ip link add eth-mgmt-atk type veth peer name atk-mgmt-br
@@ -977,7 +977,7 @@ ip netns exec attacker ip link set eth-isp address 2a:29:47:aa:9c:56   # pinned 
 
             ip netns exec attacker ip link set eth0 up
             ip netns exec attacker ip addr add 10.99.0.50/24 dev eth0
-            # No default route — mgmt network is intentionally isolated.
+            # No default route - mgmt network is intentionally isolated.
             ;;
 
         internet)

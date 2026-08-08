@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-pcp_proxy.py  –  PCP Proxy for DS-Lite B4 (plain mode)
+pcp_proxy.py  -  PCP Proxy for DS-Lite B4 (plain mode)
 draft-ietf-pcp-dslite-00 §2 / RFC 6887 / RFC 6908 §2.11
 
 Runs on the B4 CPE, inside the B4 network namespace.
@@ -28,7 +28,7 @@ import sys
 import threading
 
 PCP_PORT    = 5351
-PCP_MC_PORT = 5350     # RFC 6887 §8.5 — client port for unsolicited ANNOUNCE
+PCP_MC_PORT = 5350     # RFC 6887 §8.5 - client port for unsolicited ANNOUNCE
 PCP_VERSION = 2
 OP_ANNOUNCE = 0
 OP_MAP      = 1
@@ -94,7 +94,7 @@ def _rewrite_request(data: bytes, client_ip4: str, b4_ip6: str) -> bytes:
 
     When _PASSTHROUGH_THIRD_PARTY is True (insecure demo mode), requests that
     already carry a THIRD_PARTY option have it forwarded unchanged instead of
-    being replaced — simulating a misconfigured B4 that does not enforce
+    being replaced - simulating a misconfigured B4 that does not enforce
     RFC 6887 §13.1 / draft-ietf-pcp-dslite-00 §4 client isolation.
 
     Returns the modified packet bytes.
@@ -123,7 +123,7 @@ def _rewrite_request(data: bytes, client_ip4: str, b4_ip6: str) -> bytes:
         existing_opts_raw = rest[MAP_PLD_SIZE:]
 
         if _PASSTHROUGH_THIRD_PARTY and _has_option(existing_opts_raw, OPT_THIRD_PARTY):
-            # Passthrough mode: client supplied THIRD_PARTY — forward it unchanged.
+            # Passthrough mode: client supplied THIRD_PARTY - forward it unchanged.
             # The proxy still replaces the Client IP field (correct DS-Lite behaviour)
             # but does NOT substitute its own THIRD_PARTY, so the AFTR sees the
             # attacker-controlled THIRD_PARTY value directly.
@@ -235,14 +235,14 @@ def _track_epoch(resp: bytes):
 
 
 def _renew_all(aftr_ip6: str, b4_ip6: str):
-    """Re-send every relayed MAP to the AFTR — the renewal storm a real client
+    """Re-send every relayed MAP to the AFTR - the renewal storm a real client
     triggers after detecting an epoch reset (RFC 6887 §8.5)."""
     with _state_lock:
         maps = list(_relayed_maps.values())
     if not maps:
         print("[epoch] reset detected but no mappings to renew", flush=True)
         return
-    print(f"[epoch] EPOCH RESET — re-creating {len(maps)} mapping(s) at AFTR",
+    print(f"[epoch] EPOCH RESET - re-creating {len(maps)} mapping(s) at AFTR",
           flush=True)
     s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
     try:
@@ -315,22 +315,22 @@ def _announce_listener(b4_ip6: str, aftr_ip6: str):
         if prev is not None and e < prev:
             # RFC 7652 defence (T9): an UNSOLICITED multicast ANNOUNCE is not
             # trusted. When PCP auth is enabled, do NOT renew on the raw
-            # ANNOUNCE — first CONFIRM the reset with an integrity-protected
+            # ANNOUNCE - first CONFIRM the reset with an integrity-protected
             # unicast ANNOUNCE request to the AFTR. A forged ANNOUNCE (the
             # attacker's spoof) cannot make the real server report a reset, so
             # the confirmation fails and no renewal storm is emitted.
             if _PCP_AUTH_ENABLED:
                 if _confirm_epoch_reset(aftr_ip6, prev):
                     print("[epoch] reset CONFIRMED via authenticated unicast "
-                          "ANNOUNCE — renewing", flush=True)
+                          "ANNOUNCE - renewing", flush=True)
                     _renew_all(aftr_ip6, b4_ip6)
                 else:
                     print("[epoch] unsolicited ANNOUNCE NOT confirmed by the "
-                          "server (forged/spoofed) — ignoring (no storm)",
+                          "server (forged/spoofed) - ignoring (no storm)",
                           flush=True)
                     continue   # do not adopt the spoofed epoch
             else:
-                print("[epoch] server epoch went BACKWARDS — mappings presumed "
+                print("[epoch] server epoch went BACKWARDS - mappings presumed "
                       "lost, renewing", flush=True)
                 _renew_all(aftr_ip6, b4_ip6)
         with _state_lock:
@@ -376,7 +376,7 @@ def main():
           f"  b4_ip6={args.b4_ip6}"
           f"  aftr={args.aftr_ip6}")
 
-    # RFC 6887 §8.5 — background listener for unsolicited multicast ANNOUNCE,
+    # RFC 6887 §8.5 - background listener for unsolicited multicast ANNOUNCE,
     # so a (spoofed) epoch reset triggers a real mapping-renewal storm (T9).
     threading.Thread(
         target=_announce_listener,

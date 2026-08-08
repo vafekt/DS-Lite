@@ -1,5 +1,5 @@
 #!/bin/bash
-# attack_lib.sh — the SINGLE source of per-attack truth for the DS-Lite lab.
+# attack_lib.sh - the SINGLE source of per-attack truth for the DS-Lite lab.
 #
 # Both the interactive runner (run_attack_live.sh, one narrated terminal) and the
 # reference generator (capture_references.sh) source this file, so the live
@@ -53,7 +53,7 @@ resolve_runtime() {
     v=$(_addr4 b4-1 eth-lan);          [ -n "$v" ] && GW1="$v"
     v=$(_addr4 b4-2 eth-lan);          [ -n "$v" ] && GW2="$v"
     # VB4/B42 = the ::b4N softwire identity (NOT the first global, which may be a
-    # DHCPv6 lease) — otherwise reset_state points the tunnel at the wrong source.
+    # DHCPv6 lease) - otherwise reset_state points the tunnel at the wrong source.
     v=$(_b4soft6 b4-1 eth-isp);        [ -n "$v" ] && VB4="$v"
     v=$(_b4soft6 b4-2 eth-isp);        [ -n "$v" ] && B42="$v"
     v=$(_addr6 aftr eth-isp);          [ -n "$v" ] && AFTR="$v"
@@ -160,7 +160,7 @@ ensure_attacker_isp() {
     bridge link set dev atk-br learning off flood on 2>/dev/null || true
     # SAFETY: a forged-source attack (nat_hold/nat_exhaustion tunnel mode) adds the
     # victim's ::b4N/128 to the attacker for NDP reachability and removes it on
-    # exit — but a SIGKILL skips that, leaking ::b4N onto the attacker. If left, it
+    # exit - but a SIGKILL skips that, leaking ::b4N onto the attacker. If left, it
     # (a) duplicates the victim's address (breaks the victim's softwire) and
     # (b) makes _addr6/ATK6 resolve to the victim. Strip any such straggler.
     local leaked
@@ -254,12 +254,12 @@ attack_name() {
     esac
 }
 
-# write_config <outdir> <id> — record exactly what ran + a live IP/MAC legend,
+# write_config <outdir> <id> - record exactly what ran + a live IP/MAC legend,
 # so any pcap in the folder is readable. Self-contained legend writer.
 write_config() {
     local outdir="$1" id="$2" f="$1/config.txt"
     {
-        echo "DS-Lite live attack run — configuration & legend"
+        echo "DS-Lite live attack run - configuration & legend"
         echo "================================================="
         echo "attack    : $id  ($(attack_name "$id"))"
         echo "when (UTC): $(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -288,7 +288,7 @@ write_config() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────
-# T1 — NAT Binding-Table Exhaustion (ISP forge path: fill victim B4's cap)
+# T1 - NAT Binding-Table Exhaustion (ISP forge path: fill victim B4's cap)
 # ─────────────────────────────────────────────────────────────────────────
 spec_T1() { echo "1-attacker-ISP|attacker|eth-isp|;2-AFTR-ISP-recv|aftr|eth-isp|;3-AFTR-WAN-postNAT|aftr|eth-wan|"; }
 knobs_T1() { echo "intensity:fast|medium; target:$SRV"; }
@@ -346,7 +346,7 @@ attacker SIEGE: $cmd2"
 }
 
 # ─────────────────────────────────────────────────────────────────────────
-# T3 — Softwire Identity Takeover: NDP-poison the AFTR's cache for the victim B4
+# T3 - Softwire Identity Takeover: NDP-poison the AFTR's cache for the victim B4
 #      so its return traffic is delivered to the attacker (MITM) + victim DoS.
 #      (Tree leaf: "True MITM: sustained NDP poison holds AFTR cache -> intercept + DoS")
 # ─────────────────────────────────────────────────────────────────────────
@@ -387,7 +387,7 @@ do_T3() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────
-# T2 — Shared-IPv4 Reputation Poisoning (collective punishment via shared IP)
+# T2 - Shared-IPv4 Reputation Poisoning (collective punishment via shared IP)
 # ─────────────────────────────────────────────────────────────────────────
 spec_T2() { echo "1-client-LAN|b4-1|eth-lan|;2-B4-softwire-uplink|b4-1|eth-isp|;3-AFTR-WAN-sharedIP|aftr|eth-wan|"; }
 knobs_T2() { echo "count:150|300; target:$SRV"; }
@@ -410,7 +410,7 @@ do_T2() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────
-# T4 — Unencrypted-Tunnel Interception (on-path reads subscriber plaintext)
+# T4 - Unencrypted-Tunnel Interception (on-path reads subscriber plaintext)
 # ─────────────────────────────────────────────────────────────────────────
 spec_T4() { echo "1-victim-softwire|b4-1|eth-isp|ip6 proto 4;2-attacker-reads|attacker|eth-isp|ip6 proto 4"; }
 knobs_T4() { echo "requests:6|12; target:$SRV"; }
@@ -419,7 +419,7 @@ do_T4() {
     ensure_attacker_isp
     step "Surface: Softwire carries inner IPv4 in CLEARTEXT (no encryption)."
     start_caps "$(spec_T4)" "$outdir" "T4"
-    step "Attack: passive — attacker ($ATK6) sniffs the carrier; victim browses meanwhile."
+    step "Attack: passive - attacker ($ATK6) sniffs the carrier; victim browses meanwhile."
     local cmd="for i in \$(seq 1 $n); do curl -s -o /dev/null --max-time 4 http://$tgt/; sleep 0.5; done"
     CMDS_RUN="attacker: passive tcpdump ip6 proto 4 on eth-isp
 client1 (victim traffic): $cmd"
@@ -438,7 +438,7 @@ client1 (victim traffic): $cmd"
 }
 
 # ─────────────────────────────────────────────────────────────────────────
-# T5 — Downstream Softwire Injection (forge AFTR->B4, land on victim LAN)
+# T5 - Downstream Softwire Injection (forge AFTR->B4, land on victim LAN)
 # ─────────────────────────────────────────────────────────────────────────
 spec_T5() { echo "1-attacker-forges|attacker|eth-isp|ip6 proto 4;2-injected-into-LAN|b4-1|eth-lan|"; }
 # count defaults to 120: the injection is one sub-second sendp burst; a 15-packet
@@ -466,7 +466,7 @@ do_T5() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────
-# T6 — Softwire Reassembly Poisoning (predictable-IP-ID fragment injection;
+# T6 - Softwire Reassembly Poisoning (predictable-IP-ID fragment injection;
 #      Gilad & Herzberg 2013: spoofed fragments sharing the victim's reassembly
 #      four-tuple collide with its genuine fragments at the AFTR -> victim DoS)
 # ─────────────────────────────────────────────────────────────────────────
@@ -506,7 +506,7 @@ client1 (victim fragmented flow): ping -s 3000 -c 30 $tgt"
 }
 
 # ─────────────────────────────────────────────────────────────────────────
-# T7 — PCP Port-Exhaustion DoS (drain a B4's pool, freeze co-residents)
+# T7 - PCP Port-Exhaustion DoS (drain a B4's pool, freeze co-residents)
 # ─────────────────────────────────────────────────────────────────────────
 spec_T7() { echo "1-pcp-uplink|b4-1|eth-isp|udp port 5351;2-aftr-pcp|aftr|eth-isp|udp port 5351"; }
 knobs_T7() { echo "count:600|1200"; }
@@ -533,7 +533,7 @@ co-resident probe: pcp_attack.py map --proxy-ip $GW1 --proto 17"
 }
 
 # ─────────────────────────────────────────────────────────────────────────
-# T8 — Unauthorized THIRD_PARTY Forwarding (open inbound to another subscriber)
+# T8 - Unauthorized THIRD_PARTY Forwarding (open inbound to another subscriber)
 # ─────────────────────────────────────────────────────────────────────────
 spec_T8() { echo "1-thirdparty-map|b4-1|eth-isp|udp port 5351;2-aftr-pcp|aftr|eth-isp|udp port 5351;3-inbound-to-victim|aftr|eth-wan|tcp"; }
 knobs_T8() { echo "victim:$C2"; }
@@ -568,7 +568,7 @@ do_T8() {
 _ns_of() { case "$1" in 10.0.1.*) echo client1;; 10.0.2.*) echo client2;; *) echo client2;; esac; }
 
 # ─────────────────────────────────────────────────────────────────────────
-# T9 — PCP ANNOUNCE Spoof / Epoch Reset (one packet -> mass renew storm)
+# T9 - PCP ANNOUNCE Spoof / Epoch Reset (one packet -> mass renew storm)
 # ─────────────────────────────────────────────────────────────────────────
 spec_T9() { echo "1-attacker-announce|attacker|eth-isp|udp port 5351 or udp port 5350;2-b4-renew-storm|b4-1|eth-isp|udp port 5351 or udp port 5350"; }
 knobs_T9() { echo "count:10"; }
@@ -603,7 +603,7 @@ do_T9() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────
-# T10 — Cross-Subscriber PCP PEER Enumeration (leak another sub's NAT ports)
+# T10 - Cross-Subscriber PCP PEER Enumeration (leak another sub's NAT ports)
 # ─────────────────────────────────────────────────────────────────────────
 spec_T10() { echo "1-cross-sub-peer-leak|b4-1|eth-isp|udp port 5351;2-aftr-pcp|aftr|eth-isp|udp port 5351"; }
 knobs_T10() { echo "trials:2|3; flows:3"; }
@@ -626,14 +626,14 @@ do_T10() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────
-# T11 — Softwire DNS-Discovery Hijack (off-path poison of the B4's RFC-6334
+# T11 - Softwire DNS-Discovery Hijack (off-path poison of the B4's RFC-6334
 #       AFTR-FQDN resolution -> exit-hook rebuilds the softwire to the attacker)
 # ─────────────────────────────────────────────────────────────────────────
 spec_T11() { echo "1-offpath-flood|attacker|eth-isp|udp port 53;2-b4-resolver|b4-1|eth-isp|udp port 53"; }
 knobs_T11() { echo "rounds:2|4"; }
 # Off-path (SADDNS/Kaminsky) poisoning of the B4's AFTR-FQDN resolution. The
 # attacker is OFF-PATH and cannot see the query; it is granted the resolver's
-# upstream source port (the SADDNS ICMP-rate-limit side channel derandomises it —
+# upstream source port (the SADDNS ICMP-rate-limit side channel derandomises it -
 # shown feasible) and brute-forces the 16-bit TXID inside a wide in-flight window
 # (a slow/unresponsive authoritative server). The B4 resolver here is the DNS-0x20
 # forwarder so the Dagon-0x20 defence can be toggled against the SAME attack. The
@@ -687,7 +687,7 @@ do_T11() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────
-# T12 — Rogue AFTR Substitution (DHCPv6 Option 64 -> attacker FQDN)
+# T12 - Rogue AFTR Substitution (DHCPv6 Option 64 -> attacker FQDN)
 # ─────────────────────────────────────────────────────────────────────────
 spec_T12() { echo "1-rogue-dhcpv6|attacker|eth-isp|udp port 546 or udp port 547;2-b4-receives|b4-1|eth-isp|udp port 546 or udp port 547;3-victim-tunnels-to-attacker|attacker|eth-isp|ip6 proto 4"; }
 knobs_T12() { echo "fqdn:aftr-evil.attacker.example"; }
@@ -695,7 +695,7 @@ knobs_T12() { echo "fqdn:aftr-evil.attacker.example"; }
 _tun_remote() { nse "$1" ip -6 tunnel show ds-lite 2>/dev/null | grep -oE 'remote [0-9a-f:]+' | awk '{print $2}'; }
 # After a softwire-redirect (T12/T13) the B4's tunnel remote points at the
 # attacker. Two things make the diversion observable AT the attacker reliably:
-#  (1) prime the B4->attacker neighbor — otherwise the first encapsulated frames
+#  (1) prime the B4->attacker neighbor - otherwise the first encapsulated frames
 #      are dropped while NDP resolves and a one-shot probe ends before it does
 #      (the old "frames-to-attacker=0" false negative), and
 #  (2) drive SUSTAINED victim traffic during the capture window, not a single GET.
@@ -752,7 +752,7 @@ do_T12() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────
-# T13 — Transparent AFTR Hijack (keep the legit name, poison it to attacker IP)
+# T13 - Transparent AFTR Hijack (keep the legit name, poison it to attacker IP)
 # ─────────────────────────────────────────────────────────────────────────
 spec_T13() { echo "1-rogue-dns|attacker|eth-isp|udp port 546 or udp port 547 or udp port 53;2-b4-receives|b4-1|eth-isp|udp port 546 or udp port 547 or udp port 53;3-victim-tunnels-to-attacker|attacker|eth-isp|ip6 proto 4"; }
 knobs_T13() { echo "fqdn:aftr.dslite.example.com"; }
@@ -785,7 +785,7 @@ do_T13() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────
-# T14 — SNMP Alarm-Table Write (suppress the NOC's tunnel-count alarm)
+# T14 - SNMP Alarm-Table Write (suppress the NOC's tunnel-count alarm)
 # ─────────────────────────────────────────────────────────────────────────
 spec_T14() { echo "1-snmp-set|aftr|eth-mgmt|udp port 161;2-mgmt-station|mgmt|eth-mgmt|udp port 161"; }
 knobs_T14() { echo "value:2147483647"; }
@@ -821,7 +821,7 @@ do_T14() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────
-# T15 — SNMP MIB Information Disclosure (read every subscriber's NAT bindings)
+# T15 - SNMP MIB Information Disclosure (read every subscriber's NAT bindings)
 # ─────────────────────────────────────────────────────────────────────────
 spec_T15() { echo "1-snmp-walk|aftr|eth-mgmt|udp port 161;2-mgmt-station|mgmt|eth-mgmt|udp port 161"; }
 knobs_T15() { echo ""; }

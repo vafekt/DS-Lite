@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# T2 – Shared IPv4 Reputation Poisoning
+# T2 - Shared IPv4 Reputation Poisoning
 #
 # In DS-Lite, many subscribers share a single public IPv4 address.
 # When one malicious subscriber generates spam, scan, or abuse traffic,
@@ -7,10 +7,10 @@
 # denying service to ALL legitimate subscribers behind that same IP.
 #
 # Attack modes:
-#   spam  – Sends SMTP EHLO/MAIL FROM sequences to mail servers
-#   scan  – Sends TCP SYN scans to many target ports (typical botnet behaviour)
-#   flood – HTTP flood to a target web server
-#   abuse – Combined: spam + scan + flood  (simulates full abuse profile)
+#   spam  - Sends SMTP EHLO/MAIL FROM sequences to mail servers
+#   scan  - Sends TCP SYN scans to many target ports (typical botnet behaviour)
+#   flood - HTTP flood to a target web server
+#   abuse - Combined: spam + scan + flood  (simulates full abuse profile)
 #
 # The attacker is on the B4 LAN (10.0.x.150) or behind B4 CPE.
 # All traffic exits via the AFTR CGNAT using the shared IPv4 (192.0.2.1 or .2).
@@ -192,7 +192,7 @@ def print_progress(mode, count, threads, start_time):
 
 def main():
     p = argparse.ArgumentParser(
-        description="T2 – Shared IPv4 Reputation Poisoning\n"
+        description="T2 - Shared IPv4 Reputation Poisoning\n"
                     "Generates spam/scan/flood traffic through DS-Lite CGNAT to poison\n"
                     "the shared public IPv4 address shared by all subscribers.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -261,7 +261,7 @@ Examples:
             print(f"[recon] reflector probe failed ({e}); continuing without it")
         print()
 
-    print(f"[*] T2 – Shared IPv4 Reputation Poisoning")
+    print(f"[*] T2 - Shared IPv4 Reputation Poisoning")
     print(f"[*] Mode:   {args.mode}")
     print(f"[*] Target: {args.target}")
     print(f"[*] Count:  {args.count} per type, {args.threads} threads")
@@ -321,7 +321,7 @@ Examples:
           f"flood={stats['flood']}  errors={stats['errors']}")
     print()
     print("Post-attack verification:")
-    print("  # On server ns – check all traffic appears from shared IP:")
+    print("  # On server ns - check all traffic appears from shared IP:")
     print("    tcpdump -n -i eth0 'tcp or udp' | awk '{print $3}' | sort | uniq -c")
     print("  # Simulate blacklist (on server-router or server ns):")
     print("    nft add rule ip filter input ip saddr 192.0.2.1 drop")

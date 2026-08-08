@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# feistel_b4.py — in-path deployment of Gilad-Herzberg §8.3 at the B4 gateway,
+# feistel_b4.py - in-path deployment of Gilad-Herzberg §8.3 at the B4 gateway,
 # via NFQUEUE so the rewrite happens IN PLACE on the forward path (conntrack and
 # stateful TCP are preserved, unlike a sniff/re-inject bump-in-the-wire).
 #

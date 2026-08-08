@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# trabelsi_guard.py — userspace session-table guard for the AFTR, implementing
+# trabelsi_guard.py - userspace session-table guard for the AFTR, implementing
 # Z. Trabelsi et al., "Improved Session Table Architecture for Denial of
 # Stateful Firewall Attacks" (IEEE Access, 2018).
 #
@@ -7,7 +7,7 @@
 # exhaust the stateful NAT/conntrack table, denying legitimate subscribers.
 #
 # Trabelsi's mechanism (faithfully reproduced here):
-#  * a TWO-STRUCTURE session table — session STATE is kept separately from the
+#  * a TWO-STRUCTURE session table - session STATE is kept separately from the
 #    TIMEOUT information, so timeout processing is independent of lookup
 #    (§5.1-5.2). Here: `sessions` (key -> state) + a separate `SplayTree` keyed
 #    by last-activity time (the timeout structure);
@@ -15,7 +15,7 @@
 #    splay to the top and the stale invalid ones sink to the bottom (§5.5);
 #  * EARLY PACKET REJECTION under DoS: "when abnormal activity fills the session
 #    table with invalid entries, the algorithm switches to ... early packet
-#    rejection" (§5.6) — when occupancy crosses a threshold we evict the oldest
+#    rejection" (§5.6) - when occupancy crosses a threshold we evict the oldest
 #    half-open (UNREPLIED) entries first, freeing slots for valid flows.
 #
 # It reads the kernel conntrack table (the AFTR's real session table) as the
@@ -193,7 +193,7 @@ def main():
     a = ap.parse_args()
     tree = SplayTree()
     # Trabelsi's session-table architecture keeps SHORT timeouts for half-open /
-    # invalid entries (the separate TIMEOUT structure), PROACTIVELY — so a state
+    # invalid entries (the separate TIMEOUT structure), PROACTIVELY - so a state
     # exhaustion flood of UNREPLIED SYNs ages out in seconds and can never fill
     # the table, while ESTABLISHED (REPLIED) flows keep their normal long timeout.
     # This is applied up front, not reactively: by the time occupancy crosses a

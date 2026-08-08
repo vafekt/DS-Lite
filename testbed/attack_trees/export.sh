@@ -1,5 +1,5 @@
 #!/bin/bash
-# export.sh — refresh testbed/attack_trees/ from the QuADTool build pipeline.
+# export.sh - refresh testbed/attack_trees/ from the QuADTool build pipeline.
 # The trees are defined in results/adtool_trees/build_trees.py and rendered by
 # results/adtool_trees/render_with_quadtool.sh; this script copies the QuADTool
 # exports (.dot/.prism/.xml) and the rendered figures into this folder so the

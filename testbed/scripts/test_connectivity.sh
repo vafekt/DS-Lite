@@ -28,7 +28,7 @@ run_test "B4-1 tunnel interface up"       ip netns exec b4-1 ip link show ds-lit
 run_test "B4-2 tunnel interface up"       ip netns exec b4-2 ip link show ds-lite
 run_test "AFTR tunnel to B4-1 up"         ip netns exec aftr ip link show ds-lite-b4-1
 run_test "AFTR tunnel to B4-2 up"         ip netns exec aftr ip link show ds-lite-b4-2
-# RFC 6333 §5.3 — tunnel inner MTU = 1500 (br-isp link widened to 1540 to absorb 40-byte IPv6 header)
+# RFC 6333 §5.3 - tunnel inner MTU = 1500 (br-isp link widened to 1540 to absorb 40-byte IPv6 header)
 run_test "B4-1 tunnel MTU (1500)" ip netns exec b4-1 sh -c 'ip link show ds-lite | grep -q "mtu 1500"'
 run_test "B4-2 tunnel MTU (1500)" ip netns exec b4-2 sh -c 'ip link show ds-lite | grep -q "mtu 1500"'
 run_test "AFTR well-known addr 192.0.0.1" ip netns exec aftr ip addr show lo

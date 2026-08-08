@@ -1,12 +1,12 @@
 #!/usr/bin/python3
-# snmpv3_usm.py — SNMPv3 User-based Security Model (USM), authNoPriv, with the
+# snmpv3_usm.py - SNMPv3 User-based Security Model (USM), authNoPriv, with the
 # engineID<->address pinning fix from:
 #   Lawrence, Traynor et al., "Under New Management: Practical Attacks on
 #   SNMPv3" (USENIX WOOT 2012), §"Fixing the Vulnerability".
 #
 # The paper shows SNMPv3's *discovery* is unauthenticated, letting an adversary
 # force key selection / redirect. Its fix: do not trust discovery to choose the
-# key — keep a pinned snmpEngineID<->address list and authenticate every request
+# key - keep a pinned snmpEngineID<->address list and authenticate every request
 # (USM auth). We implement that: the agent has a fixed authoritative engineID
 # pinned at the manager, and every request must carry a valid HMAC-SHA-96
 # msgAuthenticationParameters keyed by the user's localized key (RFC 3414 §6),

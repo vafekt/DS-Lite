@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-DS-Lite lab interactive menus — a command-palette front-end for run.sh.
+DS-Lite lab interactive menus - a command-palette front-end for run.sh.
 
 Draws a filterable, arrow-key picker and prints the chosen token(s) to stdout,
 so run.sh keeps doing the heavy lifting (spawning terminals, wiring namespaces)
@@ -337,4 +337,4 @@ if __name__ == "__main__":
     try:
         sys.exit(main())
     except (KeyboardInterrupt, EOFError):
-        sys.exit(1)   # cancelled — exit quietly, no traceback
+        sys.exit(1)   # cancelled - exit quietly, no traceback

@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# dns_0x20_forwarder.py — a minimal recursive DNS forwarder that implements the
+# dns_0x20_forwarder.py - a minimal recursive DNS forwarder that implements the
 # DNS-0x20 defence of Dagon, Antonakakis, Vixie, Jinmei & Lee, "Increased DNS
 # Forgery Resistance Through 0x20-Bit Encoding" (ACM CCS 2008).
 #
@@ -11,7 +11,7 @@
 # case-PRESERVING on the wire). The authoritative server echoes the QNAME with
 # its case intact. The resolver accepts a reply only if the QNAME case matches
 # the random pattern it sent. An off-path attacker cannot see the query, so it
-# cannot reproduce the case pattern — its forged reply is dropped. This is pure
+# cannot reproduce the case pattern - its forged reply is dropped. This is pure
 # DNS-layer entropy (≈ one extra bit per letter), on top of TXID + source port.
 #
 # Toggle:  --zerox20 1  (defence ON, randomise+verify case) | 0 (OFF, baseline).

@@ -17,7 +17,7 @@ Threat model:
 
 Defense:
   Primary:   RFC 7652 PCP authentication (HMAC on every PEER request)
-  Secondary: Bind THIRD_PARTY int_ip to the requester's softwire — reject
+  Secondary: Bind THIRD_PARTY int_ip to the requester's softwire - reject
              requests where int_ip does not belong to client_addr6's B4.
 
 Run inside the testbed container:
@@ -132,7 +132,7 @@ def start_victim_flow(remote_port: int = 6666) -> subprocess.Popen:
 
 def aftr_victim_flows() -> dict:
     """Ground truth: which (int_sport → ext_port) does AFTR conntrack
-    have for victim 10.0.2.100? Attacker does NOT have this — it is
+    have for victim 10.0.2.100? Attacker does NOT have this - it is
     only used to verify the attack's recall/precision after the fact.
     """
     try:
@@ -279,7 +279,7 @@ def main():
         print("must run as root", file=sys.stderr); sys.exit(1)
 
     print("=" * 64)
-    print("T10 — Cross-Subscriber PCP PEER Enumeration via THIRD_PARTY")
+    print("T10 - Cross-Subscriber PCP PEER Enumeration via THIRD_PARTY")
     print("=" * 64)
     print(f"Attacker netns: {ATTACKER_NETNS}, victim netns: {VICTIM_NETNS}")
     print(f"AFTR IPv6:      {AFTR_IP6}:{PCP_PORT_AFTR}")
@@ -313,7 +313,7 @@ def main():
     if overall:
         print("*** T10 SUCCESS: cross-subscriber observation-isolation broken ***")
     else:
-        print("T10 not fully reproduced — check victim flow setup or defenses")
+        print("T10 not fully reproduced - check victim flow setup or defenses")
 
 
 if __name__ == "__main__":

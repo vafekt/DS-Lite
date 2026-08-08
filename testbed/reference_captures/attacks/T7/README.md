@@ -1,4 +1,4 @@
-# T7 — PCP Port-Exhaustion DoS
+# T7 - PCP Port-Exhaustion DoS
 
 Reference packet captures for T7, regenerated from the testbed by
 `testbed/scripts/capture_references.sh` (one capture point per file).

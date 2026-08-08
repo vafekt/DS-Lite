@@ -1,4 +1,4 @@
-# T5 — Downstream Softwire Injection
+# T5 - Downstream Softwire Injection
 
 Reference packet captures for T5, regenerated from the testbed by
 `testbed/scripts/capture_references.sh` (one capture point per file).

@@ -7,17 +7,17 @@
 #   bash /testbed/scripts/sample-traffic.sh
 #
 # After this runs, every capture point should have fresh activity:
-#   menu  1 (br-isp)              — DHCPv6, DNS, PCP, SNMP, ICMP-in-IPv6
-#   menu  2 (AFTR eth-isp)        — same subset that hits the AFTR
-#   menu  3 (AFTR eth-wan)        — SNMP + post-NAT ICMP
-#   menu  4 (AFTR ds-lite-open)   — usually empty unless attacker is on ISP
-#   menu  5 (B4-1 eth-isp)        — B4-1's view of the ISP segment
-#   menu  6 (B4-1 LAN)            — client1↔B4-1 DNS + ICMP
-#   menu  7 (B4-1 tunnel)         — decapsulated IPv4 at B4-1
-#   menu  8 (B4-2 eth-isp)        — B4-2's view
-#   menu  9 (B4-2 LAN)            — client2↔B4-2
-#   menu 10 (B4-2 tunnel)         — decapsulated IPv4 at B4-2
-#   menu 11 (Server eth0)         — public-IPv4 ICMP, SNMP, HTTP
+#   menu  1 (br-isp)              - DHCPv6, DNS, PCP, SNMP, ICMP-in-IPv6
+#   menu  2 (AFTR eth-isp)        - same subset that hits the AFTR
+#   menu  3 (AFTR eth-wan)        - SNMP + post-NAT ICMP
+#   menu  4 (AFTR ds-lite-open)   - usually empty unless attacker is on ISP
+#   menu  5 (B4-1 eth-isp)        - B4-1's view of the ISP segment
+#   menu  6 (B4-1 LAN)            - client1↔B4-1 DNS + ICMP
+#   menu  7 (B4-1 tunnel)         - decapsulated IPv4 at B4-1
+#   menu  8 (B4-2 eth-isp)        - B4-2's view
+#   menu  9 (B4-2 LAN)            - client2↔B4-2
+#   menu 10 (B4-2 tunnel)         - decapsulated IPv4 at B4-2
+#   menu 11 (Server eth0)         - public-IPv4 ICMP, SNMP, HTTP
 
 set -u
 banner() { echo; echo "════════ $* ════════"; }
@@ -42,7 +42,7 @@ ip netns exec client1 dig +short +time=1 -x 198.51.100.2
 echo "[b4-1]    dig A?    server.dslite.example.com   (over IPv6 to ::2)"
 ip netns exec b4-1 dig +short +time=1 server.dslite.example.com
 
-# 3. Run ICMP via the softwire — pick -c 3 so the startup A query is
+# 3. Run ICMP via the softwire - pick -c 3 so the startup A query is
 #    obvious on br-isp, and the per-reply PTRs are also visible.
 banner "ICMP through softwire (3 packets)"
 ip netns exec client1 ping -c 3 -i 0.5 -W 2 server.dslite.example.com 2>&1 | head -6
@@ -74,5 +74,5 @@ ip netns exec client1 curl -sS -o /dev/null \
 
 echo
 echo "Done. Each Wireshark window should now contain matching traffic."
-echo "If a window is empty, the relevant netns wasn't on the packet path —"
+echo "If a window is empty, the relevant netns wasn't on the packet path -"
 echo "consult the cheat sheet to pick a different capture point."

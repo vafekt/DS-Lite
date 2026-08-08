@@ -1,5 +1,5 @@
 #!/bin/bash
-# article_defenses.sh — enable/disable a defense that implements the ACTUAL
+# article_defenses.sh - enable/disable a defense that implements the ACTUAL
 # mechanism proposed by its grounding research article, adapted to DS-Lite.
 #
 # This replaces the old apply_defense.sh, where every entry was an RFC/generic
@@ -182,7 +182,7 @@ feistel_ipid() {
 #    Configurations" (IEEE S&P 2007) show ESP WITHOUT integrity (encryption-only)
 #    is broken. Their mandate: use AUTHENTICATED encryption. We key transport-mode
 #    ESP with AEAD AES-GCM (rfc4106(gcm(aes))) between each B4 and the AFTR, so
-#    the 4-in-6 softwire payload is confidential AND integrity-protected — an
+#    the 4-in-6 softwire payload is confidential AND integrity-protected - an
 #    on-path attacker sees only ESP ciphertext (T4 passive read defeated).
 esp_aead() {
   local A="$AFTR_IP6" e

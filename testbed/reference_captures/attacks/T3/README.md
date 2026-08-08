@@ -1,4 +1,4 @@
-# T3 — Softwire Identity Takeover (NDP-poison MITM)
+# T3 - Softwire Identity Takeover (NDP-poison MITM)
 
 Reference packet captures for T3, regenerated from the testbed by
 `testbed/scripts/capture_references.sh` (one capture point per file).

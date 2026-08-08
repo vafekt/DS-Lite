@@ -1,12 +1,12 @@
 #!/bin/bash
-# capture_references.sh — generate the project's REFERENCE packet captures, stored
+# capture_references.sh - generate the project's REFERENCE packet captures, stored
 # INSIDE the testbed (testbed/reference_captures/) so they ship with the project
 # and are easy to find + compare against, and are not in the volatile ./pcaps
 # runtime folder. Run from the host:  bash testbed/scripts/capture_references.sh
 #
 # Produces three groups:
 #   baseline/   normal testbed traffic, every communication type (no attack)
-#   attacks/Tn/ each attack run cleanly (the attack SUCCEEDS) — via the runner
+#   attacks/Tn/ each attack run cleanly (the attack SUCCEEDS) - via the runner
 #   defenses/   each defence OFF (attack succeeds) vs ON (attack blocked)
 set -u
 C="${CONTAINER_NAME:-ds-lite-lab}"
@@ -44,7 +44,7 @@ prov_attacker(){ nse attacker ip link show eth-isp >/dev/null 2>&1 || dx sh -c '
   ip netns exec attacker ip link set eth-isp up 2>/dev/null
   ip netns exec attacker ip -6 addr add '"$ATK6"'/64 dev eth-isp 2>/dev/null'; }
 
-# lab_restore — FULL clean baseline between captures, so no attack's state or
+# lab_restore - FULL clean baseline between captures, so no attack's state or
 # config overlaps into the next. Stronger than the runner's reset_state: it also
 # restarts the PCP server+proxies (clears the in-memory pool from T7), restarts
 # the SNMP agent (resets the alarm threshold a T14 SET left at max), restores the
@@ -91,7 +91,7 @@ prov_attacker
 lab_restore   # start from a known-clean baseline
 
 # ─────────────────────────────────────────────────────────────────────────
-# 1. BASELINE — normal traffic, every communication type, NO attack
+# 1. BASELINE - normal traffic, every communication type, NO attack
 # ─────────────────────────────────────────────────────────────────────────
 hdr "Baseline (normal full-communication capture)"
 B="$REF/baseline"; mkdir -p "$B"
@@ -128,7 +128,7 @@ for f in "$B"/*.pcap; do
   say "$(basename "$f"): ${c} pkts ($(wc -c < "$f" 2>/dev/null) bytes)"
 done
 cat > "$B/NOTES.txt" <<EOF
-Baseline reference capture — normal DS-Lite operation, NO attack running.
+Baseline reference capture - normal DS-Lite operation, NO attack running.
 Communication types exercised: HTTP through the 4-in-6 softwire + CGNAT, DNS via
 the B4 resolver, DHCPv6 (option-64 AFTR-Name), PCP MAP, SNMP GET (mgmt plane),
 ICMPv6 ping. Capture points:
@@ -139,7 +139,7 @@ ICMPv6 ping. Capture points:
 EOF
 
 # ─────────────────────────────────────────────────────────────────────────
-# 2. ATTACKS — each attack run cleanly via the runner (attack SUCCEEDS)
+# 2. ATTACKS - each attack run cleanly via the runner (attack SUCCEEDS)
 # ─────────────────────────────────────────────────────────────────────────
 hdr "Attacks (clean per-attack captures)"
 for n in $(seq 1 15); do
@@ -160,9 +160,9 @@ for n in $(seq 1 15); do
   # Auto-generate a README that matches the actual files (so the docs never
   # drift from the captures). The full narration + verdict live in RESULT.txt.
   {
-    aname=$(grep -oE 'live attack  '"$ID"'  —  .*' "$dest/RESULT.txt" | sed 's/.*—  //')
+    aname=$(grep -oE 'live attack  '"$ID"'  -  .*' "$dest/RESULT.txt" | sed 's/.*-  //')
     verdict=$(grep -E '^\s*verdict:' "$dest/RESULT.txt" | sed 's/^\s*//')
-    echo "# $ID — ${aname:-$ID}"
+    echo "# $ID - ${aname:-$ID}"
     echo
     echo "Reference packet captures for $ID, regenerated from the testbed by"
     echo "\`testbed/scripts/capture_references.sh\` (one capture point per file)."
@@ -189,7 +189,7 @@ for n in $(seq 1 15); do
 done
 
 # ─────────────────────────────────────────────────────────────────────────
-# 3. DEFENCES — capture each attack's key point with the defence OFF vs ON
+# 3. DEFENCES - capture each attack's key point with the defence OFF vs ON
 # ─────────────────────────────────────────────────────────────────────────
 hdr "Defences (off vs on captures)"
 restart_pcp(){ nse aftr pkill -9 -f pcp_server.py 2>/dev/null
@@ -216,15 +216,15 @@ defcap(){ # <DEF> <ns> <iface> <filter> <attack-cmd> ; captures off+on, restorin
 defcap SAVI aftr eth-isp "ip6 src $VB4 and ip6 dst $AFTR and ip6 proto 4" \
   "nse attacker sh -c \"timeout 6 python3 $T/tunnel/tunnel_spoof.py spoof --interface eth-isp --src-ip6 $ATK6 --victim-b4-ip6 $VB4 --aftr-ip6 $AFTR --inner-src-ip4 10.0.1.77 --inner-dst-ip4 $SRV --proto udp --focused --dst-port 9999 --count 8 --batch 1 --interval 0.2 >/dev/null 2>&1\""
 
-# ESP_AEAD (T4): victim softwire — cleartext inner HTTP vs ESP ciphertext
+# ESP_AEAD (T4): victim softwire - cleartext inner HTTP vs ESP ciphertext
 defcap ESP_AEAD b4-1 eth-isp "ip6 proto 4 or esp" \
   "nse client1 sh -c \"for i in 1 2 3 4 5; do curl -s -o /dev/null --max-time 3 http://$SRV/; done >/dev/null 2>&1\""
 
-# SNMP_USM (T14): mgmt-plane SNMP — v2c SET accepted vs USM-only (v2c dropped)
+# SNMP_USM (T14): mgmt-plane SNMP - v2c SET accepted vs USM-only (v2c dropped)
 defcap SNMP_USM aftr eth-mgmt "udp port 161" \
   "nse mgmt sh -c \"timeout 6 python3 $T/infra/snmp_attack.py set --target 10.99.0.1 --oid alarmConnectNumber --value 2147483647 >/dev/null 2>&1\""
 
-# PCP_OWNERSHIP (T8): PCP THIRD_PARTY naming a different subscriber — accepted vs NOT_AUTHORIZED
+# PCP_OWNERSHIP (T8): PCP THIRD_PARTY naming a different subscriber - accepted vs NOT_AUTHORIZED
 defcap PCP_OWNERSHIP aftr eth-isp "udp port 5351" \
   "nse client1 sh -c \"timeout 6 python3 $T/infra/pcp_attack.py thirdparty --proxy-ip $GW1 --target-internal 10.0.2.100 >/dev/null 2>&1\""
 
@@ -247,7 +247,7 @@ testbed/defenses/verify_all.sh.
 EOF
 restart_pcp "" >/dev/null 2>&1
 
-hdr "DONE — reference captures under testbed/reference_captures/"
+hdr "DONE - reference captures under testbed/reference_captures/"
 say "baseline: $(ls "$REF"/baseline/*.pcap 2>/dev/null | wc -l) pcaps"
 say "attacks:  $(ls -d "$REF"/attacks/T* 2>/dev/null | wc -l) attacks"
 say "defences: $(ls -d "$REF"/defenses/*/ 2>/dev/null | wc -l) captured"

@@ -1,4 +1,4 @@
-# T14 — SNMP Alarm-Table Write
+# T14 - SNMP Alarm-Table Write
 
 Reference packet captures for T14, regenerated from the testbed by
 `testbed/scripts/capture_references.sh` (one capture point per file).

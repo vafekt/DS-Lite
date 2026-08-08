@@ -1,4 +1,4 @@
-# FEISTEL_IPID — unpredictable packet identifiers (secondary control for T6)
+# FEISTEL_IPID - unpredictable packet identifiers (secondary control for T6)
 
 Article-grounded control (Gilad & Herzberg 2013) for the reassembly-collision
 attack **T6**. It is a **secondary** control: the reliable defence for the live

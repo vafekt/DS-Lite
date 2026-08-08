@@ -1,9 +1,9 @@
 #!/bin/bash
-# capture_defenses.sh — capture per-family OFF/ON evidence for reference_captures.
+# capture_defenses.sh - capture per-family OFF/ON evidence for reference_captures.
 # For each defence it runs the ACTUAL attack with the defence OFF (succeeds) and
 # ON (blocked), capturing packets/logs at the relevant point. ALL artifacts are
 # written INSIDE the container under the bind-mounted /testbed/pcaps/defcap/ so
-# they appear on the host (root-owned, world-readable) — no host-side redirects,
+# they appear on the host (root-owned, world-readable) - no host-side redirects,
 # which avoids cross-ownership permission errors.
 # Run from the host:  bash testbed/defenses/capture_defenses.sh
 set -u
@@ -100,7 +100,7 @@ restart_pcp ""
 # ── NAT_LOG (T2 shared-IP attribution) ──────────────────────────────────────
 echo "NAT_LOG"; mk NAT_LOG
 LOG=/var/log/aftr-bindings.log
-# NOTE: truncate (: > LOG), do NOT unlink — the AFTR logger holds the file open,
+# NOTE: truncate (: > LOG), do NOT unlink - the AFTR logger holds the file open,
 # so rm sends new records to a dangling inode and the count reads 0.
 nat_run(){ dxsh ": > $LOG 2>/dev/null || true"
   nse client1 sh -c "timeout 8 python3 $T/dns/reputation_poisoning.py --mode scan --target $SRV --count 200" >/dev/null 2>&1; sleep 1.5
@@ -148,7 +148,7 @@ dhcp_run(){ # $1 tag, $2 mode (insecure|secure)
 dhcp_run OFF insecure
 dhcp_run ON  secure
 
-# ── DNS_0X20 (T11 off-path DNS poisoning) — via runner ──────────────────────
+# ── DNS_0X20 (T11 off-path DNS poisoning) - via runner ──────────────────────
 echo "DNS_0X20"; mk DNS_0X20
 nse b4-1 pkill -9 -f dns_0x20_forwarder 2>/dev/null; nse dns-server pkill -9 -f dns_sink 2>/dev/null
 nse dns-server ip -6 addr del $CP::5/64 dev eth-isp 2>/dev/null
@@ -158,11 +158,11 @@ bash "$AP" DNS_0X20 on >/dev/null 2>&1
 dxsh "bash /testbed/scripts/run_attack_live.sh T11 2>&1 | grep -oE 'resolved to [0-9a-f:]+|resolved to <none>' | tail -1 > $OUT/DNS_0X20/ON.result.txt"
 bash "$AP" DNS_0X20 off >/dev/null 2>&1
 
-# ── FEISTEL_IPID (T6 inner IP-ID predictability) — algorithmic self-test ────
+# ── FEISTEL_IPID (T6 inner IP-ID predictability) - algorithmic self-test ────
 echo "FEISTEL_IPID"; mk FEISTEL_IPID
 dxsh "python3 /testbed/defenses/ipid_feistel.py > $OUT/FEISTEL_IPID/selftest.txt 2>&1"
 
-# ── TRABELSI (T1 session-table early eviction) — via runner ─────────────────
+# ── TRABELSI (T1 session-table early eviction) - via runner ─────────────────
 echo "TRABELSI"; mk TRABELSI
 bash "$AP" TRABELSI off >/dev/null 2>&1
 dxsh "bash /testbed/scripts/run_attack_live.sh T1 2>&1 | grep -oE 'client1=[0-9]+|conntrack=[0-9]+|[0-9]+ ESTABLISHED' | tr '\n' ' ' > $OUT/TRABELSI/OFF.result.txt"
@@ -170,4 +170,4 @@ bash "$AP" TRABELSI on >/dev/null 2>&1
 dxsh "bash /testbed/scripts/run_attack_live.sh T1 2>&1 | grep -oE 'client1=[0-9]+|conntrack=[0-9]+|[0-9]+ ESTABLISHED' | tr '\n' ' ' > $OUT/TRABELSI/ON.result.txt"
 bash "$AP" TRABELSI off >/dev/null 2>&1
 
-echo "DONE — evidence in pcaps/defcap/"
+echo "DONE - evidence in pcaps/defcap/"

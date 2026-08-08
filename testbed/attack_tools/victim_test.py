@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Victim Connectivity Monitor – DS-Lite NAT Exhaustion Impact Demo
+# Victim Connectivity Monitor - DS-Lite NAT Exhaustion Impact Demo
 #
 # Run this from the client1 or client2 network namespace while running the
 # attack tools in the attacker namespace.  Shows connection success/failure
@@ -15,7 +15,7 @@
 # Expected observations:
 #   Before attack : OK  ~5-20 ms   100% success
 #   UDP flood only : mostly OK, occasional delay as GC evicts conntrack entries
-#   + nat_hold.py  : FAIL / TIMEOUT – server busy (nc blocked) + conntrack full
+#   + nat_hold.py  : FAIL / TIMEOUT - server busy (nc blocked) + conntrack full
 import argparse
 import collections
 import socket
@@ -65,7 +65,7 @@ def rate_bar(pct, width=20):
 
 def main():
     p = argparse.ArgumentParser(
-        description='Victim connectivity monitor – observe DS-Lite NAT exhaustion impact.',
+        description='Victim connectivity monitor - observe DS-Lite NAT exhaustion impact.',
         epilog=(
             'Run from client1/client2 netns:\n'
             '  ip netns exec client1 python3 /testbed/attack_tools/victim_test.py\n\n'
@@ -90,7 +90,7 @@ def main():
     args = p.parse_args()
 
     print(f"{BOLD}╔══════════════════════════════════════════════════════════════╗{NC}")
-    print(f"{BOLD}║   Victim Connectivity Monitor  –  DS-Lite NAT Exhaustion     ║{NC}")
+    print(f"{BOLD}║   Victim Connectivity Monitor  -  DS-Lite NAT Exhaustion     ║{NC}")
     print(f"{BOLD}╚══════════════════════════════════════════════════════════════╝{NC}")
     print(f"  Target  : {args.target}:{args.port}")
     print(f"  Interval: {args.interval}s   Timeout: {args.timeout}s   "

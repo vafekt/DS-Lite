@@ -1,4 +1,4 @@
-# DS-Lite Security Testbed — Full Walkthrough
+# DS-Lite Security Testbed - Full Walkthrough
 
 A complete, honest description of the testbed: how it is set up, how it runs, how
 to monitor it, the 15 attacks (with their impact), and the 11 defences (with their
@@ -76,19 +76,19 @@ Namespaces (`docker exec ds-lite-lab ip netns list`):
 | `attacker` | the adversary (lazily created) | `2001:db8:cafe::13a` |
 
 ### Where everything lives in `testbed/`
-- `Dockerfile`, `entrypoint.sh`, `setup.sh`, `requirements.txt` — build + boot.
-- `aftr/` — the AFTR: `pcp_server.py`, `snmp_agent.py`, `nftables.conf` (the
+- `Dockerfile`, `entrypoint.sh`, `setup.sh`, `requirements.txt` - build + boot.
+- `aftr/` - the AFTR: `pcp_server.py`, `snmp_agent.py`, `nftables.conf` (the
   CGNAT rules), `monitor_nat.sh`, `subscriber_mask.py`, `traceability_logger.py`.
-- `b4/` — the B4: `pcp_proxy.py`, `dhclient6*.conf`, `dhclient6-exit-hook.sh`
+- `b4/` - the B4: `pcp_proxy.py`, `dhclient6*.conf`, `dhclient6-exit-hook.sh`
   (resolves the AFTR name → rebuilds the softwire).
-- `dhcpv6server/`, `server/` — provisioning + public-server configs.
-- `scripts/` — orchestration: `attack_lib.sh` (single source of per-attack truth),
+- `dhcpv6server/`, `server/` - provisioning + public-server configs.
+- `scripts/` - orchestration: `attack_lib.sh` (single source of per-attack truth),
   `run_attack_live.sh` (the narrated runner), `ds_menu.py` (menu UI),
   `capture_references.sh` (this doc's captures), `test_connectivity.sh`.
-- `attack_tools/` — the actual attack programs (see §6).
-- `defenses/` — the article/RFC defences + the dispatcher + verifier (see §7).
-- `attack_trees/` — attack–defence trees (QuADTool `.xml`/`.prism`/`.dot` + figures).
-- `reference_captures/` — baseline + per-attack + per-defence pcaps (see §8).
+- `attack_tools/` - the actual attack programs (see §6).
+- `defenses/` - the article/RFC defences + the dispatcher + verifier (see §7).
+- `attack_trees/` - attack-defence trees (QuADTool `.xml`/`.prism`/`.dot` + figures).
+- `reference_captures/` - baseline + per-attack + per-defence pcaps (see §8).
 
 ---
 
@@ -101,9 +101,9 @@ From the project root:
 ```
 
 What happens:
-1. **Build** — `run.sh` builds the image from `testbed/` if sources changed
+1. **Build** - `run.sh` builds the image from `testbed/` if sources changed
    (`COPY . /testbed/`; `.dockerignore` keeps pcaps/caches/figures out).
-2. **Start** — runs one privileged container (`--privileged`, 4 GB, 4 CPUs),
+2. **Start** - runs one privileged container (`--privileged`, 4 GB, 4 CPUs),
    bind-mounting `./pcaps` → `/testbed/pcaps` for run outputs, publishing `:8080`.
 3. **`entrypoint.sh` → `setup.sh`** builds the topology: creates every namespace,
    the `br-isp`/`br-mgmt` bridges and veth pairs, assigns addresses, starts the
@@ -113,9 +113,9 @@ What happens:
 4. When the log prints **`testbed is ready`**, the menu appears.
 
 Key configuration knobs:
-- `testbed/defenses/topology.env` — addresses, public pool, subscriber roster
+- `testbed/defenses/topology.env` - addresses, public pool, subscriber roster
   (data, not code; add a B4 by adding one row).
-- AFTR CGNAT policy — `testbed/aftr/nftables.conf` (per-subscriber conntrack zones
+- AFTR CGNAT policy - `testbed/aftr/nftables.conf` (per-subscriber conntrack zones
   + a per-B4 connection cap meter).
 
 ### Sanity check after boot
@@ -132,15 +132,15 @@ reaching the Internet through the softwire + CGNAT).
 ## 4. Running the testbed (the menu)
 
 `./run.sh` opens a command palette:
-- **Attack** — pick T1…T15; optionally tweak a curated knob; one narrated terminal
+- **Attack** - pick T1…T15; optionally tweak a curated knob; one narrated terminal
   shows the attack launch, captures at the reference points, measures the outcome,
   prints **MATCH/DIFFERS** against the stored result, and saves to `./pcaps/runs/`.
-- **Watch** — open a live capture on any interface.
-- **Shell** — drop into any namespace.
-- **Restore** — reset to a clean vulnerable baseline (all defences off, attack
+- **Watch** - open a live capture on any interface.
+- **Shell** - drop into any namespace.
+- **Restore** - reset to a clean vulnerable baseline (all defences off, attack
   residue cleared, health re-checked).
-- **Settings** — attacker placement, connectivity test.
-- **Quit** — stops the lab cleanly (a lab you only reattached to is left running).
+- **Settings** - attacker placement, connectivity test.
+- **Quit** - stops the lab cleanly (a lab you only reattached to is left running).
 
 Everything the menu does can also be driven directly:
 ```sh
@@ -156,17 +156,17 @@ bash testbed/defenses/verify_all.sh
 
 ## 5. Monitoring (how to see what's happening)
 
-- **Live capture** — `ip netns exec <ns> tcpdump -i <iface> -n` on any point.
+- **Live capture** - `ip netns exec <ns> tcpdump -i <iface> -n` on any point.
   The carrier side (`b4-1 eth-isp`) shows softwire/DHCPv6/DNS/PCP/NDP; the AFTR
   public side (`aftr eth-wan`) shows the CGNAT egress as the shared IPv4.
-- **CGNAT state** — `ip netns exec aftr conntrack -L` (the NAT session table);
+- **CGNAT state** - `ip netns exec aftr conntrack -L` (the NAT session table);
   `ip netns exec aftr conntrack -C` (count). `aftr/monitor_nat.sh` tails it.
-- **PCP** — the AFTR PCP server logs MAP/PEER/ANNOUNCE; the nft `nat pcp_dnat`
+- **PCP** - the AFTR PCP server logs MAP/PEER/ANNOUNCE; the nft `nat pcp_dnat`
   chain holds the inbound mappings.
-- **SNMP** — `snmpget/snmpwalk -v2c -c public 10.99.0.1 <oid>` reads the DSLITE-MIB.
+- **SNMP** - `snmpget/snmpwalk -v2c -c public 10.99.0.1 <oid>` reads the DSLITE-MIB.
 - **The narrated runner** prints, for each attack, the surface, the exact command,
-  the measured signal, and the verdict — the fastest way to *see* impact.
-- **Reference captures** (§8) — open the baseline and any attack/defence pcap in
+  the measured signal, and the verdict - the fastest way to *see* impact.
+- **Reference captures** (§8) - open the baseline and any attack/defence pcap in
   Wireshark and compare.
 
 ---
@@ -180,7 +180,7 @@ capture in `reference_captures/attacks/Tn/`.
 | ID | Name | Surface | What it does | Impact (measured) |
 |----|------|---------|--------------|-------------------|
 | **T1** | NAT Binding-Table Exhaustion | CGNAT | floods half-open sessions to fill the shared NAT table | victim client1 200→**000**, co-subscriber stays up |
-| **T2** | Shared-IPv4 Reputation Poisoning | CGNAT | one subscriber emits abuse that egresses as the shared IPv4 | all abuse sourced from `192.0.2.1` — collective blame |
+| **T2** | Shared-IPv4 Reputation Poisoning | CGNAT | one subscriber emits abuse that egresses as the shared IPv4 | all abuse sourced from `192.0.2.1` - collective blame |
 | **T3** | Tunnel-Endpoint Spoofing | softwire | forges the victim B4 as the outer IPv6 source | AFTR accepts spoofed softwire packets as the victim |
 | **T4** | Unencrypted-Tunnel Interception | softwire | passively reads the cleartext 4-in-6 inner traffic | victim's inner HTTP recovered in cleartext |
 | **T5** | Downstream Softwire Injection | softwire | forges AFTR→B4 packets carrying a spoofed inner source | forged inner IPv4 reaches the victim LAN |
@@ -237,7 +237,7 @@ Example with a knob: `… T1 intensity=medium`.
 
 **Read the impact yourself:** after a run, read the saved `RESULT.txt` (measured
 signal + MATCH/DIFFERS verdict), and open the matching capture in
-`reference_captures/attacks/Tn/` — each has a `README.md` that walks the pcap
+`reference_captures/attacks/Tn/` - each has a `README.md` that walks the pcap
 packet by packet.
 
 ---
@@ -336,7 +336,7 @@ the deviation removed. Regenerate any time with
 `bash testbed/scripts/capture_references.sh`.
 
 **Isolation guarantee.** The capture script performs a full `lab_restore`
-*before every attack* and *before and after every defence* — it restarts the PCP
+*before every attack* and *before and after every defence* - it restarts the PCP
 server+proxies (fresh pool), restarts the SNMP agent (resets any altered alarm
 threshold), restores the stock DHCPv6 + B4 resolver, flushes conntrack/NAT/NDP,
 removes all defence state, and heals the softwire. So no capture inherits leftover
@@ -346,19 +346,19 @@ state or configuration from the previous one; each is a clean, independent run.
 
 ## 9. How to evaluate this work (a checklist for you)
 
-1. **Boot & baseline** — `./run.sh`; confirm both clients = 200; open
+1. **Boot & baseline** - `./run.sh`; confirm both clients = 200; open
    `reference_captures/baseline/*` and confirm normal softwire + CGNAT + DHCPv6 +
    DNS + PCP + SNMP traffic.
-2. **Each attack works** — run T1…T15; each prints a measurable impact and
+2. **Each attack works** - run T1…T15; each prints a measurable impact and
    MATCH; cross-check against `reference_captures/attacks/Tn/RESULT.txt`.
-3. **Each defence works** — `bash testbed/defenses/verify_all.sh`; confirm
+3. **Each defence works** - `bash testbed/defenses/verify_all.sh`; confirm
    11 PASS, and that the OFF/ON numbers match the table in §7.
-4. **The mechanisms are real, not name-borrowed** — read any
+4. **The mechanisms are real, not name-borrowed** - read any
    `results/defense_verification/T*.md`: it names the article, quotes the
    mechanism, and shows the exact off/on oracle. The implementations are in
    `testbed/defenses/` (e.g. `ipid_feistel.py`, `dhcpv6auth.py`, `snmpv3_usm.py`).
-5. **Spec conformance** — `testbed/aftr/RFC-COMPLIANCE.md` maps the AFTR
+5. **Spec conformance** - `testbed/aftr/RFC-COMPLIANCE.md` maps the AFTR
    implementation to RFC 6333/6334/6887/6888/7870.
 
-If anything does not reproduce, that is a finding — the runner and the verifier
+If anything does not reproduce, that is a finding - the runner and the verifier
 print real numbers, so the claims here are auditable rather than asserted.

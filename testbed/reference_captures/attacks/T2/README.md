@@ -1,4 +1,4 @@
-# T2 — Shared-IPv4 Reputation Poisoning
+# T2 - Shared-IPv4 Reputation Poisoning
 
 Reference packet captures for T2, regenerated from the testbed by
 `testbed/scripts/capture_references.sh` (one capture point per file).

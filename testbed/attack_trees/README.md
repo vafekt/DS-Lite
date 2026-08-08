@@ -1,6 +1,6 @@
 # Attack-Defense Trees (QuADTool export)
 
-**Formalism audit + canonical re-model (2026-06-27):** see [`ADTREE_AUDIT.md`](ADTREE_AUDIT.md) — leaves are now attacker actions only, the impact is the root goal, system-reaction/goal-restating leaves removed.
+**Formalism audit + canonical re-model (2026-06-27):** see [`ADTREE_AUDIT.md`](ADTREE_AUDIT.md) - leaves are now attacker actions only, the impact is the root goal, system-reaction/goal-restating leaves removed.
 
 QuADTool-rendered attack-defense trees (ADTrees) for the 15-attack DS-Lite
 corpus (T1-T15, see `../attack_corpus.txt`). Each tree is a Kordy-Mauw
@@ -13,9 +13,9 @@ blue root is the attacker goal.
 
 | Path | Contents |
 |---|---|
-| `quadtool/tN.dot`   | QuADTool `.dot` source — the attack-defense diagram (gate vocabulary incl. SAND) |
+| `quadtool/tN.dot`   | QuADTool `.dot` source - the attack-defense diagram (gate vocabulary incl. SAND) |
 | `quadtool/tN.xml`   | QuADTool XML form of the same tree |
-| `quadtool/tN.prism` | PRISM stochastic-game model — the tree converted for probabilistic model checking |
+| `quadtool/tN.prism` | PRISM stochastic-game model - the tree converted for probabilistic model checking |
 | `figures/tN.pdf`    | Rendered tree figure (QuADTool's own GUI renderer, headless) |
 | `figures/tN.png`    | Same figure as PNG for quick viewing |
 

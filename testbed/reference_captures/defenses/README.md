@@ -1,9 +1,9 @@
-# DS-Lite defences — per-family OFF/ON evidence
+# DS-Lite defences - per-family OFF/ON evidence
 
-Each subdirectory is one **defence leaf** from the attack–defence trees in
+Each subdirectory is one **defence leaf** from the attack-defence trees in
 [`../../attack_trees/figures/`](../../attack_trees/figures/). For every family we
-run the **actual attack** twice — once with the defence **OFF** (the vulnerable
-baseline, attack succeeds) and once **ON** (attack blocked) — and capture the
+run the **actual attack** twice - once with the defence **OFF** (the vulnerable
+baseline, attack succeeds) and once **ON** (attack blocked) - and capture the
 packets/logs that show the difference. A defence is only listed as verified when
 **both** halves hold (OFF succeeds **and** ON blocks).
 

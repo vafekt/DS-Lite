@@ -1,4 +1,4 @@
-# T9 — PCP ANNOUNCE Spoof (Epoch Reset)
+# T9 - PCP ANNOUNCE Spoof (Epoch Reset)
 
 Reference packet captures for T9, regenerated from the testbed by
 `testbed/scripts/capture_references.sh` (one capture point per file).

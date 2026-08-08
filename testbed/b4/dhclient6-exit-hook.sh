@@ -7,8 +7,8 @@
 #      already exists, rebuild it whenever EITHER the AFTR name changed OR the
 #      address it resolves to changed. This models a real CPE (re-resolves on
 #      renewal) and covers both AFTR attacks:
-#        T14  Rogue AFTR substitution — a NEW (attacker) AFTR FQDN is adopted.
-#        T14B Transparent AFTR hijack — the LEGIT FQDN is kept but a rogue DNS
+#        T14  Rogue AFTR substitution - a NEW (attacker) AFTR FQDN is adopted.
+#        T14B Transparent AFTR hijack - the LEGIT FQDN is kept but a rogue DNS
 #             (handed to the B4 via Option 23) resolves it to the attacker, so
 #             the cached name still looks legitimate while traffic is redirected.
 
@@ -32,7 +32,7 @@ printf '%s\n' "$new_dhcp6_aftr_name" >"$AFTR_FILE"
 ip link show ds-lite >/dev/null 2>&1 || exit 0
 
 # Resolve the AFTR FQDN through the DNS server learned via DHCPv6 (RFC 8415
-# Option 23), exactly as a real CPE does — falling back to the provisioned
+# Option 23), exactly as a real CPE does - falling back to the provisioned
 # resolver. Under T14B the supplied DNS is the attacker's rogue resolver.
 RESOLVER="${new_dhcp6_name_servers%% *}"
 [ -z "$RESOLVER" ] && RESOLVER="2001:db8:cafe::2"
@@ -41,7 +41,7 @@ NEW_AFTR_IPV6=$(host -t AAAA "$NEW_FQDN" "$RESOLVER" 2>/dev/null \
 printf '{"event":"resolve","fqdn":"%s","resolver":"%s","resolved":"%s","ts":"%s"}\n' \
     "$NEW_FQDN" "$RESOLVER" "$NEW_AFTR_IPV6" "$(date -u +%FT%TZ)" >>"$HIJACK_LOG" 2>/dev/null
 if [ -z "$NEW_AFTR_IPV6" ]; then
-    logger -t ds-lite "could not resolve $NEW_FQDN via $RESOLVER — keeping current tunnel"
+    logger -t ds-lite "could not resolve $NEW_FQDN via $RESOLVER - keeping current tunnel"
     exit 0
 fi
 
@@ -53,7 +53,7 @@ if [ "$NEW_FQDN" = "$OLD_FQDN" ] && [ "$NEW_AFTR_IPV6" = "$CUR_REMOTE" ]; then
     exit 0
 fi
 
-logger -t ds-lite "AFTR endpoint change: name '$OLD_FQDN'->'$NEW_FQDN', addr '$CUR_REMOTE'->'$NEW_AFTR_IPV6' — rebuilding tunnel"
+logger -t ds-lite "AFTR endpoint change: name '$OLD_FQDN'->'$NEW_FQDN', addr '$CUR_REMOTE'->'$NEW_AFTR_IPV6' - rebuilding tunnel"
 
 # The softwire MUST be sourced from the STABLE softwire identity (::b4N), not a
 # DHCPv6-leased or SLAAC address. Picking the first global address here was a bug:

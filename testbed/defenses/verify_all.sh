@@ -1,5 +1,5 @@
 #!/bin/bash
-# verify_all.sh — honest, single-pass off/on verification of EVERY article/RFC
+# verify_all.sh - honest, single-pass off/on verification of EVERY article/RFC
 # defence against the ACTUAL attack, in a healthy lab. Replaces the old
 # verify_defenses.sh. Run from the host:  bash testbed/defenses/verify_all.sh
 #
@@ -42,7 +42,7 @@ restart_pcp(){ # $1 env
 
 prov_attacker; hub_bridge
 
-# ── T1 TRABELSI (NAT state exhaustion) — via runner ─────────────────────────
+# ── T1 TRABELSI (NAT state exhaustion) - via runner ─────────────────────────
 hdr "T1  TRABELSI  (NAT/conntrack state exhaustion)"
 bash "$AP" TRABELSI off >/dev/null 2>&1
 # do_T1's two-phase RUN_LINE ends with the SIEGE victim code: "... client1=<code> ..."
@@ -174,7 +174,7 @@ n=$(nse b4-1 python3 /testbed/defenses/dhcpv6auth.py client --iface eth-isp --ke
 dx pkill -9 -f 'dhcpv6_hijack.py' 2>/dev/null; dx pkill -9 -f 'dhcpv6auth.py server' 2>/dev/null
 { echo "$o"|grep -qi evil && echo "$n"|grep -qi 'aftr.dslite'; } && ok DHCPV6_AUTH "OFF $o | ON $n" || no DHCPV6_AUTH "OFF $o | ON $n"
 
-# ── T11 DNS_0X20 (off-path AFTR-FQDN poisoning) — via runner ────────────────
+# ── T11 DNS_0X20 (off-path AFTR-FQDN poisoning) - via runner ────────────────
 hdr "T11  DNS_0X20  (off-path DNS poisoning)"
 # clean any leftover off-path resolver scaffolding from earlier in this run
 nse b4-1 pkill -9 -f dns_0x20_forwarder 2>/dev/null

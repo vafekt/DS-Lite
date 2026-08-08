@@ -1,4 +1,4 @@
-# DS-Lite attack corpus — single source of truth for the run.sh menu.
+# DS-Lite attack corpus - single source of truth for the run.sh menu.
 # Format:  id | group | name | vantage
 # run.sh renders the attack menu from this file (auto-numbered, grouped)
 # and dispatches by id, so adding/removing/reordering attacks here keeps

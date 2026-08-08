@@ -1,4 +1,4 @@
-# T13 — Transparent AFTR Hijack
+# T13 - Transparent AFTR Hijack
 
 Reference packet captures for T13, regenerated from the testbed by
 `testbed/scripts/capture_references.sh` (one capture point per file).

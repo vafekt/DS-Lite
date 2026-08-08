@@ -1,6 +1,6 @@
 #!/bin/bash
 # ================================================================
-# AFTR NAT Monitor – DS-Lite / RFC 6333
+# AFTR NAT Monitor - DS-Lite / RFC 6333
 # Runs inside the AFTR namespace.
 # Shows current NAT state, press Enter to refresh, Ctrl+C to exit.
 # ================================================================

@@ -1,4 +1,4 @@
-# T10 — Cross-Subscriber PCP PEER Enumeration
+# T10 - Cross-Subscriber PCP PEER Enumeration
 
 Reference packet captures for T10, regenerated from the testbed by
 `testbed/scripts/capture_references.sh` (one capture point per file).

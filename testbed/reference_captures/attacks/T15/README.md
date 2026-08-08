@@ -1,4 +1,4 @@
-# T15 — SNMP MIB Information Disclosure
+# T15 - SNMP MIB Information Disclosure
 
 Reference packet captures for T15, regenerated from the testbed by
 `testbed/scripts/capture_references.sh` (one capture point per file).

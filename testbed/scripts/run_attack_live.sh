@@ -1,5 +1,5 @@
 #!/bin/bash
-# run_attack_live.sh — run ONE DS-Lite attack in ONE narrated terminal.
+# run_attack_live.sh - run ONE DS-Lite attack in ONE narrated terminal.
 #
 # Usage (host):  docker exec -it ds-lite-lab \
 #                  bash /testbed/scripts/run_attack_live.sh T1 intensity=fast target=198.51.100.2
@@ -53,7 +53,7 @@ resolve_runtime   # discover live addresses (DHCP/softwire may differ from refs)
 exec > >(tee "$RESULT") 2>&1
 
 echo "================================================================"
-echo "  DS-Lite live attack  $ID  —  $(attack_name "$ID")"
+echo "  DS-Lite live attack  $ID  -  $(attack_name "$ID")"
 echo "  saving to  ./${OUT#/testbed/}/"
 echo "  ground truth (reference) in  ./pcaps/per_attack/$ID/"
 echo "================================================================"
@@ -68,7 +68,7 @@ printf '  %-10s %s\n' "this run:"  "$RUN_LINE"
 if [ "${VERDICT_PASS:-0}" = 1 ]; then
     printf '  %-10s MATCH   (attack reproduced the stored result)\n' "verdict:"
 else
-    printf '  %-10s DIFFERS (did not reproduce — compare numbers above)\n' "verdict:"
+    printf '  %-10s DIFFERS (did not reproduce - compare numbers above)\n' "verdict:"
 fi
 echo "  --------------------------------------------------------------"
 echo "  saved: ./${OUT#/testbed/}/  (pcaps + config.txt + RESULT.txt)"

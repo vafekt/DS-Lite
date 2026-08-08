@@ -1,4 +1,4 @@
-# T8 — Unauthorized THIRD_PARTY Forwarding
+# T8 - Unauthorized THIRD_PARTY Forwarding
 
 Reference packet captures for T8, regenerated from the testbed by
 `testbed/scripts/capture_references.sh` (one capture point per file).

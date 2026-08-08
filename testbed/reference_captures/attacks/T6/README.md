@@ -1,4 +1,4 @@
-# T6 — Softwire Reassembly Poisoning
+# T6 - Softwire Reassembly Poisoning
 
 Reference packet captures for T6, regenerated from the testbed by
 `testbed/scripts/capture_references.sh` (one capture point per file).

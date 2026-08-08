@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-pcp_server.py  –  PCP Server for DS-Lite AFTR
+pcp_server.py  -  PCP Server for DS-Lite AFTR
 RFC 6887 (Port Control Protocol) + draft-ietf-pcp-dslite-00 (plain mode)
 RFC 6908 §2.11: PCP server co-located in AFTR (recommended deployment)
 
@@ -9,14 +9,14 @@ Listens on UDP/5351 over IPv6 for MAP/PEER/ANNOUNCE requests from B4 PCP proxies
 Dynamically creates / removes nftables DNAT rules in the ip nat pcp_dnat chain.
 
 Opcodes implemented (RFC 6887):
-  ANNOUNCE (0) – server epoch advertisement; clients use for restart recovery
-  MAP      (1) – create/refresh/delete explicit inbound port mappings
-  PEER     (2) – learn/control external address+port for outbound flows
+  ANNOUNCE (0) - server epoch advertisement; clients use for restart recovery
+  MAP      (1) - create/refresh/delete explicit inbound port mappings
+  PEER     (2) - learn/control external address+port for outbound flows
 
 Options implemented:
-  THIRD_PARTY     (1) – B4 proxy injects client IPv4 (draft-ietf-pcp-dslite-00 §2)
-  PREFER_FAILURE  (2) – fail if suggested external port unavailable (RFC 6887 §13.2)
-  FILTER          (3) – restrict remote peers that can reach a mapping (RFC 6887 §13.3)
+  THIRD_PARTY     (1) - B4 proxy injects client IPv4 (draft-ietf-pcp-dslite-00 §2)
+  PREFER_FAILURE  (2) - fail if suggested external port unavailable (RFC 6887 §13.2)
+  FILTER          (3) - restrict remote peers that can reach a mapping (RFC 6887 §13.3)
 
 Plain-mode flow (per draft-ietf-pcp-dslite-00 §2):
   Client → B4-proxy (IPv4) → AFTR PCP server (IPv6) → nftables DNAT rule
@@ -24,7 +24,7 @@ Plain-mode flow (per draft-ietf-pcp-dslite-00 §2):
     • PCP Client IP field = B4's DS-Lite tunnel IPv6 endpoint
     • THIRD_PARTY option  = client's IPv4 address
 
-Port pool  (shared with CGNAT SNAT – mirrors real AFTR behavior)
+Port pool  (shared with CGNAT SNAT - mirrors real AFTR behavior)
   Range 1024-65534, matching the AFTR's nftables SNAT pool. Each
   PCP allocation also inserts a conntrack entry so that PCP port
   exhaustion (T8) consumes the same session table as regular
@@ -53,7 +53,7 @@ from ipaddress import IPv6Address, ip_address, ip_network
 # requests carrying a THIRD_PARTY option are rejected with NOT_AUTHORIZED
 # unless the claimed internal IPv4 address falls inside the prefix
 # delegated to the requesting B4. (This is the paper's ownership/access-
-# control remediation, not an RFC default — stock PCP performs no such
+# control remediation, not an RFC default - stock PCP performs no such
 # check, which is exactly the gap the paper exploits.)
 _THIRD_PARTY_OWNERSHIP_CHECK = os.environ.get(
     "T10_THIRD_PARTY_OWNERSHIP_CHECK", "0") == "1"
@@ -296,7 +296,7 @@ def _nft_del(handle: str):
 # Real AFTRs share a single port allocation table between PCP and SNAT.
 # When PCP claims all ports, the CGNAT has none left for outbound traffic.
 # We simulate this by inserting nftables DROP rules in the forward chain
-# when the PCP pool is exhausted — matching what a real AFTR does when
+# when the PCP pool is exhausted - matching what a real AFTR does when
 # its per-subscriber port budget is fully consumed.
 
 _snat_blocked = False
@@ -309,7 +309,7 @@ def _enforce_port_budget():
     used = len(_allocated)
 
     if used >= _POOL_SIZE and not _snat_blocked:
-        # All ports claimed by PCP — block new outbound connections
+        # All ports claimed by PCP - block new outbound connections
         for iface in ("ds-lite-b4-1", "ds-lite-b4-2", "ds-lite-open"):
             # nft requires literal double-quotes around prefix/comment values
             subprocess.run(
@@ -321,11 +321,11 @@ def _enforce_port_budget():
             )
         _snat_blocked = True
         print(f"[!] PCP EXHAUSTED ({used}/{_POOL_SIZE}) "
-              f"— new outbound SNAT blocked (port budget depleted)")
+              f"- new outbound SNAT blocked (port budget depleted)")
         sys.stdout.flush()
 
     elif used < _POOL_SIZE and _snat_blocked:
-        # Ports freed — remove block rules
+        # Ports freed - remove block rules
         out = subprocess.run(
             ["nft", "-a", "list", "chain", "ip", "filter", "forward"],
             capture_output=True, text=True,
@@ -341,7 +341,7 @@ def _enforce_port_budget():
                     )
         _snat_blocked = False
         print(f"[+] PCP ports freed ({used}/{_POOL_SIZE}) "
-              f"— outbound SNAT restored")
+              f"- outbound SNAT restored")
 
 
 # ── Port allocation ──────────────────────────────────────────────────
@@ -422,7 +422,7 @@ def _handle_map(client_addr6: str, lifetime: int,
     else:
         # A direct PCP client speaking to the AFTR over IPv6 has no IPv4
         # address; we can't materialise a `ip nat` DNAT rule for it.
-        # RFC 6887 §13.1 — clients in this position SHOULD include
+        # RFC 6887 §13.1 - clients in this position SHOULD include
         # THIRD_PARTY when their internal address is in a different
         # address family than the source.
         if ':' in client_addr6:
@@ -742,7 +742,7 @@ def main():
     sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     # Absorb T7 exhaustion bursts. SO_RCVBUFFORCE (33) bypasses net.core.rmem_max
-    # for CAP_NET_ADMIN processes — the AFTR namespace runs root inside a
+    # for CAP_NET_ADMIN processes - the AFTR namespace runs root inside a
     # privileged container, so this is permitted and avoids needing to retune
     # the host-side sysctl.
     SO_RCVBUFFORCE = 33

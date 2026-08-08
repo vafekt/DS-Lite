@@ -1,4 +1,4 @@
-# T12 — Rogue AFTR Substitution
+# T12 - Rogue AFTR Substitution
 
 Reference packet captures for T12, regenerated from the testbed by
 `testbed/scripts/capture_references.sh` (one capture point per file).

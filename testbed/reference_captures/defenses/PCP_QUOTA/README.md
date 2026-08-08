@@ -1,6 +1,6 @@
-# PCP_QUOTA — per-subscriber PCP quota (port-pool exhaustion)
+# PCP_QUOTA - per-subscriber PCP quota (port-pool exhaustion)
 
-Tree defence leaf **"Per-subscriber PCP quota"** — defends **T7** (one subscriber
+Tree defence leaf **"Per-subscriber PCP quota"** - defends **T7** (one subscriber
 draining the shared AFTR PCP pool and starving others).
 
 ## Mechanism
@@ -11,12 +11,12 @@ whole pool and freeze its co-subscribers.
 ## OFF vs ON (measured)
 | | result |
 |---|---|
-| OFF (no quota), pool 60 | `OFF.pcap` + `OFF.b4-2-map.txt` — B4-1 fills the pool → co-subscriber **b4-2 MAP REFUSED** (`result_code=8 NO_RESOURCES`) |
-| ON (quota=20), pool 60 | `ON.pcap` + `ON.b4-2-map.txt` — B4-1 capped at 20 → **b4-2 MAP created** (`192.0.2.1:…`) |
+| OFF (no quota), pool 60 | `OFF.pcap` + `OFF.b4-2-map.txt` - B4-1 fills the pool → co-subscriber **b4-2 MAP REFUSED** (`result_code=8 NO_RESOURCES`) |
+| ON (quota=20), pool 60 | `ON.pcap` + `ON.b4-2-map.txt` - B4-1 capped at 20 → **b4-2 MAP created** (`192.0.2.1:…`) |
 
 The pool is deliberately small (60) so the flood actually fills it; the mechanism
 is identical at production sizes. (A 400-pool is not drained within the test
-window — that, not a defence failure, was an earlier false negative in the
+window - that, not a defence failure, was an earlier false negative in the
 verifier; now fixed in `verify_all.sh`.)
 
 ## Reproduce

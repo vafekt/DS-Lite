@@ -1,7 +1,7 @@
 #!/usr/bin/python3
-# dhcpv6auth.py — DHCPv6Auth (Ed25519-signed DHCPv6), the mechanism proposed by
+# dhcpv6auth.py - DHCPv6Auth (Ed25519-signed DHCPv6), the mechanism proposed by
 #   Albalawi & Aljuhani, "DHCPv6Auth: a mechanism to improve DHCPv6
-#   authentication and privacy", Sadhana 45:33 (2020), §4.3–4.5.
+#   authentication and privacy", Sadhana 45:33 (2020), §4.3-4.5.
 #
 # This is the ARTICLE's mechanism, not the RFC-7610 layer-2 filter. The paper:
 #   - the DHCPv6 server holds an Ed25519 key pair (§4.1);

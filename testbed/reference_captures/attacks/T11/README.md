@@ -1,4 +1,4 @@
-# T11 — Softwire DNS-Discovery Hijack
+# T11 - Softwire DNS-Discovery Hijack
 
 Reference packet captures for T11, regenerated from the testbed by
 `testbed/scripts/capture_references.sh` (one capture point per file).
