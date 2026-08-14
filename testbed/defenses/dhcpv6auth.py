@@ -1,7 +1,7 @@
 #!/usr/bin/python3
-# dhcpv6auth.py - DHCPv6Auth (Ed25519-signed DHCPv6), the mechanism proposed by
+# dhcpv6auth.py — DHCPv6Auth (Ed25519-signed DHCPv6), the mechanism proposed by
 #   Albalawi & Aljuhani, "DHCPv6Auth: a mechanism to improve DHCPv6
-#   authentication and privacy", Sadhana 45:33 (2020), §4.3-4.5.
+#   authentication and privacy", Sadhana 45:33 (2020), §4.3–4.5.
 #
 # This is the ARTICLE's mechanism, not the RFC-7610 layer-2 filter. The paper:
 #   - the DHCPv6 server holds an Ed25519 key pair (§4.1);
@@ -18,7 +18,7 @@
 #     is the manual-deployment variant.
 #
 # Adapted to DS-Lite: the signed/verified server message carries Option 64
-# (AFTR-Name, RFC 6334) and Option 23 (DNS). A rogue DHCPv6 server (the T12/T13
+# (AFTR-Name, RFC 6334) and Option 23 (DNS). A rogue DHCPv6 server (the T9/T9
 # attack, testbed/attack_tools/infra/dhcpv6_hijack.py) cannot produce a valid SA
 # option, so the verifying B4 never adopts the forged AFTR.
 #

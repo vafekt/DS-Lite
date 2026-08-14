@@ -1,0 +1,9 @@
+# Build intermediates - regenerated, not shipped in the artifact.
+# QuADTool stochastic-game / timed-automata models (~47MB of .prism/.xml);
+# the rendered tree figures in attack_trees/figures/ ship, the models do not.
+# Regenerate with: bash testbed/attack_trees/export.sh
+attack_trees/quadtool/
+
+# Python bytecode
+__pycache__/
+*.pyc

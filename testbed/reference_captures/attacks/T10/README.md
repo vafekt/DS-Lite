@@ -1,21 +1,21 @@
-# T10 - Cross-Subscriber PCP PEER Enumeration
+# T10 — DS-Lite MIB Unauthenticated Access
 
 Reference packet captures for T10, regenerated from the testbed by
-`testbed/scripts/capture_references.sh` (one capture point per file).
-The step-by-step narration, measured signal, and verdict are in
-[`RESULT.txt`](RESULT.txt).
+re-running the attack under capture (`testbed/scripts/run_attack_live.sh`;
+one capture point per file). The step-by-step narration, measured signal,
+and verdict are in [`RESULT.txt`](RESULT.txt).
 
 ## Capture points
 
 | file | packets |
 |---|---|
-| `T10_1-cross-sub-peer-leak.pcap` | 409 |
-| `T10_2-aftr-pcp.pcap` | 409 |
+| `t10_1-snmp-set.pcap` | 604 |
+| `t10_2-mgmt-station.pcap` | 604 |
 
 ## Verdict
 
 ```
-reference: cross-subscriber observation-isolation broken (leaked external port == victim's real port)
-this run:  trials passed: 2/2 aggregate TP=2 FP=0 FN=4, precision=100.00%, recall=33.33% 
+reference: unauthenticated MIB access raises the per-user port alarm to Integer32 max (never fires) AND discloses >=2 subscribers' private connections; ConnectNumber out-of-range SET rejected per RFC 60..90
+this run:  PortNumber 1000->2147483647; subscribers disclosed 2; ConnectNumber stayed 60
 verdict:   MATCH   (attack reproduced the stored result)
 ```

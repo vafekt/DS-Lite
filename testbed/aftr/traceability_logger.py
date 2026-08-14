@@ -83,9 +83,9 @@ class MappingEvent:
 #
 # The mapping is provided at logger start by setup.sh, which knows each
 # B4's live SLAAC/DHCPv6 address, via either:
-#   * the CT_MARK_MAP_FILE env var - a path to a JSON object
+#   * the CT_MARK_MAP_FILE env var — a path to a JSON object
 #     ``{"<mark-decimal-or-hex>": "<ipv6>", ...}``; or
-#   * the CT_MARK_TO_IPV6 env var - the same JSON object inline.
+#   * the CT_MARK_TO_IPV6 env var — the same JSON object inline.
 # The hardcoded defaults exist only as a fallback for unit tests; they do
 # NOT match a running testbed because SLAAC IIDs are randomized per boot.
 DEFAULT_CT_MARK_MAP: dict[int, str] = {}

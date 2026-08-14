@@ -1,4 +1,4 @@
-# T4 - Unencrypted-Tunnel Interception
+# T4 — Downstream Softwire Injection
 
 Reference packet captures for T4, regenerated from the testbed by
 `testbed/scripts/capture_references.sh` (one capture point per file).
@@ -9,13 +9,13 @@ The step-by-step narration, measured signal, and verdict are in
 
 | file | packets |
 |---|---|
-| `T4_1-victim-softwire.pcap` | 76 |
-| `T4_2-attacker-reads.pcap` | 76 |
+| `T5_1-attacker-forges.pcap` | 32 |
+| `T5_2-injected-into-LAN.pcap` | 32 |
 
 ## Verdict
 
 ```
-reference: attacker reads the victim's inner web flow in cleartext off the softwire (>0)
-this run:  readable inner web-flow packets = 41, plaintext HTTP markers = 30
+reference: forged inner-IPv4 (src 203.0.113.66) bypasses the CGN and reaches the victim LAN (>0)
+this run:  spoofed-src packets delivered onto B4-1 LAN = 15
 verdict:   MATCH   (attack reproduced the stored result)
 ```

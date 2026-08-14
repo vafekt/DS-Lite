@@ -1,0 +1,5 @@
+SAVI ON vs T12 (softwire identity multiplication)
+forged softwire packets (cafe:dead::/64) reaching the AFTR: 0
+shared-pool bindings (->:80): 0
+co-resident client1 HTTP: 200
+co-resident client2 HTTP: 200

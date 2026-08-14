@@ -1,0 +1,22 @@
+# T9 — Transparent AFTR Hijack
+
+Reference packet captures for T9, regenerated from the testbed by
+`testbed/scripts/capture_references.sh` (one capture point per file).
+The step-by-step narration, measured signal, and verdict are in
+[`RESULT.txt`](RESULT.txt).
+
+## Capture points
+
+| file | packets |
+|---|---|
+| `T13_1-rogue-dns.pcap` | 11 |
+| `T13_2-b4-receives.pcap` | 9 |
+| `T13_3-victim-tunnels-to-attacker.pcap` | 6 |
+
+## Verdict
+
+```
+reference: name stays aftr.dslite.example.com (legit) but the softwire is rebuilt to the attacker (2001:db8:cafe:0:2829:47ff:feaa:9c56); victim traffic diverted to the attacker
+this run:  name=aftr.dslite.example.com. (kept legit), softwire remote 2001:db8:cafe::10->2001:db8:cafe:0:2829:47ff:feaa:9c56, victim HTTP=000, frames-to-attacker=4
+verdict:   MATCH   (attack reproduced the stored result)
+```

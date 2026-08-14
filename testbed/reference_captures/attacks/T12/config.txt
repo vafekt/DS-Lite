@@ -1,0 +1,26 @@
+DS-Lite live attack run - configuration & legend
+=================================================
+attack    : T12  (Softwire Identity Multiplication)
+when (UTC): 2026-08-13T08:12:04Z
+knobs     : DPORT=80 
+command(s):
+    attacker CONTROL: one --src-ip6 identity (capped)
+    attacker ATTACK: python3 /testbed/attack_tools/nat/nat_exhaustion.py eth-isp --tunnel --src-ip6-prefix 2001:db8:cafe:dead::/64 --fixed-dport 80 --proto tcp --dst-ip4 198.51.100.2 --aftr-ip6 2001:db8:cafe::10 --inner-src-prefix 10.90.0.0/16 --threads 8 --batch 256
+
+verdict   : MATCH
+reference : one forged identity is capped and leaves co-residents reachable (200); many forged identities fill the 64512-port pool and deny both co-residents (200->000)
+this run  : ONE: pool=2000 co-res=200/200; MANY: pool=64512 co-res=000/000
+ground truth to compare against: pcaps/per_attack/T12/
+
+Path of a subscriber packet:
+  client (LAN) --IPv4--> B4 (CPE) --[IPv4-in-IPv6 softwire]--> AFTR (CGNAT) --IPv4--> server
+
+ROLE           IPv4 / IPv6            MAC                  WHERE
+(addresses below are the LIVE values discovered this run, not assumed)
+client1        10.0.1.100             da:a8:f1:9f:f0:b7    victim LAN host behind B4-1
+client2        10.0.2.100             a2:b6:c8:ac:f2:8a    subscriber behind B4-2 (control)
+B4-1 ISP       2001:db8:cafe::b41     b6:7a:fa:cb:9a:72    B4-1 softwire endpoint (eth-isp)
+AFTR ISP       2001:db8:cafe::10      d2:fb:f6:71:7d:2b    AFTR carrier side (eth-isp)
+AFTR WAN       192.0.2.1              4e:1a:7b:05:22:c5    AFTR public side, shared IPv4 (eth-wan)
+attacker       2001:db8:cafe:0:2829:47ff:feaa:9c56 2a:29:47:aa:9c:56    on-path attacker, ISP carrier (eth-isp)
+server         198.51.100.2           8e:17:b6:5d:70:24    public Internet server

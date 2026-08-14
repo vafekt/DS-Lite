@@ -1,22 +1,20 @@
 ================================================================
-  DS-Lite live attack  T11  —  Softwire DNS-Discovery Hijack
-  saving to  ./pcaps/runs/20260706T112706Z_T11/
+  DS-Lite live attack  T11  —  Unauthenticated Softwire Decapsulation
+  saving to  ./pcaps/runs/20260813T081111Z_T15/
   ground truth (reference) in  ./pcaps/per_attack/T11/
 ================================================================
 
-  [1] Surface: off-path poisoning of the B4's AFTR-FQDN resolution (RFC 6334).
-      0x20 case-randomisation at the B4 resolver = OFF
-/testbed/scripts/attack_lib.sh: line 32: 260941 Killed                  ip netns exec "$@"
-  [2] Victim B4 resolves the AFTR FQDN (query hangs on the slow upstream = wide window).
-  [3] Attack: OFF-PATH attacker floods forged AAAA (granted port, brute 65536 TXIDs).
-      1-offpath-flood (attacker/eth-isp) T11_1-offpath-flood.pcap           4000 pkts
-      2-b4-resolver (b4-1/eth-isp)       T11_2-b4-resolver.pcap             4000 pkts
-  [4] Measure: what AAAA did the B4 resolver cache for aftr.dslite.example.com?
-      B4 resolver answers aftr.dslite.example.com -> 2001:db8:cafe:0:2829:47ff:feaa:9c56  (attacker = 2001:db8:cafe:0:2829:47ff:feaa:9c56)
+  [1] Surface: AFTR softwire ingress. RFC 6333 authenticates no B4, so the wildcard softwire decapsulates 4in6 from any carrier source.
+  [2] Attack: an UNPROVISIONED carrier host (no DHCPv6/PCP) sends 4in6 to the AFTR (2001:db8:cafe::10), inner 10.66.66.66 -> Internet 198.51.100.2.
+      the AFTR decapsulates, NATs the inner packet to the shared public IPv4 (192.0.2.1), and forwards it - an open one-way proxy.
+      1-attacker-4in6 (attacker/eth-isp) t11_1-attacker-4in6.pcap           8 pkts
+      2-aftr-egress (aftr/eth-wan)       t11_2-aftr-egress.pcap             18 pkts
+  [3] Measure: do the relayed packets egress the AFTR's public side laundered as the shared IPv4 (192.0.2.1 -> 198.51.100.2)?
+      relayed packets leaving the AFTR as the shared public IPv4 = 10
 
   --------------------------------------------------------------
-  reference: off-path flood poisons the B4 cache: aftr.dslite.example.com -> attacker (2001:db8:cafe:0:2829:47ff:feaa:9c56)
-  this run:  aftr.dslite.example.com resolved to 2001:db8:cafe:0:2829:47ff:feaa:9c56 at the B4 resolver
+  reference: an unprovisioned host relays IPv4 to the Internet through the AFTR, laundered as the shared public IPv4 (>0)
+  this run:  relayed packets egressing as 192.0.2.1 -> 198.51.100.2 = 10
   verdict:   MATCH   (attack reproduced the stored result)
   --------------------------------------------------------------
-  saved: ./pcaps/runs/20260706T112706Z_T11/  (pcaps + config.txt + RESULT.txt)
+  saved: ./pcaps/runs/20260813T081111Z_T15/  (pcaps + config.txt + RESULT.txt)

@@ -1,4 +1,4 @@
-# T1 - NAT Binding-Table Exhaustion
+# T1 — NAT Binding-Table Exhaustion
 
 Reference packet captures for T1, regenerated from the testbed by
 `testbed/scripts/capture_references.sh` (one capture point per file).

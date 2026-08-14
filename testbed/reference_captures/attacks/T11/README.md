@@ -1,21 +1,21 @@
-# T11 - Softwire DNS-Discovery Hijack
+# T11 — Unauthenticated Softwire Decapsulation
 
 Reference packet captures for T11, regenerated from the testbed by
-`testbed/scripts/capture_references.sh` (one capture point per file).
-The step-by-step narration, measured signal, and verdict are in
-[`RESULT.txt`](RESULT.txt).
+re-running the attack under capture (`testbed/scripts/run_attack_live.sh`;
+one capture point per file). The step-by-step narration, measured signal,
+and verdict are in [`RESULT.txt`](RESULT.txt).
 
 ## Capture points
 
 | file | packets |
 |---|---|
-| `T11_1-offpath-flood.pcap` | 4000 |
-| `T11_2-b4-resolver.pcap` | 4000 |
+| `t11_1-attacker-4in6.pcap` | 4000 |
+| `t11_2-aftr-egress.pcap` | 4000 |
 
 ## Verdict
 
 ```
-reference: off-path flood poisons the B4 cache: aftr.dslite.example.com -> attacker (2001:db8:cafe:0:2829:47ff:feaa:9c56)
-this run:  aftr.dslite.example.com resolved to 2001:db8:cafe:0:2829:47ff:feaa:9c56 at the B4 resolver
+reference: an unprovisioned host relays IPv4 to the Internet through the AFTR, laundered as the shared public IPv4 (>0)
+this run:  relayed packets egressing as 192.0.2.1 -> 198.51.100.2 = 10
 verdict:   MATCH   (attack reproduced the stored result)
 ```

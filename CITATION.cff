@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this testbed, please cite the article and this software archive."
-title: "DS-Lite Security Testbed: 15 Executed Attacks, a Five-Dimensional Taxonomy, and Verified Mitigations"
+title: "DS-Lite Security Testbed: 12 Executed Attacks, a Four-Axis Classification, and Verified Mitigations"
 type: software
 authors:
   - family-names: Phan
@@ -20,7 +20,7 @@ keywords:
   - reproducible testbed
 preferred-citation:
   type: article
-  title: "Executed Security Analysis of Dual-Stack Lite: Full-Stack Attack Execution, a Five-Dimensional Taxonomy, and Mitigation Strategies"
+  title: "A Verified, Reproducible Security Analysis of Dual-Stack Lite Across the Data, Control, and Management Planes"
   authors:
     - family-names: Phan
       given-names: Viet Anh

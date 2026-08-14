@@ -1,20 +1,24 @@
 ================================================================
-  DS-Lite live attack  T9  —  PCP ANNOUNCE Spoof (Epoch Reset)
-  saving to  ./pcaps/runs/20260706T112614Z_T9/
+  DS-Lite live attack  T9  —  Rogue AFTR Substitution
+  saving to  ./pcaps/runs/20260706T112720Z_T12/
   ground truth (reference) in  ./pcaps/per_attack/T9/
 ================================================================
 
-  [1] Surface: PCP ANNOUNCE / restart signal. A reset makes clients believe the server rebooted.
-  [2] Seed: create a batch of legit mappings so there is something to renew.
-  [3] Attack: attacker forges PCP ANNOUNCE (server-restart signal) from the AFTR address.
-      1-attacker-announce (attacker/eth-isp) T9_1-attacker-announce.pcap        1211 pkts
-      2-b4-renew-storm (b4-1/eth-isp)    T9_2-b4-renew-storm.pcap           1211 pkts
-  [4] Measure: how much MAP-renew traffic did the single ANNOUNCE provoke?
-      PCP MAP traffic on the B4 uplink after the ANNOUNCE = 1211 packets (from 10 announces)
+  [1] Surface: DHCPv6 AFTR-Name (Option 64). The B4 trusts whoever answers first.
+      before: B4 softwire remote = 2001:db8:cafe::10 (the real AFTR)
+  [2] Attack: rogue DHCPv6 server advertises a NEW attacker AFTR name (aftr-evil.attacker.example).
+  [3] Measure: did the B4 adopt the attacker name AND rebuild its softwire to the attacker?
+      B4 cached AFTR name = aftr-evil.attacker.example.   softwire remote: 2001:db8:cafe::10 -> 2001:db8:cafe:0:2829:47ff:feaa:9c56
+  [4] Impact: the victim now tunnels its IPv4 to the attacker and loses real service.
+      victim client1 internet = HTTP 000 (attacker is not a real AFTR)
+      1-rogue-dhcpv6 (attacker/eth-isp)  T12_1-rogue-dhcpv6.pcap            5 pkts
+      2-b4-receives (b4-1/eth-isp)       T12_2-b4-receives.pcap             5 pkts
+      3-victim-tunnels-to-attacker (attacker/eth-isp) T12_3-victim-tunnels-to-attacker.pcap 4 pkts
+      victim softwire frames captured arriving at the attacker = 4
 
   --------------------------------------------------------------
-  reference: one ANNOUNCE triggers a renew storm (MAP packets >> announce count)
-  this run:  MAP-renew packets = 1211 after 10 ANNOUNCE
+  reference: B4 adopts attacker name (aftr-evil.attacker.example) AND rebuilds its softwire to the attacker (2001:db8:cafe:0:2829:47ff:feaa:9c56); victim loses service
+  this run:  name=aftr-evil.attacker.example., softwire remote 2001:db8:cafe::10->2001:db8:cafe:0:2829:47ff:feaa:9c56, victim HTTP=000, frames-to-attacker=4
   verdict:   MATCH   (attack reproduced the stored result)
   --------------------------------------------------------------
-  saved: ./pcaps/runs/20260706T112614Z_T9/  (pcaps + config.txt + RESULT.txt)
+  saved: ./pcaps/runs/20260706T112720Z_T12/  (pcaps + config.txt + RESULT.txt)

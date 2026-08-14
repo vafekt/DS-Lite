@@ -1,9 +1,9 @@
 #!/usr/bin/python3
-# ipid_feistel.py - Scalable Randomized IP-ID selection, the gateway defence
+# ipid_feistel.py — Scalable Randomized IP-ID selection, the gateway defence
 # proposed by Gilad & Herzberg, "Fragmentation Considered Vulnerable"
 # (ACM TISSEC 15(4), 2013), Section 8.3.
 #
-# The T6 attack (Softwire Reassembly Poisoning) works because the inner-IPv4
+# The T5 attack (Softwire Reassembly Poisoning) works because the inner-IPv4
 # IP-ID is a PREDICTABLE per-destination counter: an off-path / spoofing
 # attacker guesses the victim's next IP-ID and injects a spoofed fragment that
 # shares the victim's reassembly four-tuple (src, dst, proto, id), colliding
@@ -72,7 +72,7 @@ class IpIdFeistel:
         """Rewrite the IP-ID for a packet with reassembly tuple (s,d,p,idv)."""
         return self._permute(self._tuple_key(s, d, p), idv)
 
-    # deterministic remap that does NOT advance the rekey counter - used when a
+    # deterministic remap that does NOT advance the rekey counter — used when a
     # datagram arrives already fragmented and every fragment must map identically
     def remap_fixed(self, s, d, p, idv):
         st = self._keys.get((s, d, p))

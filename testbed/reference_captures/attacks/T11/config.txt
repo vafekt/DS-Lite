@@ -1,0 +1,25 @@
+DS-Lite live attack run - configuration & legend
+=================================================
+attack    : T11  (Unauthenticated Softwire Decapsulation)
+when (UTC): 2026-08-13T08:11:22Z
+knobs     : COUNT=8 ISRC=10.66.66.66 
+command(s):
+    attacker: python3 /testbed/attack_tools/tunnel/softwire_relay.py --local-ip6 2001:db8:cafe::13a --aftr-ip6 2001:db8:cafe::10 --inner-src 10.66.66.66 --target 198.51.100.2 --count 8 --interval 0.3
+
+verdict   : MATCH
+reference : an unprovisioned host relays IPv4 to the Internet through the AFTR, laundered as the shared public IPv4 (>0)
+this run  : relayed packets egressing as 192.0.2.1 -> 198.51.100.2 = 10
+ground truth to compare against: pcaps/per_attack/T11/
+
+Path of a subscriber packet:
+  client (LAN) --IPv4--> B4 (CPE) --[IPv4-in-IPv6 softwire]--> AFTR (CGNAT) --IPv4--> server
+
+ROLE           IPv4 / IPv6            MAC                  WHERE
+(addresses below are the LIVE values discovered this run, not assumed)
+client1        10.0.1.100             da:a8:f1:9f:f0:b7    victim LAN host behind B4-1
+client2        10.0.2.100             a2:b6:c8:ac:f2:8a    subscriber behind B4-2 (control)
+B4-1 ISP       2001:db8:cafe::b41     b6:7a:fa:cb:9a:72    B4-1 softwire endpoint (eth-isp)
+AFTR ISP       2001:db8:cafe::10      d2:fb:f6:71:7d:2b    AFTR carrier side (eth-isp)
+AFTR WAN       192.0.2.1              4e:1a:7b:05:22:c5    AFTR public side, shared IPv4 (eth-wan)
+attacker       2001:db8:cafe::13a     2a:29:47:aa:9c:56    on-path attacker, ISP carrier (eth-isp)
+server         198.51.100.2           8e:17:b6:5d:70:24    public Internet server

@@ -1,4 +1,4 @@
-# T7 - PCP Port-Exhaustion DoS
+# T7 — Cross-Subscriber PCP PEER Enumeration
 
 Reference packet captures for T7, regenerated from the testbed by
 `testbed/scripts/capture_references.sh` (one capture point per file).
@@ -9,13 +9,13 @@ The step-by-step narration, measured signal, and verdict are in
 
 | file | packets |
 |---|---|
-| `T7_1-pcp-uplink.pcap` | 1204 |
-| `T7_2-aftr-pcp.pcap` | 1204 |
+| `T10_1-cross-sub-peer-leak.pcap` | 409 |
+| `T10_2-aftr-pcp.pcap` | 409 |
 
 ## Verdict
 
 ```
-reference: pool drained; a co-resident's legit MAP is refused (NO_RESOURCES)
-this run:  co-resident MAP REFUSED (frozen)
+reference: cross-subscriber observation-isolation broken (leaked external port == victim's real port)
+this run:  trials passed: 2/2 aggregate TP=2 FP=0 FN=4, precision=100.00%, recall=33.33% 
 verdict:   MATCH   (attack reproduced the stored result)
 ```

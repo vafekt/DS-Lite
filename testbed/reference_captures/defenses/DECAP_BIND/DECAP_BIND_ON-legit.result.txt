@@ -1,0 +1,1 @@
+DECAP_BIND ON-legit (source client1): echo-requests relayed to the Internet as shared IPv4 192.0.2.1: 3

@@ -1,0 +1,25 @@
+DS-Lite live attack run - configuration & legend
+=================================================
+attack    : T10  (DS-Lite MIB Unauthenticated Access)
+when (UTC): 2026-08-13T08:11:01Z
+knobs     : VALUE=2147483647 
+command(s):
+    mgmt: python3 /testbed/attack_tools/infra/snmp_attack.py set --target 10.99.0.1 --oid alarmPortNumber --value 2147483647 ; python3 /testbed/attack_tools/infra/snmp_attack.py read --target 10.99.0.1 --oids all
+
+verdict   : MATCH
+reference : unauthenticated MIB access raises the per-user port alarm to Integer32 max (never fires) AND discloses >=2 subscribers' private connections; ConnectNumber out-of-range SET rejected per RFC 60..90
+this run  : PortNumber 1000->2147483647; subscribers disclosed 2; ConnectNumber stayed 60
+ground truth to compare against: pcaps/per_attack/T10/
+
+Path of a subscriber packet:
+  client (LAN) --IPv4--> B4 (CPE) --[IPv4-in-IPv6 softwire]--> AFTR (CGNAT) --IPv4--> server
+
+ROLE           IPv4 / IPv6            MAC                  WHERE
+(addresses below are the LIVE values discovered this run, not assumed)
+client1        10.0.1.100             da:a8:f1:9f:f0:b7    victim LAN host behind B4-1
+client2        10.0.2.100             a2:b6:c8:ac:f2:8a    subscriber behind B4-2 (control)
+B4-1 ISP       2001:db8:cafe::b41     b6:7a:fa:cb:9a:72    B4-1 softwire endpoint (eth-isp)
+AFTR ISP       2001:db8:cafe::10      d2:fb:f6:71:7d:2b    AFTR carrier side (eth-isp)
+AFTR WAN       192.0.2.1              4e:1a:7b:05:22:c5    AFTR public side, shared IPv4 (eth-wan)
+attacker       2001:db8:cafe::13a                          on-path attacker, ISP carrier (eth-isp)
+server         198.51.100.2           8e:17:b6:5d:70:24    public Internet server

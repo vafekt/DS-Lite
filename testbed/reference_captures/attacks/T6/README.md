@@ -1,4 +1,4 @@
-# T6 - Softwire Reassembly Poisoning
+# T6 — Unauthorized THIRD_PARTY Forwarding
 
 Reference packet captures for T6, regenerated from the testbed by
 `testbed/scripts/capture_references.sh` (one capture point per file).
@@ -9,13 +9,14 @@ The step-by-step narration, measured signal, and verdict are in
 
 | file | packets |
 |---|---|
-| `T6_1-attacker-preseed.pcap` | 2217 |
-| `T6_2-aftr-collide.pcap` | 2217 |
+| `T8_1-thirdparty-map.pcap` | 10 |
+| `T8_2-aftr-pcp.pcap` | 10 |
+| `T8_3-inbound-to-victim.pcap` | 8 |
 
 ## Verdict
 
 ```
-reference: victim's fragmented flow collides on overlap and is dropped (high loss)
-this run:  victim oversized-ping packet loss = 90%
+reference: attacker opens an inbound port on the shared IP to a NON-OWNED co-sub; external traffic then reaches the victim
+this run:  forged inbound-forwarding rules=5 (192.0.2.1:1024->10.0.2.100:9447); external probe reached victim=yes
 verdict:   MATCH   (attack reproduced the stored result)
 ```

@@ -1,4 +1,4 @@
-Baseline reference capture - normal DS-Lite operation, NO attack running.
+Baseline reference capture — normal DS-Lite operation, NO attack running.
 Communication types exercised: HTTP through the 4-in-6 softwire + CGNAT, DNS via
 the B4 resolver, DHCPv6 (option-64 AFTR-Name), PCP MAP, SNMP GET (mgmt plane),
 ICMPv6 ping. Capture points:

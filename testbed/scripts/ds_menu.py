@@ -12,7 +12,7 @@ and only the *selection UI* lives here. Capture the result with $(...):
 
 Modes (argv[1]):
   main       -> attack | watch | shell | restore | settings | quit
-  attacks    -> an attack id (T1..T15)            [reads attack_corpus.txt]
+  attacks    -> an attack id (T1..T12)            [reads attack_corpus.txt]
   choose     -> a token, items read from stdin (token<TAB>label[<TAB>tag])
   placement  -> b4-1 | b4-2 | isp | internet | mgmt | none
   devices    -> space-separated namespaces (multi-select with space)
@@ -41,17 +41,18 @@ MAIN = [
 # The id is the article_defenses.sh toggle name. Kept in sync with the corpus.
 DEFENSES = [
     ("TRABELSI",      "TRABELSI  (closes T1)",        "half-open early eviction; co-resident keeps service"),
-    ("NAT_LOG",       "NAT_LOG  (closes T2)",         "per-binding attribution log for the shared IPv4"),
-    ("SAVI",          "SAVI  (closes T3, T5, T6)",    "per-port carrier source binding; drops outer spoof"),
-    ("ESP_AEAD",      "ESP_AEAD  (closes T4)",        "AES-GCM ESP on the softwire; no cleartext"),
-    ("FEISTEL_IPID",  "FEISTEL_IPID  (closes T6)",    "Feistel IP-ID randomization at each B4"),
-    ("PCP_QUOTA",     "PCP_QUOTA  (closes T7)",       "per-subscriber PCP mapping cap"),
-    ("PCP_OWNERSHIP", "PCP_OWNERSHIP  (closes T8, T10)", "THIRD_PARTY/PEER bound to requester prefix"),
-    ("PCP_AUTH",      "PCP_AUTH  (closes T9)",        "authenticated ANNOUNCE; forged epoch reset ignored"),
-    ("DNS_0X20",      "DNS_0X20  (closes T11)",       "0x20 case randomization at the B4 resolver"),
-    ("DNS_COOKIES",   "DNS_COOKIES  (closes T11)",    "RFC 7873 DNS cookies at the B4 resolver; forged replies dropped"),
-    ("DHCPV6_AUTH",   "DHCPV6_AUTH  (closes T12, T13)", "Ed25519-signed DHCPv6; rogue ADVERTISE rejected"),
-    ("SNMP_USM",      "SNMP_USM  (closes T14, T15)",  "SNMPv3 USM + engineID pin; v2c default denied"),
+    ("NAT_LOG",       "NAT_LOG  (closes TS1)",         "per-binding attribution log for the shared IPv4"),
+    ("SAVI",          "SAVI  (closes T2, T4, T5, T12)", "per-port carrier source binding; drops outer spoof and forged identities"),
+    ("ESP_AEAD",      "ESP_AEAD  (closes T3)",        "AES-GCM ESP on the softwire; no cleartext"),
+    ("FEISTEL_IPID",  "FEISTEL_IPID  (closes T5)",    "Feistel IP-ID randomization at each B4"),
+    ("PCP_QUOTA",     "PCP_QUOTA  (closes TS2)",       "per-subscriber PCP mapping cap"),
+    ("PCP_OWNERSHIP", "PCP_OWNERSHIP  (closes T6, T7)", "THIRD_PARTY/PEER bound to requester prefix"),
+    ("PCP_AUTH",      "PCP_AUTH  (closes TS3)",        "authenticated ANNOUNCE; forged epoch reset ignored"),
+    ("DNS_0X20",      "DNS_0X20  (closes T8)",       "0x20 case randomization at the B4 resolver"),
+    ("DNS_COOKIES",   "DNS_COOKIES  (closes T8)",    "RFC 7873 DNS cookies at the B4 resolver; forged replies dropped"),
+    ("DHCPV6_AUTH",   "DHCPV6_AUTH  (closes T9, T9)", "Ed25519-signed DHCPv6; rogue ADVERTISE rejected"),
+    ("SNMP_USM",      "SNMP_USM  (closes T10)",       "SNMPv3 USM + engineID pin; v2c default denied"),
+    ("DECAP_BIND",    "DECAP_BIND  (softwire relay/loop)", "inner source+dest binding at decapsulation; AFTR open relay + RFC 6324 loop dropped"),
     ("__alloff__",    "Turn ALL defenses OFF",        "restore the vulnerable attack baseline"),
 ]
 

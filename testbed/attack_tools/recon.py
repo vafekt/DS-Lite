@@ -1,18 +1,18 @@
 #!/usr/bin/python
-# recon.py - carrier-segment reconnaissance for the ISP-vantage DS-Lite attacks
-# (T1 tunnel flood, T3 tunnel-endpoint spoof, T5 downstream inject).
+# recon.py — carrier-segment reconnaissance for the ISP-vantage DS-Lite attacks
+# (T1 tunnel flood, T2 tunnel-endpoint spoof, T4 downstream inject).
 #
 # The ISP-vantage attacks need two pieces of target information: the AFTR's outer
-# IPv6 and a victim B4's softwire identity. None of it is secret - the real
+# IPv6 and a victim B4's softwire identity. None of it is secret — the real
 # prerequisite is on-path position. This module implements the escalation ladder:
 #
-#   1. PASSIVE  - sniff the unencrypted softwire (IPv4-in-IPv6, next-header 4) and
+#   1. PASSIVE  — sniff the unencrypted softwire (IPv4-in-IPv6, next-header 4) and
 #                 read live B4 outer-IPv6 sources + the AFTR (their common peer).
 #                 Invisible to the operator, but only sees *active* subscribers.
-#   2. GUESS    - if passive yields nothing in the window, enumerate the
+#   2. GUESS    — if passive yields nothing in the window, enumerate the
 #                 predictable softwire prefix (::b41, ::b42, ...). Sequential B4
 #                 numbering means the next subscriber is simply the next address.
-#   3. ACTIVE   - NDP-probe the guessed addresses to confirm which B4s are live.
+#   3. ACTIVE   — NDP-probe the guessed addresses to confirm which B4s are live.
 #                 Noisy and detectable (SAVI / edge IDS sees the solicitations),
 #                 so it is the last resort for an idle, unpredictable victim.
 #
@@ -155,7 +155,7 @@ def discover(iface, src_ip6, aftr_hint=DEFAULT_AFTR, exclude=None,
 # Standalone CLI: run recon and print the result (for operators / chaining).
 if __name__ == "__main__":
     import argparse
-    ap = argparse.ArgumentParser(description="DS-Lite carrier-segment recon (T1/T3/T5 target discovery)")
+    ap = argparse.ArgumentParser(description="DS-Lite carrier-segment recon (T1/T2/T4 target discovery)")
     ap.add_argument("--interface", required=True, help="carrier interface (e.g. eth-isp)")
     ap.add_argument("--src-ip6", default=f"{DEFAULT_PREFIX}::13a", help="attacker outer IPv6 (excluded from victims)")
     ap.add_argument("--aftr-ip6", default=DEFAULT_AFTR, help="AFTR hint (from provisioning)")

@@ -1,12 +1,12 @@
-# SNMP_USM - SNMPv3 USM engineID pin (management plane)
+# SNMP_USM — SNMPv3 USM engineID pin (management plane)
 
-Tree defence leaf **"SNMPv3 USM engineID pin"** - defends **T14, T15** (community-
+Tree defence leaf **"SNMPv3 USM engineID pin"** — defends **T10, T11** (community-
 authenticated SNMP write to suppress alarms / read to disclose subscriber state).
 
 ## Mechanism
 SNMPv1/v2c authenticate with only a community string. SNMPv3 USM with engineID
 pinning requires per-user authentication/privacy, so a community-only SET/GET is
-rejected. (RFC 7870 §9 explicitly requires this - "SNMP versions prior to SNMPv3
+rejected. (RFC 7870 §9 explicitly requires this — "SNMP versions prior to SNMPv3
 did not include adequate security".)
 
 ## OFF vs ON (measured)
@@ -15,12 +15,12 @@ The attack SET targets the writable, unconstrained alarm threshold
 
 | | result |
 |---|---|
-| OFF (v2c community) | `OFF.pcap` + `OFF.readback.txt` - v2c SET accepted → threshold = **2147483647** (alarm disabled) |
-| ON (SNMPv3 USM) | `ON.pcap` + `ON.readback.txt` - v2c SET **rejected** → OAM USM read = **-1** (default) |
+| OFF (v2c community) | `OFF.pcap` + `OFF.readback.txt` — v2c SET accepted → threshold = **2147483647** (alarm disabled) |
+| ON (SNMPv3 USM) | `ON.pcap` + `ON.readback.txt` — v2c SET **rejected** → OAM USM read = **-1** (default) |
 
 > Note: `.240.1.3.1.6` (ConnectNumber) is range-clamped 60..90 and `.1`
-> (B4AddrType) is read-only - neither is a valid USM probe; the writable
-> unconstrained `.8` (PortNumber) is. T15's read disclosure (the NAT-bind subtree
+> (B4AddrType) is read-only — neither is a valid USM probe; the writable
+> unconstrained `.8` (PortNumber) is. T11's read disclosure (the NAT-bind subtree
 > `.240.1.2.*`) is likewise blocked by USM access control.
 
 ## Reproduce

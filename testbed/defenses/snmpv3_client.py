@@ -1,6 +1,6 @@
 #!/usr/bin/python3
-# snmpv3_client.py - legit SNMPv3 USM authNoPriv manager (the authorized OAM
-# station). Proves that with the T14/T15 defence ON, a holder of the user key
+# snmpv3_client.py — legit SNMPv3 USM authNoPriv manager (the authorized OAM
+# station). Proves that with the T10/T11 defence ON, a holder of the user key
 # can still GET/SET, while the unauthenticated attacker (snmp_attack.py, v2c)
 # is dropped. engineID is pinned (no discovery), per "Under New Management".
 import argparse
@@ -77,7 +77,7 @@ def main():
     ap.add_argument("--oid", default="1.3.6.1.2.1.240.1.3.1.1")
     ap.add_argument("--set", type=int, default=None, dest="setval")
     a = ap.parse_args()
-    key = usm.password_to_key_sha1(a.secret, ENGINE_ID)
+    key = usm.password_to_key_sha256(a.secret, ENGINE_ID)
     oid = tuple(int(x) for x in a.oid.split("."))
     pdu = set_pdu(1234, oid, a.setval) if a.setval is not None else get_pdu(1234, oid)
     scoped, status = request(a.host, a.port, a.user.encode(), key, pdu)

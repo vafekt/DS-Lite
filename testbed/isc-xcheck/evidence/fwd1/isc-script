@@ -1,0 +1,19 @@
+#!/bin/sh
+case "$1" in
+start)
+  ip link set tun0 up
+  ip addr add 10.0.100.1 peer 10.0.100.2 dev tun0
+  ip route add 10.0.0.0/8 dev tun0
+  ip route add 198.18.0.0/15 dev tun0
+  ip -6 route add 2001::/64 dev tun0
+  sysctl -w net.ipv4.conf.tun0.rp_filter=0
+  # egress: userspace-NAT pool address -> shared public (ISC shareone pattern)
+  iptables -t nat -F
+  iptables -t nat -A POSTROUTING -s 198.18.200.111 -j SNAT --to-source 203.0.113.1
+  # return: inbound to shared public high ports -> pool
+  iptables -t nat -A PREROUTING -p udp -d 203.0.113.1 --dport 5000:59999 -j DNAT --to-destination 198.18.200.111
+  iptables -t nat -A PREROUTING -p tcp -d 203.0.113.1 --dport 5000:59999 -j DNAT --to-destination 198.18.200.111
+  ;;
+stop) ip link set tun0 down ;;
+esac
+exit 0

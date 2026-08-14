@@ -1,24 +1,24 @@
 ================================================================
-  DS-Lite live attack  T10  —  Cross-Subscriber PCP PEER Enumeration
-  saving to  ./pcaps/runs/20260706T112640Z_T10/
+  DS-Lite live attack  T10  —  DS-Lite MIB Unauthenticated Access
+  saving to  ./pcaps/runs/20260813T081057Z_T14/
   ground truth (reference) in  ./pcaps/per_attack/T10/
 ================================================================
 
-  [1] Surface: AFTR PCP PEER operation (returns external IP:port for a flow).
-  [2] Attack: a B4-1 host abuses PEER to learn a DIFFERENT subscriber's external ports.
-      [T10] probes=102 elapsed=1.70s wildcard_leak=38393 TP=1 FP=0 FN=2
-      [T10] probes=102 elapsed=1.68s wildcard_leak=23073 TP=1 FP=0 FN=2
-      ===== T10 verdict =====
-      trials passed: 2/2
-      aggregate TP=2 FP=0 FN=4, precision=100.00%, recall=33.33%
-      *** T10 SUCCESS: cross-subscriber observation-isolation broken ***
-      1-cross-sub-peer-leak (b4-1/eth-isp) T10_1-cross-sub-peer-leak.pcap     337 pkts
-      2-aftr-pcp (aftr/eth-isp)          T10_2-aftr-pcp.pcap                337 pkts
-  [3] Measure: did the tool confirm a cross-subscriber leak (leaked port == real port)?
+  [1] Surface: SNMP/MIB OAM plane (DSLITE-MIB, RFC 7870); default community, no USM.
+  [2] Seed: drive both subscribers so the AFTR holds a binding for each.
+  [3] Baseline: dsliteAFTRAlarmPortNumber = 1000 (NOC's per-user NAT-port alarm).
+  [4] Attack (write): a mgmt-reachable host raises the port-usage alarm to Integer32 max so it never fires.
+  [5] Attack (read): walk the DSLITE-MIB bind table, disclosing every subscriber's private NAT connections.
+      1-snmp-set (aftr/eth-mgmt)         t10_1-snmp-set.pcap                271 pkts
+      2-mgmt-station (mgmt/eth-mgmt)     t10_2-mgmt-station.pcap            275 pkts
+  [6] Measure: threshold raised, distinct subscribers disclosed, and the RFC range enforced on ConnectNumber.
+      port-usage alarm threshold now = 2147483647 (was 1000) -> NOC blind to port exhaustion
+      distinct subscriber inner IPs disclosed via the MIB = 2  [10.0.1.100 10.0.2.100 ]
+      ConnectNumber out-of-range SET: tried 2147483647, value stayed 60 (RFC 60..90 enforced)
 
   --------------------------------------------------------------
-  reference: cross-subscriber observation-isolation broken (leaked external port == victim's real port)
-  this run:  trials passed: 2/2 aggregate TP=2 FP=0 FN=4, precision=100.00%, recall=33.33% 
+  reference: unauthenticated MIB access raises the per-user port alarm to Integer32 max (never fires) AND discloses >=2 subscribers' private connections; ConnectNumber out-of-range SET rejected per RFC 60..90
+  this run:  PortNumber 1000->2147483647; subscribers disclosed 2; ConnectNumber stayed 60
   verdict:   MATCH   (attack reproduced the stored result)
   --------------------------------------------------------------
-  saved: ./pcaps/runs/20260706T112640Z_T10/  (pcaps + config.txt + RESULT.txt)
+  saved: ./pcaps/runs/20260813T081057Z_T14/  (pcaps + config.txt + RESULT.txt)

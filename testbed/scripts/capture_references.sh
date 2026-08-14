@@ -1,12 +1,12 @@
 #!/bin/bash
-# capture_references.sh - generate the project's REFERENCE packet captures, stored
+# capture_references.sh — generate the project's REFERENCE packet captures, stored
 # INSIDE the testbed (testbed/reference_captures/) so they ship with the project
 # and are easy to find + compare against, and are not in the volatile ./pcaps
 # runtime folder. Run from the host:  bash testbed/scripts/capture_references.sh
 #
 # Produces three groups:
 #   baseline/   normal testbed traffic, every communication type (no attack)
-#   attacks/Tn/ each attack run cleanly (the attack SUCCEEDS) - via the runner
+#   attacks/Tn/ each attack run cleanly (the attack SUCCEEDS) — via the runner
 #   defenses/   each defence OFF (attack succeeds) vs ON (attack blocked)
 set -u
 C="${CONTAINER_NAME:-ds-lite-lab}"
@@ -44,14 +44,14 @@ prov_attacker(){ nse attacker ip link show eth-isp >/dev/null 2>&1 || dx sh -c '
   ip netns exec attacker ip link set eth-isp up 2>/dev/null
   ip netns exec attacker ip -6 addr add '"$ATK6"'/64 dev eth-isp 2>/dev/null'; }
 
-# lab_restore - FULL clean baseline between captures, so no attack's state or
+# lab_restore — FULL clean baseline between captures, so no attack's state or
 # config overlaps into the next. Stronger than the runner's reset_state: it also
-# restarts the PCP server+proxies (clears the in-memory pool from T7), restarts
-# the SNMP agent (resets the alarm threshold a T14 SET left at max), restores the
+# restarts the PCP server+proxies (clears the in-memory pool from TS2), restarts
+# the SNMP agent (resets the alarm threshold a T10 SET left at max), restores the
 # stock DHCPv6 + B4 resolver, and removes any leftover defence state.
 lab_restore(){
   # kill every attack tool + any defence daemon/scaffolding
-  dx pkill -9 -f 'nat_exhaustion|nat_hold|tunnel_spoof|reputation_poisoning|pcp_attack|fragment_attack|dhcpv6_hijack|dns_cache_poison|dns_offpath_poison|t5_softwire_inject|t10_peer_crosssub|dns_0x20_forwarder|dns_sink|trabelsi_guard|feistel_b4|snmpv3_client|dhcpv6auth.py|conntrack -E' 2>/dev/null
+  dx pkill -9 -f 'nat_exhaustion|nat_hold|tunnel_spoof|reputation_poisoning|pcp_attack|fragment_attack|dhcpv6_hijack|dns_cache_poison|dns_offpath_poison|t4_softwire_inject|t7_peer_crosssub|dns_0x20_forwarder|dns_sink|trabelsi_guard|feistel_b4|snmpv3_client|dhcpv6auth.py|conntrack -E' 2>/dev/null
   # PCP: restart server + proxies clean (no defence env, fresh pool)
   nse aftr pkill -9 -f pcp_server.py 2>/dev/null
   nse b4-1 pkill -9 -f pcp_proxy.py 2>/dev/null; nse b4-2 pkill -9 -f pcp_proxy.py 2>/dev/null; sleep 0.4
@@ -70,7 +70,7 @@ lab_restore(){
   nse b4-1 ip xfrm state flush 2>/dev/null; nse b4-2 ip xfrm state flush 2>/dev/null
   nse b4-1 nft delete table ip feistel 2>/dev/null; nse b4-2 nft delete table ip feistel 2>/dev/null
   nse aftr sysctl -qw net.netfilter.nf_conntrack_tcp_timeout_syn_recv=60 net.netfilter.nf_conntrack_tcp_timeout_syn_sent=60 net.netfilter.nf_conntrack_udp_timeout=30 >/dev/null 2>&1
-  # clear residual attack state: conntrack, PCP-DNAT, NDP, AFTR-name, softwire, T11 silent-upstream
+  # clear residual attack state: conntrack, PCP-DNAT, NDP, AFTR-name, softwire, T8 silent-upstream
   nse aftr conntrack -F >/dev/null 2>&1
   nse aftr nft flush chain ip nat pcp_dnat 2>/dev/null
   nse aftr ip -6 neigh flush dev eth-isp 2>/dev/null
@@ -91,7 +91,7 @@ prov_attacker
 lab_restore   # start from a known-clean baseline
 
 # ─────────────────────────────────────────────────────────────────────────
-# 1. BASELINE - normal traffic, every communication type, NO attack
+# 1. BASELINE — normal traffic, every communication type, NO attack
 # ─────────────────────────────────────────────────────────────────────────
 hdr "Baseline (normal full-communication capture)"
 B="$REF/baseline"; mkdir -p "$B"
@@ -128,7 +128,7 @@ for f in "$B"/*.pcap; do
   say "$(basename "$f"): ${c} pkts ($(wc -c < "$f" 2>/dev/null) bytes)"
 done
 cat > "$B/NOTES.txt" <<EOF
-Baseline reference capture - normal DS-Lite operation, NO attack running.
+Baseline reference capture — normal DS-Lite operation, NO attack running.
 Communication types exercised: HTTP through the 4-in-6 softwire + CGNAT, DNS via
 the B4 resolver, DHCPv6 (option-64 AFTR-Name), PCP MAP, SNMP GET (mgmt plane),
 ICMPv6 ping. Capture points:
@@ -139,11 +139,14 @@ ICMPv6 ping. Capture points:
 EOF
 
 # ─────────────────────────────────────────────────────────────────────────
-# 2. ATTACKS - each attack run cleanly via the runner (attack SUCCEEDS)
+# 2. ATTACKS — each attack run cleanly via the runner (attack SUCCEEDS)
 # ─────────────────────────────────────────────────────────────────────────
 hdr "Attacks (clean per-attack captures)"
-for n in $(seq 1 15); do
-  ID="T$n"
+# The paper's 16-tree corpus: T1-T12 executed attacks, the T9b name-preserving
+# rogue-AFTR variant, and the TS1-TS3 supplementary CGNAT weaknesses. Driven
+# explicitly (not "seq 1 15") so every id — including T9b and the TS set — is
+# captured and the ids stay in lockstep with attack_lib.sh's paper-scheme handlers.
+for ID in T1 T2 T3 T4 T5 T6 T7 T8 T9 T9b T10 T11 T12 TS1 TS2 TS3; do
   lab_restore                       # clean baseline BEFORE each attack (no overlap)
   say "running $ID ..."
   outdir=$(dx bash /testbed/scripts/run_attack_live.sh "$ID" 2>&1 | grep -oE 'pcaps/runs/[0-9TZ]+_'"$ID" | head -1)
@@ -160,9 +163,9 @@ for n in $(seq 1 15); do
   # Auto-generate a README that matches the actual files (so the docs never
   # drift from the captures). The full narration + verdict live in RESULT.txt.
   {
-    aname=$(grep -oE 'live attack  '"$ID"'  -  .*' "$dest/RESULT.txt" | sed 's/.*-  //')
+    aname=$(grep -oE 'live attack  '"$ID"'  —  .*' "$dest/RESULT.txt" | sed 's/.*—  //')
     verdict=$(grep -E '^\s*verdict:' "$dest/RESULT.txt" | sed 's/^\s*//')
-    echo "# $ID - ${aname:-$ID}"
+    echo "# $ID — ${aname:-$ID}"
     echo
     echo "Reference packet captures for $ID, regenerated from the testbed by"
     echo "\`testbed/scripts/capture_references.sh\` (one capture point per file)."
@@ -189,7 +192,7 @@ for n in $(seq 1 15); do
 done
 
 # ─────────────────────────────────────────────────────────────────────────
-# 3. DEFENCES - capture each attack's key point with the defence OFF vs ON
+# 3. DEFENCES — capture each attack's key point with the defence OFF vs ON
 # ─────────────────────────────────────────────────────────────────────────
 hdr "Defences (off vs on captures)"
 restart_pcp(){ nse aftr pkill -9 -f pcp_server.py 2>/dev/null
@@ -212,19 +215,19 @@ defcap(){ # <DEF> <ns> <iface> <filter> <attack-cmd> ; captures off+on, restorin
   lab_restore                                  # RESTORE after the defence (no overlap into the next)
   say "$def: OFF $(dx tcpdump -nr /tmp/doff.pcap 2>/dev/null|wc -l) pkts | ON $(dx tcpdump -nr /tmp/don.pcap 2>/dev/null|wc -l) pkts"; }
 
-# SAVI (T3): spoofed softwire from attacker -> count packets reaching the AFTR
+# SAVI (T2): spoofed softwire from attacker -> count packets reaching the AFTR
 defcap SAVI aftr eth-isp "ip6 src $VB4 and ip6 dst $AFTR and ip6 proto 4" \
   "nse attacker sh -c \"timeout 6 python3 $T/tunnel/tunnel_spoof.py spoof --interface eth-isp --src-ip6 $ATK6 --victim-b4-ip6 $VB4 --aftr-ip6 $AFTR --inner-src-ip4 10.0.1.77 --inner-dst-ip4 $SRV --proto udp --focused --dst-port 9999 --count 8 --batch 1 --interval 0.2 >/dev/null 2>&1\""
 
-# ESP_AEAD (T4): victim softwire - cleartext inner HTTP vs ESP ciphertext
+# ESP_AEAD (T3): victim softwire — cleartext inner HTTP vs ESP ciphertext
 defcap ESP_AEAD b4-1 eth-isp "ip6 proto 4 or esp" \
   "nse client1 sh -c \"for i in 1 2 3 4 5; do curl -s -o /dev/null --max-time 3 http://$SRV/; done >/dev/null 2>&1\""
 
-# SNMP_USM (T14): mgmt-plane SNMP - v2c SET accepted vs USM-only (v2c dropped)
+# SNMP_USM (T10): mgmt-plane SNMP — v2c SET accepted vs USM-only (v2c dropped)
 defcap SNMP_USM aftr eth-mgmt "udp port 161" \
   "nse mgmt sh -c \"timeout 6 python3 $T/infra/snmp_attack.py set --target 10.99.0.1 --oid alarmConnectNumber --value 2147483647 >/dev/null 2>&1\""
 
-# PCP_OWNERSHIP (T8): PCP THIRD_PARTY naming a different subscriber - accepted vs NOT_AUTHORIZED
+# PCP_OWNERSHIP (T6): PCP THIRD_PARTY naming a different subscriber — accepted vs NOT_AUTHORIZED
 defcap PCP_OWNERSHIP aftr eth-isp "udp port 5351" \
   "nse client1 sh -c \"timeout 6 python3 $T/infra/pcp_attack.py thirdparty --proxy-ip $GW1 --target-internal 10.0.2.100 >/dev/null 2>&1\""
 
@@ -247,7 +250,7 @@ testbed/defenses/verify_all.sh.
 EOF
 restart_pcp "" >/dev/null 2>&1
 
-hdr "DONE - reference captures under testbed/reference_captures/"
+hdr "DONE — reference captures under testbed/reference_captures/"
 say "baseline: $(ls "$REF"/baseline/*.pcap 2>/dev/null | wc -l) pcaps"
 say "attacks:  $(ls -d "$REF"/attacks/T* 2>/dev/null | wc -l) attacks"
 say "defences: $(ls -d "$REF"/defenses/*/ 2>/dev/null | wc -l) captured"

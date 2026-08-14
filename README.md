@@ -4,7 +4,7 @@ A reproducible Dual-Stack Lite (RFC 6333) security testbed. The whole lab runs
 inside one Docker container. It builds two customer routers (B4), a provider
 Address Family Transition Router (AFTR) with carrier-grade NAT, a DHCPv6 and DNS
 provisioning server, an Internet-side server, and an on-path attacker. A corpus
-of 15 attacks and 11 verified defenses is bundled and driven from one script.
+of 12 attacks and 8 verified defenses is bundled and driven from one script.
 
 The lab is meant for hands-on learning and research. Every attack runs end to
 end against a conformant stack. Every defense can be toggled on and off so you
@@ -54,7 +54,7 @@ automatically.
 
 `run.sh` opens an interactive menu. From it you can:
 
-1. Run any of the 15 attacks and watch the measured result.
+1. Run any of the 12 attacks and watch the measured result.
 2. Open the Defenses menu, turn a control on or off, then re-run the attack it
    closes.
 3. Watch live traffic on any device, or open a shell on any device.
@@ -62,25 +62,26 @@ automatically.
 
 ## The attack corpus
 
-The 15 attacks span the three planes of the DS-Lite stack.
+The 12 attacks span the data, control, and management planes of the DS-Lite stack.
 
 | ID | Attack | Surface |
 |---|---|---|
-| T1 | NAT binding-table exhaustion (self) | Data: NAT/CGN |
-| T2 | Shared-IPv4 reputation poisoning | Data: NAT/CGN |
-| T3 | Softwire endpoint spoofing and on-path interception | Data: softwire |
-| T4 | Unencrypted-tunnel interception | Data: softwire |
-| T5 | Downstream softwire injection | Data: softwire |
-| T6 | Softwire reassembly poisoning | Data: fragmentation |
-| T7 | PCP port-exhaustion denial of service | Control: PCP |
-| T8 | Unauthorized THIRD_PARTY forwarding | Control: PCP |
-| T9 | PCP ANNOUNCE spoof (server-restart signal) | Control: PCP |
-| T10 | Cross-subscriber PCP PEER enumeration | Control: PCP |
-| T11 | Softwire DNS-discovery hijack | Control: DNS |
-| T12 | Rogue AFTR substitution | Control: DHCPv6 |
-| T13 | Transparent AFTR hijack | Control: DHCPv6 |
-| T14 | SNMP alarm-table write | Management: SNMP |
-| T15 | SNMP MIB information disclosure | Management: SNMP |
+| T1 | NAT binding-table exhaustion | Data: NAT/CGN |
+| T2 | Softwire endpoint spoofing and on-path interception | Data: softwire |
+| T3 | Unencrypted-tunnel interception | Data: softwire |
+| T4 | Downstream softwire injection | Data: softwire |
+| T5 | Softwire reassembly poisoning | Data: fragmentation |
+| T6 | Unauthorized PCP THIRD_PARTY forwarding | Control: PCP |
+| T7 | Cross-subscriber PCP PEER enumeration | Control: PCP |
+| T8 | B4 DNS cache poisoning | Control: DNS |
+| T9 | Rogue AFTR discovery hijack | Control: DHCPv6 |
+| T10 | DS-Lite MIB unauthenticated access | Management: SNMP |
+| T11 | Unauthenticated softwire decapsulation (open relay) | Data: softwire |
+| T12 | Softwire identity multiplication | Data: softwire |
+
+Three supplementary carrier-grade-NAT tools ship alongside the corpus, documented
+but outside the paper's executed set: `TS1` shared-IPv4 reputation poisoning,
+`TS2` PCP port-exhaustion, and `TS3` PCP ANNOUNCE (epoch) spoofing.
 
 ## Running one attack directly
 
@@ -96,23 +97,20 @@ reference, and saves the packet captures under `pcaps/runs/`.
 
 ## The defenses
 
-Each attack has a matching control. All 11 are verified: with the control off
-the attack succeeds, and with it on the attack is blocked. The reliable control
-for each attack is listed below.
+Each attack has a matching control. All are verified: with the control off the
+attack succeeds, and with it on the attack is blocked. The reliable control for
+each attack is listed below.
 
 | Defense | Closes | Mechanism |
 |---|---|---|
-| `TRABELSI` | T1 | Early eviction of half-open connection state |
-| `NAT_LOG` | T2 | Per-subscriber attribution logging |
-| `SAVI` | T3, T5, T6 | Per-port source-address validation on the carrier |
-| `ESP_AEAD` | T4 | Authenticated encryption on the softwire |
-| `FEISTEL_IPID` | T6 | Unpredictable packet identifiers (secondary to SAVI) |
-| `PCP_QUOTA` | T7 | Per-subscriber port-mapping limit |
-| `PCP_OWNERSHIP` | T8, T10 | Ownership check on port requests |
-| `PCP_AUTH` | T9 | Authenticated control messages |
-| `DNS_0X20` | T11 | Query case randomization at the resolver |
-| `DHCPV6_AUTH` | T12, T13 | Signed provisioning messages |
-| `SNMP_USM` | T14, T15 | Authenticated management access |
+| `TRABELSI` | T1 | Split half-open and established session table with a per-subscriber cap |
+| `SAVI` | T2, T4, T5, T12 | Source-address validation at the softwire ingress |
+| `ESP_AEAD` | T3 | Authenticated encryption (IPsec ESP) on the softwire |
+| `PCP_OWNERSHIP` | T6, T7 | THIRD_PARTY ownership check on port requests |
+| `DNS_COOKIES` | T8 | DNS Cookies (RFC 7873) at the B4 resolver |
+| `DHCPV6_AUTH` | T9 | Signed DHCPv6 provisioning messages |
+| `SNMP_USM` | T10 | SNMPv3 USM authenticated management access |
+| `DECAP_BIND` | T11 | Decapsulation-time provisioned-source binding (the RFC 6333 optional ingress filter) |
 
 Toggle a defense from the host:
 
@@ -121,9 +119,9 @@ bash testbed/defenses/article_defenses.sh SAVI on
 bash testbed/defenses/article_defenses.sh SAVI off
 ```
 
-Then re-run the attack it closes (for `SAVI` that is T3, T5, or T6) and compare.
+Then re-run the attack it closes (for `SAVI` that is T2, T4, T5, or T12) and compare.
 
-Verify all 11 defenses in one pass:
+Verify all defenses in one pass:
 
 ```bash
 bash testbed/defenses/verify_all.sh
@@ -149,8 +147,8 @@ bash testbed/scripts/capture_references.sh
 
 ```
 testbed/
-  attack_tools/        the 15 attack tools, grouped by surface
-  defenses/            the 11 defense toggles and the verifier
+  attack_tools/        the attack tools, grouped by surface
+  defenses/            the defense toggles and the verifier
   aftr/  b4/           the provider and customer-router programs
   dhcpv6server/ server/ provisioning and Internet-side services
   scripts/             the attack runner, the capture tool, helpers

@@ -35,19 +35,19 @@ PCAP_DIR="$(pwd)/pcaps"
 CORPUS_FILE="$(pwd)/testbed/attack_corpus.txt"   # menu source of truth
 LAUNCH_LOG="/tmp/ds-lite-launch.log"
 # When the prompt_toolkit command-palette front-end is available, the upfront
-# Wireshark / device gauntlet is skipped - those are chosen on demand from the
+# Wireshark / device gauntlet is skipped — those are chosen on demand from the
 # palette instead. Set DS_LITE_NO_PALETTE=1 to force the legacy numbered menus.
 _palette_ok() { [ -z "$DS_LITE_NO_PALETTE" ] && python3 -c 'import prompt_toolkit' 2>/dev/null \
                 && [ -f "$(pwd)/testbed/scripts/ds_menu.py" ]; }
 mkdir -p "$PCAP_DIR"
 : > "$LAUNCH_LOG"
-dbg "run.sh started $(date -u +%FT%TZ) - diagnostics in $LAUNCH_LOG"
+dbg "run.sh started $(date -u +%FT%TZ) — diagnostics in $LAUNCH_LOG"
 
 # ── X11 / sudo guard ────────────────────────────────────────────────
 # When invoked via `sudo`, DISPLAY and XAUTHORITY are normally preserved
 # in env_keep, but on some sudoers configurations they are not.
 if [ -z "$DISPLAY" ]; then
-    warn "DISPLAY is not set - device terminal windows will not open."
+    warn "DISPLAY is not set — device terminal windows will not open."
     dbg "via sudo? re-run: sudo --preserve-env=DISPLAY,XAUTHORITY ./run.sh"
     dbg "or add: Defaults env_keep += \"DISPLAY XAUTHORITY\"  to /etc/sudoers"
 fi
@@ -67,7 +67,7 @@ TERM_EMU=$(detect_terminal)
 if [ -n "$TERM_EMU" ]; then
     dbg "terminal emulator: $TERM_EMU"
 else
-    warn "no graphical terminal found - device shells/captures are unavailable."
+    warn "no graphical terminal found — device shells/captures are unavailable."
 fi
 
 # Background-launch a terminal command line, capturing stderr to the
@@ -202,7 +202,7 @@ start_wireshark() {  # <ns> <iface>
         ok "Wireshark opening live on $ns/$iface"
     else
         local ts cfile; ts=$(date +%H%M%S); cfile="/testbed/pcaps/${ns}-${iface}-${ts}.pcap"
-        warn "no DISPLAY/Wireshark - capturing to ./testbed/pcaps/${ns}-${iface}-${ts}.pcap"
+        warn "no DISPLAY/Wireshark — capturing to ./testbed/pcaps/${ns}-${iface}-${ts}.pcap"
         open_cmd_terminal "Capture-$ns" "$ns" "tcpdump -ni '$iface' -U -w '$cfile'"
     fi
 }
@@ -226,7 +226,7 @@ _print_manual_cheatsheet() {
       b4-2)     say "On B4-2 LAN (10.0.2.x): the second subscriber's vantage (co-subscriber attacks)." ;;
       mgmt)     say "On OAM (10.99.0.50): e.g. snmpwalk -v2c -c public 10.99.0.1" ;;
       internet) say "On the public Internet (198.51.100.50): reach the shared public address / service." ;;
-      none)     warn "No attacker placed - set a placement to get an attack console." ;;
+      none)     warn "No attacker placed — set a placement to get an attack console." ;;
     esac
 }
 
@@ -239,14 +239,14 @@ cleanup() {
     for f in "${TERM_FIFOS[@]}"; do rm -f "$f" 2>/dev/null || true; done
     # NOTE: the canonical attack-defence trees in testbed/attack_trees/ are the
     # QuADTool export (regenerated via results/adtool_trees/render_with_quadtool.sh
-    # + testbed/attack_trees/export.sh - see testbed/attack_trees/README.md). They
+    # + testbed/attack_trees/export.sh — see testbed/attack_trees/README.md). They
     # are NOT auto-regenerated on exit: doing so used the legacy SVG renderer (with
     # placeholder metrics) and would docker-cp the container's older copy back over
     # the freshly exported trees. Quit just tears down; the trees are managed by the
     # documented pipeline.
     # Leave a lab we only reattached to running; only tear down one we started.
     if [ "${REATTACHED:-0}" = 1 ]; then
-        hdr "Detached - lab left running"
+        hdr "Detached — lab left running"
         kv "Reopen panel:" "./run.sh"
         kv "Stop the lab:" "docker rm -f $CONTAINER_NAME"
     else
@@ -282,7 +282,7 @@ if [ "$NEED_BUILD" = 1 ]; then
     else
         # Keep the build quiet; full log in $LAUNCH_LOG, shown only on failure.
         if ! docker build -t "$IMAGE_NAME" testbed/ >>"$LAUNCH_LOG" 2>&1; then
-            err "image build failed - last lines:"; tail -15 "$LAUNCH_LOG" >&2; exit 1
+            err "image build failed — last lines:"; tail -15 "$LAUNCH_LOG" >&2; exit 1
         fi
     fi
     ok "image built"
@@ -310,7 +310,7 @@ echo "  1) IPv4-only network of B4-1 (10.0.1.0/24)"
 echo "  2) IPv4-only network of B4-2 (10.0.2.0/24)"
 echo "  3) IPv6-only ISP network     (2001:db8:cafe::/64)"
 echo "  4) Public Internet / WAN     (198.51.100.0/24)"
-echo "  5) OAM management network    (10.99.0.0/24) - insider with SNMP/syslog access"
+echo "  5) OAM management network    (10.99.0.0/24) — insider with SNMP/syslog access"
 echo "  6) No attacker"
 echo ""
 stty sane 2>/dev/null || true
@@ -344,7 +344,7 @@ WS_LABEL=( ["1"]="ISP bridge (all IPv6)"
            ["10"]="B4-2 tunnel (decap IPv4)"
            ["11"]="Server (IPv4 dst)"
            ["12"]="Attacker ($ATTACKER_PLACEMENT)"
-           ["13"]="OAM/Mgmt network (SNMP - RFC 5706)" )
+           ["13"]="OAM/Mgmt network (SNMP — RFC 5706)" )
 WS_NS=(    ["1"]=""         ["2"]="aftr"   ["3"]="aftr"       ["4"]="aftr"
            ["5"]="b4-1"     ["6"]="b4-1"   ["7"]="b4-1"
            ["8"]="b4-2"     ["9"]="b4-2"  ["10"]="b4-2"
@@ -392,7 +392,7 @@ _ws_add() {
     local n="$1"
     # Entry 12 is the attacker capture; only valid once an attacker is placed.
     if [ "$n" -eq 12 ] && [ -z "$ATTACKER_PLACEMENT" ]; then
-        warn "entry 12 (Attacker) needs an attacker first - choose a placement, then re-open the capture menu"
+        warn "entry 12 (Attacker) needs an attacker first — choose a placement, then re-open the capture menu"
         return
     fi
     local ns="${WS_NS[$n]}" iface="${WS_IF[$n]}"
@@ -425,7 +425,7 @@ rm -f "$PCAP_DIR"/*.pcap "$PCAP_DIR"/*.pcap[0-9] "$PCAP_DIR"/*.pcap[0-9][0-9] 2>
 
 # ── Run / reattach container ────────────────────────────────────────
 # If a healthy container is already running (and we did not just rebuild), just
-# reattach to it - the lab survives across sessions and recovers instantly if
+# reattach to it — the lab survives across sessions and recovers instantly if
 # its menu process died. Otherwise (re)create it.
 if [ -z "${FRESH_IMAGE:-}" ] && docker ps -q -f "name=^${CONTAINER_NAME}$" | grep -q .; then
     dbg "reattaching to the already-running container"
@@ -467,7 +467,7 @@ else
             break
         fi
         if ! docker ps -q -f "name=$CONTAINER_NAME" | grep -q .; then
-            printf '\n'; err "container exited during init - last lines:"
+            printf '\n'; err "container exited during init — last lines:"
             docker logs "$CONTAINER_NAME" 2>&1 | tail -20 >&2
             docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
             exit 1
@@ -505,7 +505,7 @@ if [ -n "$ATTACKER_PLACEMENT" ]; then
 else
     printf "  %s%3s)  %-15s (%s)%s\n" "$C_DIM" "11" "Attacker" "place one first" "$C_RST"
 fi
-_dev_row "12" "Mgmt-Station"   "mgmt, 10.99.0.10 - SNMP attacker for T11/T12"
+_dev_row "12" "Mgmt-Station"   "mgmt, 10.99.0.10 - SNMP attacker for T8/T9"
 echo "  all)  All of the above"
 echo "    0)  No terminals"
 echo ""
@@ -527,7 +527,7 @@ _open_dev() {
     local n="$1"
     # Entry 11 is the attacker shell; only valid once an attacker is placed.
     if [ "$n" -eq 11 ] && [ -z "$ATTACKER_PLACEMENT" ]; then
-        warn "entry 11 (Attacker) needs an attacker first - place one (p), then re-open the device menu"
+        warn "entry 11 (Attacker) needs an attacker first — place one (p), then re-open the device menu"
         return
     fi
     local label="${DEV_LABEL[$n]}" ns="${DEV_NS[$n]}"
@@ -556,7 +556,7 @@ if [ -n "$TERM_EMU" ]; then
         fi
 
         if [ -z "$DISPLAY" ] || [ -z "$TERM_EMU" ]; then
-            warn "no graphical display - skipping device terminals (open with: docker exec -it $CONTAINER_NAME ip netns exec <ns> bash)"
+            warn "no graphical display — skipping device terminals (open with: docker exec -it $CONTAINER_NAME ip netns exec <ns> bash)"
         else
             echo "Opening device terminals ($TERM_EMU)..."
             for n in $dev_nums; do
@@ -571,7 +571,7 @@ if [ -n "$TERM_EMU" ]; then
     ATK_WS_ACTIVE=0
     if [ "${#WS_ENTRIES[@]}" -gt 0 ]; then
         if ! command -v wireshark &>/dev/null; then
-            echo "[!] wireshark not found on host - skipping live capture."
+            echo "[!] wireshark not found on host — skipping live capture."
         else
             for entry in "${WS_ENTRIES[@]}"; do
                 ws_ns="${entry%%:*}"
@@ -891,7 +891,7 @@ _setup_attacker_links() {
 move_attacker() {
     local target="$1"
     if [ "$target" = "$ATTACKER_PLACEMENT" ]; then
-        echo "  Attacker is already on '$target' - nothing to do."
+        echo "  Attacker is already on '$target' — nothing to do."
         return 0
     fi
     # Lazy boot: the attacker namespace is created by setup.sh only when a
@@ -908,7 +908,7 @@ move_attacker() {
     iface=$(docker exec "$CONTAINER_NAME" ip netns exec attacker ip -o link show \
             | awk -F': ' '/eth/{print $2; exit}' | awk -F'@' '{print $1}')
     if [ -z "$iface" ]; then
-        warn "Reposition to '$target' failed - no interface in attacker ns."
+        warn "Reposition to '$target' failed — no interface in attacker ns."
         return 1
     fi
     ATTACKER_PLACEMENT="$target"
@@ -970,7 +970,7 @@ show_attack_menu() {
 #    attack -> defend -> re-attack loop works from the menu, no shell needed.
 #    Each row names the attack(s) the control closes, so the mapping is obvious.
 DEF_IDS=(TRABELSI NAT_LOG SAVI ESP_AEAD FEISTEL_IPID PCP_QUOTA PCP_OWNERSHIP PCP_AUTH DNS_0X20 DHCPV6_AUTH SNMP_USM)
-DEF_CLOSES=("T1" "T2" "T3,T5,T6" "T4" "T6" "T7" "T8,T10" "T9" "T11" "T12,T13" "T14,T15")
+DEF_CLOSES=("T1" "TS1" "T2,T4,T5,T12" "T3" "T5" "TS2" "T6,T7" "TS3" "T8" "T9" "T10")
 DEF_NAME=("Half-open early eviction" "Per-binding attribution log" "SAVI source binding" "AEAD ESP on softwire" "Feistel IP-ID randomization" "Per-subscriber PCP quota" "PCP ownership binding" "Authenticated PCP ANNOUNCE" "DNS-0x20 randomization" "Ed25519-signed DHCPv6" "SNMPv3 USM + engineID pin")
 defense_menu() {
     local DEFSH="$(pwd)/testbed/defenses/article_defenses.sh"
@@ -1007,7 +1007,7 @@ defense_menu() {
                             bash "$DEFSH" "$did" "${state,,}" 2>&1 | sed 's/^/    /'
                             echo "  Now re-run ${DEF_CLOSES[$((pick-1))]} from the attack menu to see the effect."
                             ;;
-                        *) echo "  (cancelled - type on or off)" ;;
+                        *) echo "  (cancelled — type on or off)" ;;
                     esac
                 else
                     echo "  Invalid selection: $pick"
@@ -1020,18 +1020,18 @@ defense_menu() {
 
 # ── reset_aftr_state: clear cross-attack residue before each attack ──
 # Several attacks leave persistent state that breaks later attacks:
-#   * T15 (PCP port-exhaust) makes pcp_server install forward-chain DROP
+#   * T11 (PCP port-exhaust) makes pcp_server install forward-chain DROP
 #     rules (comment "PCP-EXHAUST") that block ALL b4 -> eth-wan data flows.
-#   * T7/T8/T10 push entries into chain ip nat pcp_dnat that persist.
+#   * TS2/T6/T7 push entries into chain ip nat pcp_dnat that persist.
 #   * Any flood leaves conntrack entries and per_b4_connlimit meter counts.
-#   * T10 leaves a poisoned dnsmasq cache; T13/T14 leave the cached
+#   * T7 leaves a poisoned dnsmasq cache; T9/T10 leave the cached
 #     AFTR-Name in /var/run/ds-lite-aftr-name.
-# Running, e.g., T15 then T1 would make T1 silently fail (every packet
+# Running, e.g., T11 then T1 would make T1 silently fail (every packet
 # dropped by the leftover PCP-EXHAUST rule), so this runs before each attack.
 reset_aftr_state() {
     local dx="docker exec $CONTAINER_NAME"
     # (a0) re-assert the static softwire-local B4 addresses. A prior DHCPv6
-    #      hijack (T12/T13) flushes eth-isp and drops ::b41/::b42, after which
+    #      hijack (T9/T9) flushes eth-isp and drops ::b41/::b42, after which
     #      the B4 tunnel cannot source its outer packets and the subscriber's
     #      whole data path is dead. Re-adding here heals the lab before the next
     #      attack so a leftover hijack never silently breaks unrelated runs.
@@ -1054,10 +1054,10 @@ reset_aftr_state() {
     # `docker exec -d` runs the daemon detached so it survives this function.
     # IMPORTANT: the B4 proxies MUST be restarted with --passthrough-third-party,
     # exactly as setup.sh launches them. Without it the proxy strips/ignores the
-    # client-supplied THIRD_PARTY option, so T8/T10 PEER requests are not
+    # client-supplied THIRD_PARTY option, so T6/T7 PEER requests are not
     # forwarded to the AFTR and silently find nothing (the proxy log stays empty).
     # PCP_POOL_SIZE must match setup.sh (env PCP_POOL_SIZE=1024). Without it the
-    # server defaults to the full 1024-65534 range, so T15 port-exhaustion can
+    # server defaults to the full 1024-65534 range, so T11 port-exhaustion can
     # never deplete the pool in a trial window and silently looks DEFENDED.
     docker exec -d "$CONTAINER_NAME" ip netns exec aftr env PCP_POOL_SIZE="${PCP_POOL_SIZE:-1024}" python3 /testbed/aftr/pcp_server.py >/dev/null 2>&1
     docker exec -d "$CONTAINER_NAME" ip netns exec b4-1 python3 /testbed/b4/pcp_proxy.py \
@@ -1071,10 +1071,10 @@ reset_aftr_state() {
     for ns in client1 client2 server b4-1 b4-2; do
         $dx ip netns exec "$ns" pkill -9 -f 'ncat|curl|dig|nslookup' >/dev/null 2>&1
     done
-    # Victim-fixture processes (T6 ping flood, T10 http.server + PCP refresh) live
-    # only in subscriber namespaces. Scope this to client1/client2 - the `server`
+    # Victim-fixture processes (T5 ping flood, T7 http.server + PCP refresh) live
+    # only in subscriber namespaces. Scope this to client1/client2 — the `server`
     # ns runs a legitimate single-threaded python http.server (its -c script also
-    # matches "http.server"), and killing it would break T4/T11.
+    # matches "http.server"), and killing it would break T3/T8.
     for ns in client1 client2; do
         $dx ip netns exec "$ns" pkill -9 -f 'python3 -m http.server|ping -s' >/dev/null 2>&1
     done
@@ -1087,15 +1087,15 @@ reset_aftr_state() {
     #     (`ct count over 2000`); it has no standalone name to flush, and
     #     `nft delete meter` is a syntax error on this build. Flushing
     #     conntrack in (d) drops the entries, so the meter drains on its own.
-    # (f2) remove the stateless ISP ACL that the T7/T8 fragment tools install on
+    # (f2) remove the stateless ISP ACL that the TS2/T6 fragment tools install on
     #      the AFTR to demonstrate the bypass. That table drops every
     #      encapsulated TCP SYN (inner proto 6, SYN flag), so if the attack is
     #      interrupted before its own teardown runs (e.g. Ctrl+C, timeout) it
     #      leaves ALL subscriber TCP through the softwire black-holed while ICMP
     #      and UDP still work. Deleting it here restores the data plane.
     $dx ip netns exec aftr nft delete table ip6 stateless_fw >/dev/null 2>&1
-    # (g) flush B4 dnsmasq cache (clears T10 cache poison); (h) clear T13/T14
-    #     AFTR-Name; (h2) clear T10's NDP hijack. T10 --hijack-upstream installs
+    # (g) flush B4 dnsmasq cache (clears T7 cache poison); (h) clear T9/T10
+    #     AFTR-Name; (h2) clear T7's NDP hijack. T7 --hijack-upstream installs
     #     a PERMANENT neighbour entry on the victim B4 that maps the upstream
     #     resolver (and gateway/AFTR) to the attacker MAC. `ip neigh flush` does
     #     NOT remove PERMANENT entries, so without an explicit delete the victim
@@ -1107,7 +1107,7 @@ reset_aftr_state() {
         # Restore the AFTR-name cache to its legitimate post-boot value (NOT
         # delete it): the dhclient exit hook only rebuilds the tunnel when a
         # PRIOR name is present to compare against, so wiping the file makes the
-        # next renewal look like first boot and the T13/T14 hijack silently
+        # next renewal look like first boot and the T9/T10 hijack silently
         # no-ops. Writing the legit name back puts the B4 in clean post-boot
         # state so AFTR-hijack attacks are reproducible after a reset.
         $dx ip netns exec "$b4" bash -c 'pkill -HUP dnsmasq 2>/dev/null;
@@ -1116,10 +1116,10 @@ reset_aftr_state() {
                 ip -6 neigh del "$a" dev eth-isp 2>/dev/null || true
             done; true' >/dev/null 2>&1
     done
-    # (i) restore each B4 softwire to the legit AFTR. T13/T14 repoint the
+    # (i) restore each B4 softwire to the legit AFTR. T9/T10 repoint the
     #     tunnel to the attacker (and change the B4's tunnel local), so just
     #     clearing the cached name leaves the data plane broken for the next
-    #     attack - the AFTR only decapsulates the canonical (local,remote) pair.
+    #     attack — the AFTR only decapsulates the canonical (local,remote) pair.
     #     `ip tunnel change` resets the link MTU to the ip6tnl default (1460), so
     #     restore the configured 1500 explicitly or the next fragment-class
     #     attack runs against a silently different MTU.
@@ -1127,7 +1127,7 @@ reset_aftr_state() {
     $dx ip netns exec b4-2 ip -6 tunnel change ds-lite local 2001:db8:cafe::b42 remote 2001:db8:cafe::10 >/dev/null 2>&1
     $dx ip netns exec b4-1 ip link set ds-lite mtu 1500 >/dev/null 2>&1
     $dx ip netns exec b4-2 ip link set ds-lite mtu 1500 >/dev/null 2>&1
-    # (j) clear the stand-in RBL block T3 leaves on the server-router
+    # (j) clear the stand-in RBL block T2 leaves on the server-router
     #     (drop rule on the shared public IPv4) so it does not black-hole
     #     subscriber traffic for the next attack.
     $dx ip netns exec server-router nft flush chain ip filter forward >/dev/null 2>&1
@@ -1136,7 +1136,7 @@ reset_aftr_state() {
 
 # ── restore_lab: user-facing "reset to clean baseline" (no restart) ──
 # Turns OFF every defense, clears all attack residue (reset_aftr_state), heals the
-# management plane, and verifies health - so you can keep experimenting without
+# management plane, and verifies health — so you can keep experimenting without
 # Ctrl-C + rebuild. Safe to run any time; idempotent.
 restore_lab() {
     local dx="docker exec $CONTAINER_NAME"
@@ -1175,7 +1175,7 @@ restore_lab() {
     kv "client1:"  "HTTP ${c1:-???}"
     kv "client2:"  "HTTP ${c2:-???}"
     if [ "$c1" = 200 ] && [ "$c2" = 200 ]; then ok "lab restored to clean baseline"
-    else warn "subscribers not both 200 - run 'Settings → connectivity test' for detail"; fi
+    else warn "subscribers not both 200 — run 'Settings → connectivity test' for detail"; fi
 }
 
 # ── Run one attack in a single narrated terminal ───────────────────────────
@@ -1205,7 +1205,7 @@ _resolve_knobs() {
     [ -z "$(printf '%s' "$kspec" | tr -d ' ')" ] && return 0   # this attack has no knobs
     stty sane 2>/dev/null || true
     local yn=""
-    printf '\n  %s - Enter to run with proven defaults, or type c to customize: ' "$id" >/dev/tty
+    printf '\n  %s — Enter to run with proven defaults, or type c to customize: ' "$id" >/dev/tty
     read -r yn </dev/tty || true
     case "$yn" in c|C|custom*) : ;; *) return 0 ;; esac
     local out="" OIFS="$IFS" kv kn kvals def alts val
@@ -1381,9 +1381,9 @@ if [ -n "$TERM_EMU" ]; then
         read -erp "  Select [1-${MENU_COUNT}, p/d/v/m/t/s/g/r, 0=exit]: " ATK_CHOICE
         # (d = Defenses submenu; handled in the case below)
         # If read returns EOF (stdin closed or piped from an exited subshell),
-        # don't loop forever printing the menu - exit cleanly.
+        # don't loop forever printing the menu — exit cleanly.
         if [ $? -ne 0 ] && [ -z "$ATK_CHOICE" ]; then
-            echo "  [stdin closed - exiting attack menu]"
+            echo "  [stdin closed — exiting attack menu]"
             break
         fi
         case "$ATK_CHOICE" in
@@ -1424,7 +1424,7 @@ if [ -n "$TERM_EMU" ]; then
                 echo "  (each holds RESULT.txt with the measured signal + MATCH/DIFFERS"
                 echo "  verdict, plus the per-point pcaps). Latest runs:"
                 ls -1dt "$(pwd)"/pcaps/runs/*_T* 2>/dev/null | head -10 | sed 's|.*/pcaps|    pcaps|' \
-                    || echo "    (no runs yet - launch an attack first)"
+                    || echo "    (no runs yet — launch an attack first)"
                 ;;
             "")  continue ;;
             *)
@@ -1441,7 +1441,7 @@ if [ -n "$TERM_EMU" ]; then
 fi
 
 # The menu loop exits only on an explicit Quit (or stdin close). In both cases
-# the user is done, so clean up immediately - stop the lab if we started it,
-# leave it running if we merely reattached - and exit. (No "press Ctrl+C" wait:
+# the user is done, so clean up immediately — stop the lab if we started it,
+# leave it running if we merely reattached — and exit. (No "press Ctrl+C" wait:
 # Quit means quit.) cleanup() ends with `exit 0`.
 cleanup

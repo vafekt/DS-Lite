@@ -14,16 +14,22 @@
 #               Ed25519-signed DHCPv6 server messages carrying a Signature
 #               Authentication (SA) option + Replay-Detection field; the B4
 #               verifies the signature before adopting Option 64 (AFTR-Name).
-#               -> T12 (Rogue AFTR Substitution), T13 (Transparent AFTR Hijack)
+#               -> T9 (Rogue AFTR Substitution), T9b (Transparent AFTR Hijack)
 #
 #  PCP_OWNERSHIP  Müller & Rytilahti et al., "Peeking Behind NAT Gateways",
 #               NDSS 2020 (§Potential Remediations). PCP server enforces
 #               ownership binding: a client may only MAP/PEER/THIRD_PARTY an
 #               internal address inside its own delegated prefix.
-#               -> T8 (Unauthorized THIRD_PARTY Forwarding); T10 (cross-subscriber PEER enumeration)
+#               -> T6 (Unauthorized THIRD_PARTY Forwarding); T7 (cross-subscriber PEER enumeration)
 #
 #  (more migrated from apply_defense.sh as each article mechanism is built)
 set -u
+# SNMP USM (D10) secret/user. Default to the value the OAM client
+# (snmpv3_client.py) also defaults to, so the agent's SHA-256 localized key and
+# the client's match even when the caller exports nothing. Override by exporting
+# SNMP_SECRET before invoking.
+: "${SNMP_SECRET:=S3cr3t-oam-2026}"
+: "${SNMP_USM_USER:=oamuser}"
 C="${CONTAINER_NAME:-ds-lite-lab}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 . "${TOPOLOGY_ENV:-$HERE/topology.env}"
@@ -42,7 +48,7 @@ AFTR_LEGIT="${AFTR_LEGIT:-aftr.dslite.example.com.}"
 AFTR_FILE=/var/run/ds-lite-aftr-name
 ISP_IFACE="${ISP_IFACE:-eth-isp}"
 
-# ── DHCPV6_AUTH (T12/T13): Ed25519-signed DHCPv6 (DHCPv6Auth, Sadhana 2020) ──
+# ── DHCPV6_AUTH (T9/T9b): Ed25519-signed DHCPv6 (DHCPv6Auth, Sadhana 2020) ──
 dhcpv6_auth() {
   case "$1" in
   on)
@@ -78,7 +84,7 @@ dhcpv6_auth() {
   esac
 }
 
-# ── PCP_OWNERSHIP (T8/T10): ownership binding in pcp_server (NDSS 2020) ──────
+# ── PCP_OWNERSHIP (T6/T7): ownership binding in pcp_server (NDSS 2020) ──────
 pcp_ownership() {
   dx ip netns exec aftr pkill -9 -f pcp_server.py 2>/dev/null
   _kill_proxy() { dx ip netns exec "$1" pkill -9 -f pcp_proxy.py 2>/dev/null; }
@@ -93,7 +99,7 @@ pcp_ownership() {
   echo "PCP_OWNERSHIP $1 (ownership binding: THIRD_PARTY/PEER restricted to requester's prefix)"
 }
 
-# ── SNMP_USM (T14/T15): SNMPv3 USM authNoPriv + engineID pinning ────────────
+# ── SNMP_USM (T10): SNMPv3 USM authNoPriv + engineID pinning ────────────────
 #    Under New Management (WOOT'12): authenticate every request, pin engineID.
 snmp_usm() {
   dx ip netns exec aftr pkill -9 -f snmp_agent.py 2>/dev/null; sleep 0.4
@@ -111,15 +117,15 @@ snmp_usm() {
   sleep 1
 }
 
-# ── SAVI (T3/T5/T6): per-port source-address binding on the carrier bridge ──
+# ── SAVI (T2/T4/T5): per-port source-address binding on the carrier bridge ──
 #    Mechanism from Chen, Liu et al., "SAVI-based IPv6 source address validation
 #    implementation of the access network": build a binding (source-IP <-> MAC
 #    <-> switch port) and drop packets whose source does not match the binding
 #    for the ingress port. The access network is "the best location" to validate.
 #    Adapted to DS-Lite: each carrier-bridge port is bound to the softwire/infra
 #    source it legitimately owns; a port emitting any OTHER carrier-prefix global
-#    source is dropped. This kills the outer-source spoof that T3 (MITM), T5
-#    (downstream injection) and T6 (inner-fragment overlap injection) all rely on.
+#    source is dropped. This kills the outer-source spoof that T2 (MITM), T4
+#    (downstream injection) and T5 (inner-fragment overlap injection) all rely on.
 #    Bindings are configured from the provisioned roster here (RFC 7039 permits
 #    configured bindings for stable infrastructure); a dynamic deployment would
 #    learn them by snooping DHCPv6/ND exactly as the paper describes.
@@ -148,10 +154,16 @@ savi() {
   echo "SAVI on (per-port carrier-source binding; spoofed outer source dropped)"
 }
 _savi_bind() {  # <bridge-port> <bound-global-addr>
-  dx nft "add rule bridge savi pre iifname $1 ip6 saddr ${CARRIER_PREFIX}::/64 ip6 saddr != $2 counter drop"
+  # Proper source-address validation (RFC 7039 / BCP 38) binds the port to the
+  # ONE global-unicast source it owns and drops any other. Scope the match to all
+  # global unicast (2000::/3), not just the carrier /64: an identity-multiplication
+  # flood (T12) forges outer sources from a DIFFERENT /64 (e.g. cafe:dead::/64), so
+  # a carrier-/64-only rule misses it. Link-local (fe80::/10) and multicast are
+  # left untouched so ND/RA still work.
+  dx nft "add rule bridge savi pre iifname $1 ip6 saddr 2000::/3 ip6 saddr != $2 counter drop"
 }
 
-# ── FEISTEL_IPID (T6): in-path Feistel IP-ID randomisation at the B4 ─────────
+# ── FEISTEL_IPID (T5): in-path Feistel IP-ID randomisation at the B4 ─────────
 #    Gilad & Herzberg 2013 §8.3. nft sends the subscriber's outbound inner-IPv4
 #    (about to be encapsulated) to NFQUEUE; feistel_b4.py rewrites the IP-ID with
 #    a keyed 3-round Feistel permutation and accepts (in-path, conntrack kept).
@@ -177,13 +189,13 @@ feistel_ipid() {
   echo "FEISTEL_IPID $st (in-path Feistel IP-ID randomisation at each B4)"
 }
 
-# ── ESP_AEAD (T4): authenticated-encryption ESP on the softwire ─────────────
+# ── ESP_AEAD (T3): authenticated-encryption ESP on the softwire ─────────────
 #    Degabriele & Paterson, "Attacking the IPsec Standards in Encryption-only
 #    Configurations" (IEEE S&P 2007) show ESP WITHOUT integrity (encryption-only)
 #    is broken. Their mandate: use AUTHENTICATED encryption. We key transport-mode
 #    ESP with AEAD AES-GCM (rfc4106(gcm(aes))) between each B4 and the AFTR, so
 #    the 4-in-6 softwire payload is confidential AND integrity-protected - an
-#    on-path attacker sees only ESP ciphertext (T4 passive read defeated).
+#    on-path attacker sees only ESP ciphertext (T3 passive read defeated).
 esp_aead() {
   local A="$AFTR_IP6" e
   local KO=0x0123456789abcdef0123456789abcdef11111111   # b4->aftr (16B key+4B salt)
@@ -218,7 +230,7 @@ esp_aead() {
   fi
 }
 
-# ── TRABELSI (T1/T7): two-structure session table + early eviction (IEEE Access'18) ─
+# ── TRABELSI (T1/TS2): two-structure session table + early eviction (IEEE Access'18) ─
 #    Proactively collapses the half-open (invalid) conntrack timeout so a state-
 #    exhaustion flood of UNREPLIED entries ages out in seconds and cannot fill
 #    the shared NAT table; ESTABLISHED flows keep their normal timeout.
@@ -238,16 +250,16 @@ trabelsi() {
   fi
 }
 
-# ── DNS_0X20 (T11): DNS-0x20 case randomisation at the B4 resolver (Dagon CCS'08) ─
+# ── DNS_0X20 (T8): DNS-0x20 case randomisation at the B4 resolver (Dagon CCS'08) ─
 #    Runs the 0x20-validating forwarder as the B4's recursive resolver for the
 #    AFTR-FQDN path. on = enforce 0x20 (random-case query + reply case-check);
 #    off = no 0x20 (vulnerable baseline). Production equivalent: unbound
 #    use-caps-for-id. The off-path poisoner is dns_offpath_poison.py.
 dns_0x20() {
-  # The T11 resolver (dns_0x20_forwarder) is brought up by the attack itself
-  # (do_T11), with the silent-upstream window the off-path SADDNS attack needs.
+  # The T8 resolver (dns_0x20_forwarder) is brought up by the attack itself
+  # (do_T8), with the silent-upstream window the off-path SADDNS attack needs.
   # This toggle just records whether 0x20 case-randomisation must be enforced;
-  # do_T11 reads /run/t11-0x20-mode on each B4 and starts the forwarder with it.
+  # do_T8 reads /run/t11-0x20-mode on each B4 and starts the forwarder with it.
   local v=0; [ "$1" = on ] && v=1
   local e
   for e in "${B4S[@]}"; do set -- $e
@@ -256,12 +268,12 @@ dns_0x20() {
   echo "DNS_0X20 $1 (Dagon 0x20 case-randomisation at the B4 resolver: mode=$v)"
 }
 
-# ── DNS_COOKIES (T11): DNS Cookies at the B4 resolver (Eastlake & Andrews, RFC ──
+# ── DNS_COOKIES (T8): DNS Cookies at the B4 resolver (Eastlake & Andrews, RFC ──
 #    7873). on = run the cookie-validating forwarder (random 64-bit Client Cookie,
 #    the reply must echo it); off = no cookies (vulnerable baseline). Production
 #    equivalent: unbound/BIND with DNS cookies enabled (BIND default). The
 #    off-path poisoner cannot see the query, so its forged replies carry no valid
-#    cookie and are dropped. do_T11 reads /run/t11-cookies-mode on each B4 and
+#    cookie and are dropped. do_T8 reads /run/t11-cookies-mode on each B4 and
 #    starts dns_cookies_forwarder.py when it is 1 (else the 0x20/baseline path).
 dns_cookies() {
   local v=0; [ "$1" = on ] && v=1
@@ -278,7 +290,7 @@ dns_cookies() {
 # article-grounded ones above.
 # ═══════════════════════════════════════════════════════════════════════════
 
-# ── PCP_QUOTA (T7): per-subscriber PCP mapping quota (RFC 6887 §16.5 / 6888 REQ-4) ─
+# ── PCP_QUOTA (TS2): per-subscriber PCP mapping quota (RFC 6887 §16.5 / 6888 REQ-4) ─
 pcp_quota() {
   dx ip netns exec aftr pkill -9 -f pcp_server.py 2>/dev/null
   _kill_proxy() { dx ip netns exec "$1" pkill -9 -f pcp_proxy.py 2>/dev/null; }
@@ -291,7 +303,7 @@ pcp_quota() {
   echo "PCP_QUOTA $1 (per-subscriber mapping cap; one B4 cannot drain the shared pool)"
 }
 
-# ── PCP_AUTH (T9): authenticated ANNOUNCE confirmation (RFC 7652) ────────────
+# ── PCP_AUTH (TS3): authenticated ANNOUNCE confirmation (RFC 7652) ────────────
 #    On a suspected epoch reset the B4 proxy confirms via an integrity-protected
 #    unicast ANNOUNCE to the AFTR before renewing; a forged multicast ANNOUNCE is
 #    not confirmed by the real server -> no renewal storm.
@@ -307,7 +319,7 @@ pcp_auth() {
   echo "PCP_AUTH $1 (RFC 7652 authenticated ANNOUNCE confirmation; forged epoch reset ignored)"
 }
 
-# ── NAT_LOG (T2): per-binding attribution logging (RFC 6888 REQ-9 / RFC 6302) ─
+# ── NAT_LOG (TS1): per-binding attribution logging (RFC 6888 REQ-9 / RFC 6302) ─
 #    Shared-IPv4 reputation poisoning cannot be prevented (shared-fate), but each
 #    NAT binding is logged (inner subscriber IP <-> shared public IP:port + time)
 #    so abuse on the shared address is attributable + actionable.
@@ -324,8 +336,52 @@ nat_log() {
   fi
 }
 
+# ── DECAP_BIND (softwire open-relay + RFC 6324 amplification loop) ───────────
+#    Novel decapsulation-time inner binding at the AFTR. At the softwire ingress
+#    (post-decapsulation, iif = the softwire, hooked in the aftr netns) it
+#    enforces two per-softwire bindings taken from the provisioned subscriber
+#    roster (RFC 6333 §6.6 softwire <-> delegated prefix; a dynamic deployment
+#    learns them from DHCPv6-PD):
+#      (1) inner-SOURCE binding - a decapsulated datagram's inner IPv4 source
+#          must belong to the prefix bound to the softwire it arrived on, so an
+#          unprovisioned or spoofed source cannot launder arbitrary inner
+#          sources through the AFTR as the shared public IPv4 (closes the open
+#          relay). Distinct from SAVI (D3, OUTER IPv6 source on the carrier
+#          bridge) and from uRPF (reverse-route test that breaks under
+#          asymmetric routing).
+#      (2) inner-DEST anti-loop - a decapsulated datagram destined into the
+#          overlapping-address range routed per-softwire is an RFC 6324 loop
+#          packet (a subscriber would deliver it locally), dropped independently
+#          of the stateful forward policy (closes the softwire amplifier).
+#    The unprovisioned wildcard softwire (ds-lite-open) carries no binding, so
+#    everything decapsulated there is dropped.
+decap_bind() {
+  nse aftr nft delete table ip decap_bind 2>/dev/null
+  if [ "$1" != on ]; then
+    echo "DECAP_BIND off (no decapsulation-time inner binding)"; return
+  fi
+  local OVERLAP="${DSLITE_OVERLAP_RANGE:-192.168.0.0/16}"
+  local INFRA="${DSLITE_INFRA_RANGE:-10.99.0.0/24}"   # AFTR OAM/management + provider infrastructure
+  nse aftr nft add table ip decap_bind
+  nse aftr nft "add chain ip decap_bind ingress { type filter hook prerouting priority -150 ; policy accept ; }"
+  local e name gw pfx iface
+  for e in "${B4S[@]}"; do set -- $e
+    name="$1"; gw="$2"; pfx="${gw%.*}.0/24"; iface="ds-lite-${name}"
+    # inner-SOURCE binding: the decapsulated source must fall in the softwire's provisioned prefix (drops the relay)
+    nse aftr nft "add rule ip decap_bind ingress iifname \"${iface}\" ip saddr != ${pfx} counter drop"
+    # inner-DEST anti-loop: a decapsulated packet destined back into the overlap range is the only one that can loop
+    nse aftr nft "add rule ip decap_bind ingress iifname \"${iface}\" ip daddr ${OVERLAP} counter drop"
+    # inner-DEST infrastructure filter: decapsulated traffic must never reach the AFTR's own OAM/management plane
+    # (a mere subscriber otherwise rides the softwire into the local management agent, collapsing P3 to P1)
+    nse aftr nft "add rule ip decap_bind ingress iifname \"${iface}\" ip daddr ${INFRA} counter drop"
+  done
+  nse aftr nft "add rule ip decap_bind ingress iifname \"ds-lite-open\" counter drop"
+  echo "DECAP_BIND on (per-softwire inner source+dest binding at decapsulation; relay, RFC 6324 loop, and cross-plane management access dropped)"
+}
+
 case "$DEF" in
   DHCPV6_AUTH)   dhcpv6_auth   "$STATE" ;;
+  DECAP_BIND)    decap_bind    "$STATE" ;;
   PCP_OWNERSHIP) pcp_ownership "$STATE" ;;
   SNMP_USM)      snmp_usm      "$STATE" ;;
   SAVI)          savi          "$STATE" ;;
@@ -334,8 +390,8 @@ case "$DEF" in
   DNS_COOKIES)   dns_cookies   "$STATE" ;;
   TRABELSI)      trabelsi      "$STATE" ;;
   ESP_AEAD)      esp_aead      "$STATE" ;;
-  PCP_QUOTA)     pcp_quota     "$STATE" ;;   # T7  (RFC 6887)
-  PCP_AUTH)      pcp_auth      "$STATE" ;;   # T9  (RFC 7652)
-  NAT_LOG)       nat_log       "$STATE" ;;   # T2  (RFC 6888)
+  PCP_QUOTA)     pcp_quota     "$STATE" ;;   # TS2  (RFC 6887)
+  PCP_AUTH)      pcp_auth      "$STATE" ;;   # TS3  (RFC 7652)
+  NAT_LOG)       nat_log       "$STATE" ;;   # TS1  (RFC 6888)
   *) echo "unknown defense: $DEF" >&2; exit 2 ;;
 esac

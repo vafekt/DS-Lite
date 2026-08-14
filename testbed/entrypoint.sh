@@ -2,7 +2,7 @@
 
 cleanup() {
     echo ""
-    echo "Caught signal - tearing down lab..."
+    echo "Caught signal – tearing down lab..."
     /testbed/teardown.sh
     echo "Lab cleaned up. Exiting."
     exit 0
@@ -11,7 +11,7 @@ cleanup() {
 trap cleanup SIGINT SIGTERM
 # Attack tooling and reset routines spray broad signals (pkill -HUP/-9,
 # dhclient restarts). Ignore stray signals at PID 1 so a misfired kill
-# never tears the whole container down - only an explicit docker stop
+# never tears the whole container down — only an explicit docker stop
 # (SIGTERM/SIGINT above) ends the lab.
 trap '' SIGHUP SIGUSR1 SIGUSR2
 

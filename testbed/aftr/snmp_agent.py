@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# DS-Lite AFTR SNMP Agent - partial RFC 7870 DSLITE-MIB simulator
+# DS-Lite AFTR SNMP Agent – partial RFC 7870 DSLITE-MIB simulator
 #
 # Implements the subset of the DSLITE-MIB defined in RFC 7870 that is
 # exercised by the attack corpus: the alarm-threshold scalar subtree
@@ -13,14 +13,14 @@
 # MIB structure (three subtrees):
 #
 #   dsliteMIBObjects (240.1)
-#   ├── dsliteTunnel (240.1.1)          - softwire tunnel management
+#   ├── dsliteTunnel (240.1.1)          – softwire tunnel management
 #   │   ├── dsliteTunnelTable (240.1.1.1)
 #   │   │   └── dsliteTunnelEntry indexed by:
 #   │   │       addressType(1), startAddress(2), endAddress(3), ifIndex
 #   │   │       Also: startAddPreLen(4)
 #   │   └── (scalar) tunnelCount
 #   │
-#   ├── dsliteNAT (240.1.2)            - extended NAT binding table
+#   ├── dsliteNAT (240.1.2)            – extended NAT binding table
 #   │   ├── dsliteNATBindTable (240.1.2.1)
 #   │   │   └── dsliteNATBindEntry indexed by 8 fields:
 #   │   │       natv2PortMapInstanceIndex, protocol, externalRealm,
@@ -30,27 +30,27 @@
 #   │   │       internalPort, pool, mapBehavior, filterBehavior, pooling
 #   │   └── dsliteNATBindCurrentCount (240.1.2.2.0)
 #   │
-#   └── dsliteInfo (240.1.3)           - statistics + alarm thresholds
-#       ├── dsliteAFTRAlarmScalar (240.1.3.1)   - EXACT RFC 7870 §8 order:
-#       │   ├── dsliteAFTRAlarmB4AddrType        (.1) - notify identity
-#       │   ├── dsliteAFTRAlarmB4Addr            (.2) - notify identity
-#       │   ├── dsliteAFTRAlarmProtocolType      (.3) - notify identity
-#       │   ├── dsliteAFTRAlarmSpecificIPAddrType(.4) - notify identity
-#       │   ├── dsliteAFTRAlarmSpecificIP        (.5) - notify identity
-#       │   ├── dsliteAFTRAlarmConnectNumber     (.6) - r/w, Integer32(60..90), DEFVAL 60
-#       │   ├── dsliteAFTRAlarmSessionNumber     (.7) - r/w, Integer32, DEFVAL -1
-#       │   └── dsliteAFTRAlarmPortNumber        (.8) - r/w, Integer32, DEFVAL -1
+#   └── dsliteInfo (240.1.3)           – statistics + alarm thresholds
+#       ├── dsliteAFTRAlarmScalar (240.1.3.1)   — EXACT RFC 7870 §8 order:
+#       │   ├── dsliteAFTRAlarmB4AddrType        (.1) – notify identity
+#       │   ├── dsliteAFTRAlarmB4Addr            (.2) – notify identity
+#       │   ├── dsliteAFTRAlarmProtocolType      (.3) – notify identity
+#       │   ├── dsliteAFTRAlarmSpecificIPAddrType(.4) – notify identity
+#       │   ├── dsliteAFTRAlarmSpecificIP        (.5) – notify identity
+#       │   ├── dsliteAFTRAlarmConnectNumber     (.6) – r/w, Integer32(60..90), DEFVAL 60
+#       │   ├── dsliteAFTRAlarmSessionNumber     (.7) – r/w, Integer32, DEFVAL -1
+#       │   └── dsliteAFTRAlarmPortNumber        (.8) – r/w, Integer32, DEFVAL -1
 #       │
 #       └── dsliteStatisticsTable (240.1.3.2)
 #           └── per-subscriber: discards, sends, receives,
 #               currentIPv4Sessions, currentIPv6Sessions
 #
 #   dsliteNotifications (240.0)
-#   ├── dsliteTunnelNumAlarm          (.1) - tunnel count exceeds threshold
-#   ├── dsliteAFTRUserSessionNumAlarm (.2) - user sessions exceed threshold
-#   └── dsliteAFTRPortUsageOfSpecificIpAlarm (.3) - NAT port usage threshold
+#   ├── dsliteTunnelNumAlarm          (.1) – tunnel count exceeds threshold
+#   ├── dsliteAFTRUserSessionNumAlarm (.2) – user sessions exceed threshold
+#   └── dsliteAFTRPortUsageOfSpecificIpAlarm (.3) – NAT port usage threshold
 #
-# Writable OIDs (T14 targets), per RFC 7870 §8; SYNTAX range enforced on SET:
+# Writable OIDs (T10 targets), per RFC 7870 §8; SYNTAX range enforced on SET:
 #   1.3.6.1.2.1.240.1.3.1.6  dsliteAFTRAlarmConnectNumber  Integer32(60..90)
 #   1.3.6.1.2.1.240.1.3.1.7  dsliteAFTRAlarmSessionNumber  Integer32
 #   1.3.6.1.2.1.240.1.3.1.8  dsliteAFTRAlarmPortNumber     Integer32
@@ -75,15 +75,16 @@ PORT = 161
 # not match COMMUNITY, so a probe with the well-known "public" gets no reply.
 ENFORCE_COMMUNITY = os.environ.get("T12_SNMP_COMMUNITY_ENFORCE", "0") == "1"
 
-# ── T14/T15 defence: SNMPv3 USM authNoPriv + engineID pinning ──────────────
+# ── T10/T11 defence: SNMPv3 USM authNoPriv + engineID pinning ──────────────
 # Mechanism from Lawrence & Traynor et al., "Under New Management: Practical
 # Attacks on SNMPv3" (USENIX WOOT 2012): authenticate every request and pin the
 # snmpEngineID instead of trusting unauthenticated discovery. When T_SNMP_USM=1
-# the agent ONLY accepts SNMPv3 USM messages carrying a valid HMAC-SHA-96
-# msgAuthenticationParameters for the configured user, within the engineTime
-# window (anti-replay); SNMPv1/v2c (the T14/T15 attack) is dropped. The engine
-# identity is fixed and pinned at the manager, so discovery cannot be abused to
-# choose a key. authNoPriv (no AES in the lab); auth alone blocks SET and GET.
+# the agent ONLY accepts SNMPv3 USM messages carrying a valid HMAC-SHA-256
+# msgAuthenticationParameters (RFC 7860 usmHMAC192SHA256) for the configured
+# user, within the engineTime window (anti-replay); SNMPv1/v2c (the T10/T11
+# attack) is dropped. The engine identity is fixed and pinned at the manager, so
+# discovery cannot be abused to choose a key. authNoPriv (no AES in the lab);
+# auth alone blocks SET and GET.
 USM_MODE = os.environ.get("T_SNMP_USM", "0") == "1"
 USM_USER = os.environ.get("SNMP_USM_USER", "oamuser").encode()
 USM_PASS = os.environ.get("SNMP_SECRET", "S3cr3t-oam-2026")
@@ -94,7 +95,7 @@ _USM_START = time.time()
 if USM_MODE:
     sys.path.insert(0, "/testbed/defenses")
     import snmpv3_usm as _usm
-    _USM_KEY = _usm.password_to_key_sha1(USM_PASS, USM_ENGINE_ID)
+    _USM_KEY = _usm.password_to_key_sha256(USM_PASS, USM_ENGINE_ID)
 
 
 def _usm_engine_time():
@@ -157,7 +158,7 @@ OID_NAT_BIND_TABLE = OID_BASE + (1, 2, 1)     # dsliteNATBindTable (RFC 7870)
 OID_NAT_BIND_COUNT = OID_BASE + (1, 2, 2, 0)
 
 # dsliteInfo subtree (.1.3)
-# dsliteAFTRAlarmScalar (.1.3.1) - EXACT RFC 7870 §8 column order:
+# dsliteAFTRAlarmScalar (.1.3.1) — EXACT RFC 7870 §8 column order:
 OID_ALARM_B4_ADDR_TYPE = OID_BASE + (1, 3, 1, 1)  # dsliteAFTRAlarmB4AddrType   (notify)
 OID_ALARM_B4_ADDR      = OID_BASE + (1, 3, 1, 2)  # dsliteAFTRAlarmB4Addr       (notify)
 OID_ALARM_PROTO_TYPE   = OID_BASE + (1, 3, 1, 3)  # dsliteAFTRAlarmProtocolType (notify)
@@ -167,7 +168,7 @@ OID_ALARM_CONNECT_NUM  = OID_BASE + (1, 3, 1, 6)  # dsliteAFTRAlarmConnectNumber
 OID_ALARM_SESSION_NUM  = OID_BASE + (1, 3, 1, 7)  # dsliteAFTRAlarmSessionNumber (r/w, Integer32, DEFVAL -1)
 OID_ALARM_PORT_NUM     = OID_BASE + (1, 3, 1, 8)  # dsliteAFTRAlarmPortNumber    (r/w, Integer32, DEFVAL -1)
 
-# dsliteStatisticsTable (.1.3.2) - RFC 7870
+# dsliteStatisticsTable (.1.3.2) — RFC 7870
 OID_STATS_TABLE = OID_BASE + (1, 3, 2)
 
 # dsliteNotifications (.0)
@@ -175,7 +176,7 @@ OID_NOTIF_TUNNEL_NUM   = OID_BASE + (0, 1)  # dsliteTunnelNumAlarm
 OID_NOTIF_SESSION_NUM  = OID_BASE + (0, 2)  # dsliteAFTRUserSessionNumAlarm
 OID_NOTIF_PORT_USAGE   = OID_BASE + (0, 3)  # dsliteAFTRPortUsageOfSpecificIpAlarm
 
-# ── Mutable alarm thresholds (RFC 7870 §8 - T14 attack targets) ─────────
+# ── Mutable alarm thresholds (RFC 7870 §8 — T10 attack targets) ─────────
 # RFC 7870 defines each object's SYNTAX exactly:
 #   dsliteAFTRAlarmConnectNumber  Integer32 (60..90)  DEFVAL 60
 #   dsliteAFTRAlarmSessionNumber  Integer32           DEFVAL -1
@@ -361,7 +362,7 @@ def get_tunnel_entries():
                 'addressType': 2,         # ipv6(2)
                 'startAddress': remote,   # B4 IPv6 (:: for wildcard)
                 'endAddress': local,      # AFTR IPv6
-                'startAddPreLen': 128,    # /128 - each B4 tunnel endpoint is a host route (RFC 7870 dsliteTunnelStartAddrPrefixLength)
+                'startAddPreLen': 128,    # /128 — each B4 tunnel endpoint is a host route (RFC 7870 dsliteTunnelStartAddrPrefixLength)
                 'encapsMethod': 17,       # dsLite(17) IANAtunnelType
                 'ifIndex': len(entries) + 1,
             })
@@ -918,11 +919,11 @@ def run_server(host, port, community):
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind((host, port))
     print(f"[SNMP] DS-Lite AFTR SNMP agent listening on {host}:{port}")
-    print(f"[SNMP] Community: {community} (SNMPv2c - NOT RECOMMENDED per RFC 7870 §7)")
+    print(f"[SNMP] Community: {community} (SNMPv2c – NOT RECOMMENDED per RFC 7870 §7)")
     print(f"[SNMP] MIB: DSLITE-MIB (IANA mib-2.240 = OID 1.3.6.1.2.1.240)")
     print(f"[SNMP] Tunnel encapsulation type: dsLite(17)")
     print(f"[SNMP]")
-    print(f"[SNMP] Writable alarm thresholds (RFC 7870 §4 - T13 targets):")
+    print(f"[SNMP] Writable alarm thresholds (RFC 7870 §4 – T9 targets):")
     thresh_names = {
         OID_ALARM_CONNECT_NUM: 'dsliteAFTRAlarmConnectNumber',
         OID_ALARM_SESSION_NUM: 'dsliteAFTRAlarmSessionNumber',
@@ -959,7 +960,7 @@ def run_server(host, port, community):
 
 def main():
     p = argparse.ArgumentParser(
-        description='DS-Lite AFTR SNMP Agent - RFC 7870 DSLITE-MIB simulator\n'
+        description='DS-Lite AFTR SNMP Agent – RFC 7870 DSLITE-MIB simulator\n'
                     'IANA OID: mib-2.240 (1.3.6.1.2.1.240)\n'
                     'Tunnel type: dsLite(17)',
         formatter_class=argparse.RawDescriptionHelpFormatter,

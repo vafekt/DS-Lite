@@ -1,6 +1,6 @@
-# NAT_LOG - per-binding attribution log (shared-IP abuse)
+# NAT_LOG — per-binding attribution log (shared-IP abuse)
 
-Tree defence leaf **"Per-binding attribution log"** - defends **T2** (abuse from
+Tree defence leaf **"Per-binding attribution log"** — defends **TS1** (abuse from
 the shared public IPv4 that, without logging, cannot be attributed to the
 responsible subscriber and collateral-blocks the co-subscribers).
 
@@ -13,8 +13,8 @@ punishing every co-subscriber.
 ## OFF vs ON (measured)
 | | result |
 |---|---|
-| OFF (no logging) | `OFF.attribution.log` + `OFF.count.txt` - **0** attribution records (abuse unattributable) |
-| ON (per-binding log) | `ON.attribution.log` + `ON.count.txt` - **200** records mapping the abuse to the subscriber |
+| OFF (no logging) | `OFF.attribution.log` + `OFF.count.txt` — **0** attribution records (abuse unattributable) |
+| ON (per-binding log) | `ON.attribution.log` + `ON.count.txt` — **200** records mapping the abuse to the subscriber |
 
 The attacker (client1) scans from the shared IP; OFF nothing ties the abuse to a
 subscriber, ON every flow is logged with its internal owner.

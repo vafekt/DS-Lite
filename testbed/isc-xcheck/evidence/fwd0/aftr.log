@@ -1,0 +1,4 @@
+net.ipv4.conf.tun0.rp_filter = 0
+upsize tunnel hash
+tunnel add 2001:0:0:5::2
+1786628962 bucket 2001:0:0:5::2 198.18.200.111 udp #20109 #44351 #52145 #38577 #25413 #12469 #22518 #33259
