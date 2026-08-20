@@ -128,8 +128,25 @@ bash "$AP" SNMP_USM off >/dev/null 2>&1
 # SET so the OAM read stays at the (legit) default, never the attacker's value.
 { [ "${o:-0}" -gt 1000000 ] && [ "${n:-2147483647}" -lt 1000000 ]; } && ok SNMP_USM "OFF v2c-SET=$o | ON OAM reads $n" || no SNMP_USM "OFF $o | ON $n"
 
-# ── T9/T9 DHCPV6_AUTH (rogue AFTR) ────────────────────────────────────────
-hdr "T9/T9  DHCPV6_AUTH  (rogue DHCPv6 AFTR-Name)"
+# ── T9/T9b AFTR_PIN (rogue AFTR-Name + rogue-resolver pinning) - via runner ──
+# Runs BEFORE DHCPV6_AUTH: that block kills dhcpd6 and the B4 dhclient without
+# restoring them, so AFTR_PIN must measure on the clean boot-state B4.
+hdr "T9/T9b  AFTR_PIN  (provisioned name + resolver pinning, no server key)"
+# Deterministic hook-level check, free of run-to-run attack timing: drive the B4
+# dhclient6 exit hook exactly as dhclient6 would on a BOUND event, once with a
+# rogue AFTR-Name (name-pin leg, T9) and once with a rogue Option-23 resolver
+# under the legit name (resolver-pin leg, T9b). OFF (stock hook) adopts each
+# rogue; ON (pinned hook) rejects the rogue name and resolves only through the
+# pinned resolver. Both pin DECISIONS are verified here.
+_apname() { nse b4-1 sh -c "echo 'aftr.dslite.example.com.' >/var/run/ds-lite-aftr-name; new_dhcp6_aftr_name='aftr-evil.attacker.example.' reason=BOUND bash /etc/dhcp/dhclient-exit-hooks.d/ds-lite >/dev/null 2>&1; tr -d '[:space:]' </var/run/ds-lite-aftr-name"; }
+_apresolver() { nse b4-1 sh -c "echo 'aftr.dslite.example.com.' >/var/run/ds-lite-aftr-name; : >/var/log/ds-lite-hijack.log; new_dhcp6_aftr_name='aftr.dslite.example.com.' new_dhcp6_name_servers='dead:beef::66' reason=BOUND bash /etc/dhcp/dhclient-exit-hooks.d/ds-lite >/dev/null 2>&1; grep resolve /var/log/ds-lite-hijack.log | tail -1"; }
+bash "$AP" AFTR_PIN off >/dev/null 2>&1; o=$(_apname); orr=$(_apresolver)
+bash "$AP" AFTR_PIN on  >/dev/null 2>&1; n=$(_apname); nrr=$(_apresolver)
+bash "$AP" AFTR_PIN off >/dev/null 2>&1
+{ echo "$o"|grep -qi evil && echo "$n"|grep -qi 'aftr.dslite' && echo "$orr"|grep -qi 'dead:beef' && ! echo "$nrr"|grep -qi 'dead:beef'; } && ok AFTR_PIN "name OFF adopts rogue, ON keeps $n | resolver OFF uses rogue, ON pins it out" || no AFTR_PIN "name OFF $o ON $n | resolver OFF $orr ON $nrr"
+
+# ── T9 DHCPV6_AUTH (rogue AFTR) ───────────────────────────────────────────
+hdr "T9  DHCPV6_AUTH  (rogue DHCPv6 AFTR-Name)"
 dx test -f /testbed/defenses/keys/dhcpv6_ed25519.sec || dx python3 /testbed/defenses/dhcpv6auth.py keygen --out /testbed/defenses/keys >/dev/null 2>&1
 dx pkill -9 -f 'dhcpd -6' 2>/dev/null
 # the B4 dhclient holds the client port 546; the verifying client cannot bind

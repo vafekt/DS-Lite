@@ -217,3 +217,14 @@ and export.sh is now self-contained (renders into testbed/attack_trees only, nev
 Boolean reachability: 16/16 goals reachable with no defense; every credited defense makes its goal
 unreachable (T1's SAVI is a known non-closer standing alone — it guards only the forge-source branch
 of T1's OR; T1's closer is the two-structure session table, unchanged).
+
+## Update 2026-08-20 — T9/T9b mitigation relabelled to AFTR-PIN (paper Round-4 alignment)
+The T9 and T9b defence label `D_dhcpauth` changed from "Ed25519-signed DHCPv6" to
+"AFTR-PIN name + resolver pin" in `results/adtool_trees/build_trees.py`, matching the paper's
+Round-4 reframing: signed DHCPv6 is not bootstrappable at first contact (RFC 8415 removed the
+delayed-authentication option), so the discovery hijack is closed by AFTR-PIN — a keyless public
+pin of the provisioned AFTR name and resolver, not a server key. This is a label-only change: the
+Defender node still attaches to the same rogue-Advertise (T9) and rogue-resolver (T9b) action, so
+the tree structure, the boolean reachability (16/16 goals reachable with no defence; every credited
+defence closes its goal), and the coverage claims are all unchanged. Bundle re-exported via
+`export.sh` (16 QuADTool trees + 16 figures).

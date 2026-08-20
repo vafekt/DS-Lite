@@ -751,7 +751,7 @@ socat TCP-LISTEN:8080,fork,reuseaddr \
     EXEC:"ip netns exec server nc 127.0.0.1 80" 2>/dev/null &
 
 ########################################################################
-# 13b. SNMP agent on AFTR (RFC 7870 DSLITE-MIB – T10/T11 target)
+# 13b. SNMP agent on AFTR (RFC 7870 DSLITE-MIB – T10 target)
 ########################################################################
 echo "=== Starting AFTR SNMP agent (RFC 7870 DSLITE-MIB) ==="
 # RFC 5706 §3.1 — bind to OAM management interface only.  The data-plane
@@ -763,7 +763,7 @@ ip netns exec aftr python3 -u "$SCRIPT_DIR/aftr/snmp_agent.py" \
 echo "  SNMP agent running on AFTR  10.99.0.1:161 (OAM only)  community=public"
 echo "  Exposes: dsliteTunnelTable, dsliteNATBindTable, alarm thresholds"
 echo "  T10 test: python3 /testbed/attack_tools/infra/snmp_attack.py set --target 10.99.0.1 --oid alarmConnectNumber --value 2147483647"
-echo "  T11 test: python3 /testbed/attack_tools/infra/snmp_attack.py read --target 10.99.0.1 --oids all"
+echo "  T10 test: python3 /testbed/attack_tools/infra/snmp_attack.py read --target 10.99.0.1 --oids all"
 
 # RFC 5706 defense-in-depth: drop SNMP arriving on data-plane interfaces
 # even if a future misconfiguration binds the agent to 0.0.0.0.  Operators
@@ -967,7 +967,7 @@ ip netns exec attacker ip link set eth-isp address 2a:29:47:aa:9c:56   # pinned 
         mgmt)
             # IPv4-only attacker on the OAM/management network (10.99.0.0/24)
             # Models an insider with management-plane access — the only
-            # placement from which SNMP attacks (T10/T11) succeed when the
+            # placement from which SNMP attacks (T10) succeed when the
             # AFTR follows RFC 5706 §3.1 OAM segregation.
             ip link add eth-mgmt-atk type veth peer name atk-mgmt-br
             ip link set eth-mgmt-atk netns attacker

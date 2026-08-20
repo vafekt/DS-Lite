@@ -1,0 +1,12 @@
+================================================================
+  Per-address NAT-pool split under T12 (two public IPv4 on the AFTR)
+================================================================
+  baseline  client1(->.1)=200  client2(->.2)=200   pool.1=1  pool.2=1
+  flooding T12 (forged softwire identities, inner src in B4-1 LAN -> egress .1) ...
+
+  ---------------- per-address pool split (T12) ----------------
+  first  address 192.0.2.1 pool = 64512  (flooded)
+  second address 192.0.2.2 pool = 1      (untouched)
+  co-resident on .1 (client1) = 000    co-resident on .2 (client2) = 200
+  => Shared-IPv4 (cohort on 192.0.2.1) strictly smaller than AFTR-Wide  [OK]
+  --------------------------------------------------------------

@@ -1,0 +1,5 @@
+T5: 20/20 succeeded  (rule-of-three 95% lower bound 85%)
+    flow loss: mean 89.5%  SD 6.7%  95% CI [86.5, 92.5]  (n=20)
+T8: 18/20 succeeded
+T9: 20/20 succeeded  (rule-of-three 95% lower bound 85%)
+T9b: 20/20 succeeded  (rule-of-three 95% lower bound 85%)

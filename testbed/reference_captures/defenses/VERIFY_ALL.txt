@@ -1,7 +1,3 @@
-# verify_all.sh — off/on re-execution oracle for every mitigation
-# recorded 2026-08-13T22:20:28Z on a healthy ds-lite-lab; 15/15 PASS
-# includes SAVI_T12 (identity-multiplication, fixed 2000::/3 scope) and DECAP_BIND (T11 relay + cross-plane)
-
 
 == T1  TRABELSI  (NAT/conntrack state exhaustion) ==
   PASS  TRABELSI       OFF client1=000 | ON client1=200
@@ -15,35 +11,23 @@
 == T12  SAVI  (softwire identity multiplication / shared-pool drain) ==
   PASS  SAVI_T12       OFF pool=64512 co-res=000 | ON pool=0 co-res=200 (identity flood blocked)
 
-== T5  FEISTEL_IPID  (secondary: defeats identifier prediction) ==
-  PASS  FEISTEL_IPID   sequential-prediction hits over 2000 ids = 0 (counter would be 2000; prediction defeated, secondary to SAVI)
-
 == T6/T7  PCP_OWNERSHIP  (THIRD_PARTY / PEER cross-subscriber) ==
   PASS  PCP_OWNERSHIP  OFF 5 cross-sub DNAT | ON 0
-
-== TS2  PCP_QUOTA  (per-subscriber pool exhaustion) ==
-  PASS  PCP_QUOTA      OFF b4-2 REFUSED | ON b4-2 OK
-
-== TS3  PCP_AUTH  (forged ANNOUNCE epoch reset) ==
-  PASS  PCP_AUTH       OFF 6 storms | ON 0 storms
-
-== TS1  NAT_LOG  (shared-IPv4 reputation attribution) ==
-  PASS  NAT_LOG        OFF 0 records | ON 200 records
 
 == T10  SNMP_USM  (MIB write + disclosure) ==
   PASS  SNMP_USM       OFF v2c-SET=2147483647 | ON OAM reads -1
 
-== T9/T9  DHCPV6_AUTH  (rogue DHCPv6 AFTR-Name) ==
+== T9/T9b  AFTR_PIN  (provisioned name + resolver pinning, no server key) ==
+  PASS  AFTR_PIN       name OFF adopts rogue, ON keeps aftr.dslite.example.com. | resolver OFF uses rogue, ON pins it out
+
+== T9  DHCPV6_AUTH  (rogue DHCPv6 AFTR-Name) ==
   PASS  DHCPV6_AUTH    OFF AFTR=aftr-evil.attacker.example. | ON AFTR=aftr.dslite.example.com.
 
-== T8  DNS_0X20  (off-path DNS poisoning) ==
-  PASS  DNS_0X20       OFF resolved to 2001:db8:cafe:0:94d7:3ff:fe9f:1d78 | ON resolved to <none>
-
 == T8  DNS_COOKIES  (off-path DNS poisoning) ==
-  PASS  DNS_COOKIES    OFF resolved to 2001:db8:cafe:0:94d7:3ff:fe9f:1d78 | ON resolved to <none>
+  PASS  DNS_COOKIES    OFF resolved to 2001:db8:cafe:0:a041:4eff:fedd:8f74 | ON resolved to <none>
 
 == D11  DECAP_BIND  (T11 softwire decap relay + RFC 6324 loop + cross-plane mgmt access) ==
   PASS  DECAP_BIND     OFF relay=3 to Internet | ON relay=0 blocked, legit=3 ok
   PASS  DECAP_BIND_XPLANE OFF P1->AFTR MIB via softwire | ON P1 blocked, P3 mgmt ok
 
-================ 15 PASS, 0 FAIL ================
+================ 11 PASS, 0 FAIL ================

@@ -16,6 +16,14 @@
 #               verifies the signature before adopting Option 64 (AFTR-Name).
 #               -> T9 (Rogue AFTR Substitution), T9b (Transparent AFTR Hijack)
 #
+#  AFTR_PIN     Provisioned AFTR-name and resolver pinning (a novel composition
+#               for DS-Lite AFTR discovery). The B4 rejects any DHCPv6-supplied
+#               AFTR-Name outside its provisioned ISP domain and resolves the
+#               pinned name only through the provisioned resolver, routing trust
+#               through a PUBLIC pin (no secret key), not the server key
+#               DHCPv6 lacks.
+#               -> T9 (Rogue AFTR Substitution), T9b (Transparent AFTR Hijack)
+#
 #  PCP_OWNERSHIP  Müller & Rytilahti et al., "Peeking Behind NAT Gateways",
 #               NDSS 2020 (§Potential Remediations). PCP server enforces
 #               ownership binding: a client may only MAP/PEER/THIRD_PARTY an
@@ -360,7 +368,7 @@ decap_bind() {
   if [ "$1" != on ]; then
     echo "DECAP_BIND off (no decapsulation-time inner binding)"; return
   fi
-  local OVERLAP="${DSLITE_OVERLAP_RANGE:-192.168.0.0/16}"
+  local OVERLAP="${DSLITE_DECAP_OVERLAP:-10.0.0.0/16}"   # subscriber inner space (this build); RFC 6324 overlap range (distinct env from setup.sh's reply-routing OVERLAP)
   local INFRA="${DSLITE_INFRA_RANGE:-10.99.0.0/24}"   # AFTR OAM/management + provider infrastructure
   nse aftr nft add table ip decap_bind
   nse aftr nft "add chain ip decap_bind ingress { type filter hook prerouting priority -150 ; policy accept ; }"
@@ -379,8 +387,37 @@ decap_bind() {
   echo "DECAP_BIND on (per-softwire inner source+dest binding at decapsulation; relay, RFC 6324 loop, and cross-plane management access dropped)"
 }
 
+# ── AFTR_PIN (T9/T9b): provisioned AFTR-name + resolver pinning ──────────────
+#    The B4 rejects any DHCPv6-supplied AFTR-Name (Option 64) outside its
+#    provisioned ISP domain and resolves the pinned name only through the
+#    provisioned resolver, so a carrier attacker can neither substitute a rogue
+#    name (T9) nor redirect the legit name via a rogue resolver (T9b). Trust is
+#    routed through a PUBLIC pin (a domain the CPE is provisioned with)
+#    rather than a DHCPv6 server key no deployed standard
+#    bootstraps. The exit hook is backward-compatible: absent the pin files it
+#    behaves as the stock unpinned hook, so the pin toggles cleanly on and off.
+aftr_pin() {
+  local HOOK=/etc/dhcp/dhclient-exit-hooks.d/ds-lite
+  local PIN_DOMAIN="${AFTR_PIN_DOMAIN:-dslite.example.com}"
+  local PIN_RESOLVER="${AFTR_PIN_RESOLVER:-${DNS_IP6:-2001:db8:cafe::2}}"
+  case "$1" in
+  on)
+    dx sh -c "[ -f ${HOOK}.stock ] || cp ${HOOK} ${HOOK}.stock"
+    dx cp /testbed/defenses/aftr_pin_hook.sh "$HOOK"; dx chmod +x "$HOOK"
+    dx sh -c "mkdir -p /etc/ds-lite; printf '%s\n' '${PIN_DOMAIN}' >/etc/ds-lite/aftr-pin; printf '%s\n' '${PIN_RESOLVER}' >/etc/ds-lite/aftr-resolver"
+    echo "AFTR_PIN on (AFTR-Name pinned to *.${PIN_DOMAIN}, resolver pinned to ${PIN_RESOLVER}; rogue name and rogue resolver rejected, no server key)"
+    ;;
+  off)
+    dx rm -rf /etc/ds-lite 2>/dev/null
+    dx sh -c "[ -f ${HOOK}.stock ] && cp ${HOOK}.stock ${HOOK} || true"
+    echo "AFTR_PIN off (stock unpinned AFTR discovery restored)"
+    ;;
+  esac
+}
+
 case "$DEF" in
   DHCPV6_AUTH)   dhcpv6_auth   "$STATE" ;;
+  AFTR_PIN)      aftr_pin      "$STATE" ;;
   DECAP_BIND)    decap_bind    "$STATE" ;;
   PCP_OWNERSHIP) pcp_ownership "$STATE" ;;
   SNMP_USM)      snmp_usm      "$STATE" ;;
