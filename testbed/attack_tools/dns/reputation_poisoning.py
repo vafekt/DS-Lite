@@ -240,7 +240,7 @@ Examples:
     p.add_argument('--discover', action='store_true',
                    help='Reconnaissance: query the source-reflector (server:9999) '
                         'to learn the shared CGN public IPv4 this subscriber egresses '
-                        'under - the blast radius of the reputation poisoning.')
+                        'under - the reach of the reputation poisoning.')
     args = p.parse_args()
 
     if not is_valid_ipv4(args.target):
@@ -256,7 +256,7 @@ Examples:
             print(f"[recon] source-reflector says: {reply}")
             print(f"[recon] shared CGN public IPv4 = {pub}")
             print(f"[recon] => poisoning this address blocklists EVERY co-subscriber "
-                  f"sharing it (the blast radius). Proceeding with abuse...")
+                  f"sharing it (the reach). Proceeding with abuse...")
         except Exception as e:
             print(f"[recon] reflector probe failed ({e}); continuing without it")
         print()

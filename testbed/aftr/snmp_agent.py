@@ -344,10 +344,16 @@ def get_tunnel_entries():
             stderr=subprocess.DEVNULL, text=True
         )
         for line in out.splitlines():
-            if 'ip6tnl' not in line.lower() and 'ipip6' not in line.lower():
-                continue
             parts = line.split()
+            if not parts:
+                continue
             name = parts[0].rstrip(':')
+            # DS-Lite softwire devices (ds-lite-b4-1/2 carry the real B4 tunnel
+            # sources; ds-lite-open is the wildcard). `ip -6 tunnel show` prints
+            # their mode as "ip/ipv6", not the literal "ip6tnl"/"ipip6", so match
+            # on the device name and skip the kernel default ip6tnl0.
+            if not name.startswith('ds-lite'):
+                continue
             remote = '::'
             local = '::'
             for i, p in enumerate(parts):
@@ -399,6 +405,22 @@ def get_nat_bindings():
       mapBehavior, filterBehavior, addressPooling
     """
     bindings = []
+    # RFC 7870 dsliteNATBindMappingIntAddress is the IPv6 tunnel source (the B4
+    # address), not the decapsulated inner IPv4. conntrack is IPv4-only, so join
+    # each inner source to its per-B4 softwire device (ip route) and that device
+    # to its remote B4 IPv6 via get_tunnel_entries().
+    dev_to_b4 = {t['name']: t['startAddress'] for t in get_tunnel_entries()
+                 if t.get('startAddress') not in ('::', '', None)}
+    def _b4_src(inner_ip):
+        try:
+            r = subprocess.check_output(['ip', 'route', 'get', inner_ip],
+                                        stderr=subprocess.DEVNULL, text=True)
+            p = r.split()
+            if 'dev' in p:
+                return dev_to_b4.get(p[p.index('dev') + 1])
+        except Exception:
+            pass
+        return None
     try:
         out = subprocess.check_output(
             ['conntrack', '-L', '-o', 'extended'],
@@ -445,7 +467,7 @@ def get_nat_bindings():
             bindings.append({
                 'protocol': proto_num,
                 'protocolName': proto_name,
-                'internalAddress': fields.get('src', '?'),
+                'internalAddress': _b4_src(fields.get('src', '')) or '?',
                 'internalPort': int(fields.get('sport', 0)),
                 'externalAddress': reply_fields.get('dst', fields.get('dst', '?')),
                 'externalPort': int(reply_fields.get('dport', fields.get('dport', 0))),
@@ -455,7 +477,6 @@ def get_nat_bindings():
                 'mapBehavior': 1,       # endpointIndependent(1)
                 'filterBehavior': 3,    # addressAndPortDependent(3)
                 'addressPooling': 2,    # paired(2)
-                'raw': line[:240],
             })
     except Exception:
         pass
@@ -579,7 +600,7 @@ def get_mib_value(oid):
                 return 0x04, entry['externalAddress'].encode()
             elif col == 3:  # externalPort
                 return 0x02, struct.pack('!I', entry['externalPort'])
-            elif col == 4:  # internalAddress (subscriber private IPv4)
+            elif col == 4:  # internalAddress = B4 IPv6 tunnel source (RFC 7870)
                 return 0x04, entry['internalAddress'].encode()
             elif col == 5:  # internalPort
                 return 0x02, struct.pack('!I', entry['internalPort'])
@@ -593,8 +614,6 @@ def get_mib_value(oid):
                 return 0x02, struct.pack('!I', entry['filterBehavior'])
             elif col == 10: # addressPooling: paired(2)
                 return 0x02, struct.pack('!I', entry['addressPooling'])
-            elif col == 11: # raw conntrack line
-                return 0x04, entry['raw'].encode()
         return None, None
 
     # ── dsliteInfo subtree (.1.3) ─────────────────────────────────────
@@ -738,7 +757,7 @@ def enumerate_leaf_oids():
             oids.append(OID_TUNNEL_TABLE + (col, row))
     oids.append(OID_TUNNEL_COUNT)                 # .1.1.2.0
     n_bind = len(get_nat_bindings())
-    for col in range(1, 12):                      # dsliteNATBindTable columns 1..11
+    for col in range(1, 11):                      # dsliteNATBindTable columns 1..10
         for row in range(1, n_bind + 1):
             oids.append(OID_NAT_BIND_TABLE + (col, row))
     oids.append(OID_NAT_BIND_COUNT)               # .1.2.2.0

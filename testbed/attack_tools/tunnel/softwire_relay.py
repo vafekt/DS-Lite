@@ -22,8 +22,10 @@
 # neighbor resolution), used, then torn down. The attack needs only carrier
 # reachability to the AFTR softwire address; on the default build it succeeds
 # whenever ingress filtering (uRPF) is off, which is the documented default. It
-# is closed by the DECAP_BIND defense (decapsulation-time inner-source binding)
-# and by uRPF.
+# is closed by the DECAP_BIND defense (decapsulation-time provisioned-source
+# binding). Outer-source uRPF does not close it (the carrier source is the
+# attacker's own); inner-source uRPF drops only the non-routable inner source
+# used here and does not substitute for provisioning in general.
 import argparse
 import subprocess
 

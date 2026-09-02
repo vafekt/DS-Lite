@@ -19,7 +19,8 @@ set -u
 C="${CONTAINER_NAME:-ds-lite-lab}"
 N="${N:-20}"
 IDS="${IDS:-T5 T8 T9 T9b}"
-HOUT="${HOUT:-/home/kali/Desktop/Penterep/DS-Lite/testbed/reference_captures/probabilistic}"
+HERE="$(cd "$(dirname "$0")" && pwd)"
+HOUT="${HOUT:-$HERE/../reference_captures/probabilistic}"
 mkdir -p "$HOUT"
 run_one() { docker exec "$C" bash /testbed/scripts/run_attack_live.sh "$1" 2>/dev/null; }
 

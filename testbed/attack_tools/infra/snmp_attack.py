@@ -118,7 +118,7 @@ for i in range(1, 11):
 # dsliteNATBindTable entries (.1.2.1.col.row)
 # Columns: 1=protocol, 2=externalAddr, 3=externalPort,
 #          4=internalAddr, 5=internalPort, 6=dstAddr, 7=dstPort,
-#          8=mapBehavior, 9=filterBehavior, 10=addressPooling, 11=raw
+#          8=mapBehavior, 9=filterBehavior, 10=addressPooling
 for i in range(1, 21):
     KNOWN_OIDS[f'natProtocol.{i}']       = OID_BASE + (1, 2, 1, 1, i)
     KNOWN_OIDS[f'natExtAddr.{i}']        = OID_BASE + (1, 2, 1, 2, i)
@@ -130,7 +130,6 @@ for i in range(1, 21):
     KNOWN_OIDS[f'natMapBehavior.{i}']    = OID_BASE + (1, 2, 1, 8, i)
     KNOWN_OIDS[f'natFilterBehavior.{i}'] = OID_BASE + (1, 2, 1, 9, i)
     KNOWN_OIDS[f'natPooling.{i}']        = OID_BASE + (1, 2, 1, 10, i)
-    KNOWN_OIDS[f'natRaw.{i}']            = OID_BASE + (1, 2, 1, 11, i)
 
 OID_GROUPS = {
     'tunnel': ['tunnelCount'] + [k for k in KNOWN_OIDS
@@ -603,7 +602,7 @@ T11 – Disclosure examples:
                         print(f"  {name}: {val}  ← Tunnel topology")
                 elif 'nat' in name.lower():
                     if 'IntAddr' in name:
-                        print(f"  {name}: {val}  ← Subscriber internal IPv4 (privacy)")
+                        print(f"  {name}: {val}  ← B4 tunnel source (softwire identity, RFC 7870)")
                     elif 'Behavior' in name or 'Pooling' in name:
                         print(f"  {name}: {val}  ← NAT behavior (port-mapping predictability)")
                     else:

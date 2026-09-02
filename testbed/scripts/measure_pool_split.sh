@@ -1,6 +1,6 @@
 #!/bin/bash
 # measure_pool_split.sh - integrated per-address NAT-pool measurement for the
-# Blast-Radius separation (paper Section sec:aps-experiment). Runs the AFTR with
+# Reach separation (paper Section sec:aps-experiment). Runs the AFTR with
 # TWO public IPv4 addresses (B4-1 subscriber LAN -> 192.0.2.1, B4-2 -> 192.0.2.2)
 # and floods the identity-multiplication attack (T12) so it egresses on the FIRST
 # address, then counts the NAT-pool occupancy on each address. It shows the flood
