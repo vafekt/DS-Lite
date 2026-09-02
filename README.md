@@ -108,9 +108,9 @@ each attack is listed below.
 | `ESP_AEAD` | T3 | Authenticated encryption (IPsec ESP) on the softwire |
 | `PCP_OWNERSHIP` | T6, T7 | THIRD_PARTY ownership check on port requests |
 | `DNS_COOKIES` | T8 | DNS Cookies (RFC 7873) at the B4 resolver |
-| `DHCPV6_AUTH` | T9 | Signed DHCPv6 provisioning messages |
+| `AFTR_PIN` | T9 | Provisioned AFTR-name and resolver pinning, a keyless public pin (closes both the rogue-name T9a and the rogue-resolver T9b) |
 | `SNMP_USM` | T10 | SNMPv3 USM authenticated management access |
-| `DECAP_BIND` | T11 | Decapsulation-time provisioned-source binding (the RFC 6333 optional ingress filter) |
+| `DECAP_BIND` | T11 | Decapsulation-time provisioned-softwire binding, the customer filter RFC 6333 leaves optional |
 
 Toggle a defense from the host:
 
