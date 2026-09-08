@@ -1,24 +1,24 @@
 ================================================================
-  DS-Lite live attack  T9  —  Rogue AFTR Substitution
-  saving to  ./pcaps/runs/20260706T112720Z_T12/
+  DS-Lite live attack  T9  —  Cross-Subscriber PCP PEER Enumeration
+  saving to  ./pcaps/runs/20260706T112640Z_T12/
   ground truth (reference) in  ./pcaps/per_attack/T9/
 ================================================================
 
-  [1] Surface: DHCPv6 AFTR-Name (Option 64). The B4 trusts whoever answers first.
-      before: B4 softwire remote = 2001:db8:cafe::10 (the real AFTR)
-  [2] Attack: rogue DHCPv6 server advertises a NEW attacker AFTR name (aftr-evil.attacker.example).
-  [3] Measure: did the B4 adopt the attacker name AND rebuild its softwire to the attacker?
-      B4 cached AFTR name = aftr-evil.attacker.example.   softwire remote: 2001:db8:cafe::10 -> 2001:db8:cafe:0:2829:47ff:feaa:9c56
-  [4] Impact: the victim now tunnels its IPv4 to the attacker and loses real service.
-      victim client1 internet = HTTP 000 (attacker is not a real AFTR)
-      1-rogue-dhcpv6 (attacker/eth-isp)  T12_1-rogue-dhcpv6.pcap            5 pkts
-      2-b4-receives (b4-1/eth-isp)       T12_2-b4-receives.pcap             5 pkts
-      3-victim-tunnels-to-attacker (attacker/eth-isp) T12_3-victim-tunnels-to-attacker.pcap 4 pkts
-      victim softwire frames captured arriving at the attacker = 4
+  [1] Surface: AFTR PCP PEER operation (returns external IP:port for a flow).
+  [2] Attack: a B4-1 host abuses PEER to learn a DIFFERENT subscriber's external ports.
+      [T9] probes=102 elapsed=1.70s wildcard_leak=38393 TP=1 FP=0 FN=2
+      [T9] probes=102 elapsed=1.68s wildcard_leak=23073 TP=1 FP=0 FN=2
+      ===== T9 verdict =====
+      trials passed: 2/2
+      aggregate TP=2 FP=0 FN=4, precision=100.00%, recall=33.33%
+      *** T9 SUCCESS: cross-subscriber observation-isolation broken ***
+      1-cross-sub-peer-leak (b4-1/eth-isp) T12_1-cross-sub-peer-leak.pcap     337 pkts
+      2-aftr-pcp (aftr/eth-isp)          T12_2-aftr-pcp.pcap                337 pkts
+  [3] Measure: did the tool confirm a cross-subscriber leak (leaked port == real port)?
 
   --------------------------------------------------------------
-  reference: B4 adopts attacker name (aftr-evil.attacker.example) AND rebuilds its softwire to the attacker (2001:db8:cafe:0:2829:47ff:feaa:9c56); victim loses service
-  this run:  name=aftr-evil.attacker.example., softwire remote 2001:db8:cafe::10->2001:db8:cafe:0:2829:47ff:feaa:9c56, victim HTTP=000, frames-to-attacker=4
+  reference: cross-subscriber observation-isolation broken (leaked external port == victim's real port)
+  this run:  trials passed: 2/2 aggregate TP=2 FP=0 FN=4, precision=100.00%, recall=33.33% 
   verdict:   MATCH   (attack reproduced the stored result)
   --------------------------------------------------------------
-  saved: ./pcaps/runs/20260706T112720Z_T12/  (pcaps + config.txt + RESULT.txt)
+  saved: ./pcaps/runs/20260706T112640Z_T12/  (pcaps + config.txt + RESULT.txt)

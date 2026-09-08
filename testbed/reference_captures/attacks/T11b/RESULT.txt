@@ -1,7 +1,7 @@
 ================================================================
-  DS-Lite live attack  T9  —  Transparent AFTR Hijack
+  DS-Lite live attack  T11  —  Transparent AFTR Hijack
   saving to  ./pcaps/runs/20260706T112740Z_T13/
-  ground truth (reference) in  ./pcaps/per_attack/T9/
+  ground truth (reference) in  ./pcaps/per_attack/T11/
 ================================================================
 
   [1] Surface: DHCPv6 + DNS. Keep the legit AFTR name but make it resolve to the attacker.

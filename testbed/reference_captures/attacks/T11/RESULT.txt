@@ -1,20 +1,24 @@
 ================================================================
-  DS-Lite live attack  T11  —  Unauthenticated Softwire Decapsulation
-  saving to  ./pcaps/runs/20260813T081111Z_T15/
+  DS-Lite live attack  T11  —  Rogue AFTR Substitution
+  saving to  ./pcaps/runs/20260706T112720Z_T6/
   ground truth (reference) in  ./pcaps/per_attack/T11/
 ================================================================
 
-  [1] Surface: AFTR softwire ingress. RFC 6333 authenticates no B4, so the wildcard softwire decapsulates 4in6 from any carrier source.
-  [2] Attack: an UNPROVISIONED carrier host (no DHCPv6/PCP) sends 4in6 to the AFTR (2001:db8:cafe::10), inner 10.66.66.66 -> Internet 198.51.100.2.
-      the AFTR decapsulates, NATs the inner packet to the shared public IPv4 (192.0.2.1), and forwards it - an open one-way proxy.
-      1-attacker-4in6 (attacker/eth-isp) t11_1-attacker-4in6.pcap           8 pkts
-      2-aftr-egress (aftr/eth-wan)       t11_2-aftr-egress.pcap             18 pkts
-  [3] Measure: do the relayed packets egress the AFTR's public side laundered as the shared IPv4 (192.0.2.1 -> 198.51.100.2)?
-      relayed packets leaving the AFTR as the shared public IPv4 = 10
+  [1] Surface: DHCPv6 AFTR-Name (Option 64). The B4 trusts whoever answers first.
+      before: B4 softwire remote = 2001:db8:cafe::10 (the real AFTR)
+  [2] Attack: rogue DHCPv6 server advertises a NEW attacker AFTR name (aftr-evil.attacker.example).
+  [3] Measure: did the B4 adopt the attacker name AND rebuild its softwire to the attacker?
+      B4 cached AFTR name = aftr-evil.attacker.example.   softwire remote: 2001:db8:cafe::10 -> 2001:db8:cafe:0:2829:47ff:feaa:9c56
+  [4] Impact: the victim now tunnels its IPv4 to the attacker and loses real service.
+      victim client1 internet = HTTP 000 (attacker is not a real AFTR)
+      1-rogue-dhcpv6 (attacker/eth-isp)  T6_1-rogue-dhcpv6.pcap            5 pkts
+      2-b4-receives (b4-1/eth-isp)       T6_2-b4-receives.pcap             5 pkts
+      3-victim-tunnels-to-attacker (attacker/eth-isp) T6_3-victim-tunnels-to-attacker.pcap 4 pkts
+      victim softwire frames captured arriving at the attacker = 4
 
   --------------------------------------------------------------
-  reference: an unprovisioned host relays IPv4 to the Internet through the AFTR, laundered as the shared public IPv4 (>0)
-  this run:  relayed packets egressing as 192.0.2.1 -> 198.51.100.2 = 10
+  reference: B4 adopts attacker name (aftr-evil.attacker.example) AND rebuilds its softwire to the attacker (2001:db8:cafe:0:2829:47ff:feaa:9c56); victim loses service
+  this run:  name=aftr-evil.attacker.example., softwire remote 2001:db8:cafe::10->2001:db8:cafe:0:2829:47ff:feaa:9c56, victim HTTP=000, frames-to-attacker=4
   verdict:   MATCH   (attack reproduced the stored result)
   --------------------------------------------------------------
-  saved: ./pcaps/runs/20260813T081111Z_T15/  (pcaps + config.txt + RESULT.txt)
+  saved: ./pcaps/runs/20260706T112720Z_T6/  (pcaps + config.txt + RESULT.txt)

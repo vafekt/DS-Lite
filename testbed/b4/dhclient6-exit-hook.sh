@@ -7,8 +7,8 @@
 #      already exists, rebuild it whenever EITHER the AFTR name changed OR the
 #      address it resolves to changed. This models a real CPE (re-resolves on
 #      renewal) and covers both AFTR attacks:
-#        T9   Rogue AFTR substitution — a NEW (attacker) AFTR FQDN is adopted.
-#        T9b Transparent AFTR hijack — the LEGIT FQDN is kept but a rogue DNS
+#        T11   Rogue AFTR substitution — a NEW (attacker) AFTR FQDN is adopted.
+#        T11b Transparent AFTR hijack — the LEGIT FQDN is kept but a rogue DNS
 #             (handed to the B4 via Option 23) resolves it to the attacker, so
 #             the cached name still looks legitimate while traffic is redirected.
 
@@ -33,7 +33,7 @@ ip link show ds-lite >/dev/null 2>&1 || exit 0
 
 # Resolve the AFTR FQDN through the DNS server learned via DHCPv6 (RFC 8415
 # Option 23), exactly as a real CPE does — falling back to the provisioned
-# resolver. Under T9b the supplied DNS is the attacker's rogue resolver.
+# resolver. Under T11b the supplied DNS is the attacker's rogue resolver.
 RESOLVER="${new_dhcp6_name_servers%% *}"
 [ -z "$RESOLVER" ] && RESOLVER="2001:db8:cafe::2"
 NEW_AFTR_IPV6=$(host -t AAAA "$NEW_FQDN" "$RESOLVER" 2>/dev/null \

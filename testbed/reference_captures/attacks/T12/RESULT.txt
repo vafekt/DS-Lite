@@ -1,24 +1,24 @@
 ================================================================
-  DS-Lite live attack  T12  —  Softwire Identity Multiplication
-  saving to  ./pcaps/runs/20260813T081130Z_T16/
+  DS-Lite live attack  T12  —  DS-Lite MIB Unauthenticated Access
+  saving to  ./pcaps/runs/20260902T164047Z_T12/
   ground truth (reference) in  ./pcaps/per_attack/T12/
 ================================================================
 
-  [1] Surface: AFTR NAT/CGN shared port pool (RFC 6888 per-subscriber cap keyed on the forgeable softwire identity).
-  [2] Baseline: co-residents behind both B4s reach the target endpoint (198.51.100.2:80); the shared pool is 64,512 ports.
-      client1=200  client2=200
-  [3] Control: ONE forged identity pinned to :80; the per-subscriber cap (2000) cannot fill the pool.
-      ONE identity: pool(->:80)=2000 (capped ~2000) -> client1=200 client2=200  [co-residents UP, isolation holds]
-/testbed/scripts/attack_lib.sh: line 32:  2407 Killed                  ip netns exec "$@"
-  [4] Attack: MANY forged softwire identities (prefix 2001:db8:cafe:dead::/64) pinned to :80 drain the shared pool.
-      MANY identities: pool(->:80)=64512 (near 64512) -> client1=000 client2=000  [co-residents DENIED, isolation broken]
-      1-attacker-4in6 (attacker/eth-isp) t12_1-attacker-4in6.pcap           4000 pkts
-      2-aftr-egress (aftr/eth-wan)       t12_2-aftr-egress.pcap             4000 pkts
-/testbed/scripts/attack_lib.sh: line 32:  2464 Killed                  ip netns exec "$@"
+  [1] Surface: SNMP/MIB OAM plane (DSLITE-MIB, RFC 7870); default community, no USM.
+  [2] Seed: drive both subscribers so the AFTR holds a binding for each.
+  [3] Baseline: dsliteAFTRAlarmPortNumber = 1000 (NOC's per-user NAT-port alarm).
+  [4] Attack (write): a mgmt-reachable host raises the port-usage alarm to Integer32 max so it never fires.
+  [5] Attack (read): walk the DSLITE-MIB tables, disclosing each softwire's tunnel-source identity and external mapping.
+      1-snmp-set (aftr/eth-mgmt)         t12_1-snmp-set.pcap                556 pkts
+      2-mgmt-station (mgmt/eth-mgmt)     t12_2-mgmt-station.pcap            556 pkts
+  [6] Measure: threshold raised, distinct subscribers disclosed, and the RFC range enforced on ConnectNumber.
+      port-usage alarm threshold now = 2147483647 (was 1000) -> NOC blind to port exhaustion
+      distinct softwire tunnel sources disclosed via the MIB = 2  [2001:db8:cafe::b41 2001:db8:cafe::b42 ]
+      ConnectNumber out-of-range SET: tried 2147483647, value stayed 60 (RFC 60..90 enforced)
 
   --------------------------------------------------------------
-  reference: one forged identity is capped and leaves co-residents reachable (200); many forged identities fill the 64512-port pool and deny both co-residents (200->000)
-  this run:  ONE: pool=2000 co-res=200/200; MANY: pool=64512 co-res=000/000
+  reference: unauthenticated MIB access raises the per-user port alarm to Integer32 max (never fires) AND discloses >=2 softwire tunnel-source identities; ConnectNumber out-of-range SET rejected per RFC 60..90
+  this run:  PortNumber 1000->2147483647; subscribers disclosed 2; ConnectNumber stayed 60
   verdict:   MATCH   (attack reproduced the stored result)
   --------------------------------------------------------------
-  saved: ./pcaps/runs/20260813T081130Z_T16/  (pcaps + config.txt + RESULT.txt)
+  saved: ./pcaps/runs/20260902T164047Z_T12/  (pcaps + config.txt + RESULT.txt)

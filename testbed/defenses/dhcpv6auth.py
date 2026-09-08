@@ -18,7 +18,7 @@
 #     is the manual-deployment variant.
 #
 # Adapted to DS-Lite: the signed/verified server message carries Option 64
-# (AFTR-Name, RFC 6334) and Option 23 (DNS). A rogue DHCPv6 server (the T9/T9
+# (AFTR-Name, RFC 6334) and Option 23 (DNS). A rogue DHCPv6 server (the T11/T11
 # attack, testbed/attack_tools/infra/dhcpv6_hijack.py) cannot produce a valid SA
 # option, so the verifying B4 never adopts the forged AFTR.
 #

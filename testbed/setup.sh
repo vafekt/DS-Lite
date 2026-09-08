@@ -75,7 +75,7 @@ ip link add br-isp type bridge
 ip link set br-isp mtu "${ISP_MTU:-1500}"
 ip link set br-isp up
 # Disable multicast snooping so that DHCPv6 multicast/link-local
-# packets are forwarded to all bridge ports (needed for T12 testing).
+# packets are forwarded to all bridge ports (needed for T6 testing).
 echo 0 > /sys/class/net/br-isp/bridge/multicast_snooping
 
 # DHCPv6-Server <-> ISP bridge
@@ -112,9 +112,9 @@ ip link set b41-br up
 # another B4's softwire traffic. `isolated on` blocks this B4 port from
 # exchanging or being flooded frames with the OTHER isolated B4 port, while
 # still reaching the non-isolated infrastructure ports (AFTR, DNS, DHCPv6)
-# and the ISP-aggregation attacker port (left non-isolated so the on-path softwire attacks (T2-T5) model a
+# and the ISP-aggregation attacker port (left non-isolated so the on-path softwire attacks (T2-T7) model a
 # realistic P3 on-path vantage). This makes the cross-subscriber threat model
-# honest: T7's PEER+THIRD_PARTY enumeration must work via the AFTR control
+# honest: T9's PEER+THIRD_PARTY enumeration must work via the AFTR control
 # plane, not by sniffing the victim's plaintext softwire. Toggle off to model
 # a flat/hub access segment.
 bridge link set dev b41-br isolated on
@@ -636,7 +636,7 @@ echo "  per-B4 reply routing for overlapping private space ($OVERLAP_RANGE)"
 echo "=== Starting PCP services (RFC 6887 plain mode) ==="
 
 # PCP server on AFTR: listens UDP6/5351, manages pcp_dnat nftables chain.
-# Lab demo: cap the PCP pool so T11 exhaustion is reachable in a trial.
+# Lab demo: cap the PCP pool so T5 exhaustion is reachable in a trial.
 # Override with PCP_POOL_SIZE in the environment; unset for full RFC range.
 ip netns exec aftr env PCP_POOL_SIZE="${PCP_POOL_SIZE:-1024}" \
     python3 "$SCRIPT_DIR/aftr/pcp_server.py" \
@@ -751,7 +751,7 @@ socat TCP-LISTEN:8080,fork,reuseaddr \
     EXEC:"ip netns exec server nc 127.0.0.1 80" 2>/dev/null &
 
 ########################################################################
-# 13b. SNMP agent on AFTR (RFC 7870 DSLITE-MIB – T10 target)
+# 13b. SNMP agent on AFTR (RFC 7870 DSLITE-MIB – T12 target)
 ########################################################################
 echo "=== Starting AFTR SNMP agent (RFC 7870 DSLITE-MIB) ==="
 # RFC 5706 §3.1 — bind to OAM management interface only.  The data-plane
@@ -762,8 +762,8 @@ ip netns exec aftr python3 -u "$SCRIPT_DIR/aftr/snmp_agent.py" \
     > /var/log/snmp-agent.log 2>&1 &
 echo "  SNMP agent running on AFTR  10.99.0.1:161 (OAM only)  community=public"
 echo "  Exposes: dsliteTunnelTable, dsliteNATBindTable, alarm thresholds"
-echo "  T10 test: python3 /testbed/attack_tools/infra/snmp_attack.py set --target 10.99.0.1 --oid alarmConnectNumber --value 2147483647"
-echo "  T10 test: python3 /testbed/attack_tools/infra/snmp_attack.py read --target 10.99.0.1 --oids all"
+echo "  T12 test: python3 /testbed/attack_tools/infra/snmp_attack.py set --target 10.99.0.1 --oid alarmConnectNumber --value 2147483647"
+echo "  T12 test: python3 /testbed/attack_tools/infra/snmp_attack.py read --target 10.99.0.1 --oids all"
 
 # RFC 5706 defense-in-depth: drop SNMP arriving on data-plane interfaces
 # even if a future misconfiguration binds the agent to 0.0.0.0.  Operators
@@ -953,7 +953,7 @@ ip netns exec attacker ip link set eth-isp address 2a:29:47:aa:9c:56   # pinned 
             ip netns exec attacker ip link set eth-isp up
             # Attacker gets IPv6 via SLAAC from radvd + DHCPv6
             ip netns exec attacker sysctl -qw net.ipv6.conf.eth-isp.accept_ra=1
-            # Static IPv6 for attacker on ISP segment — required for T10 (AFTR
+            # Static IPv6 for attacker on ISP segment — required for T12 (AFTR
             # Discovery Hijack): the testbed DNS resolves aftr-rogue.dslite.example.com
             # to this address so the victim B4's tunnel-rebuild hook can complete.
             ip netns exec attacker ip -6 addr add 2001:db8:cafe::13a/64 dev eth-isp 2>/dev/null || true
@@ -967,7 +967,7 @@ ip netns exec attacker ip link set eth-isp address 2a:29:47:aa:9c:56   # pinned 
         mgmt)
             # IPv4-only attacker on the OAM/management network (10.99.0.0/24)
             # Models an insider with management-plane access — the only
-            # placement from which SNMP attacks (T10) succeed when the
+            # placement from which SNMP attacks (T12) succeed when the
             # AFTR follows RFC 5706 §3.1 OAM segregation.
             ip link add eth-mgmt-atk type veth peer name atk-mgmt-br
             ip link set eth-mgmt-atk netns attacker

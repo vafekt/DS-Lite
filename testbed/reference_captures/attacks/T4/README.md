@@ -9,8 +9,8 @@ The step-by-step narration, measured signal, and verdict are in
 
 | file | packets |
 |---|---|
-| `T5_1-attacker-forges.pcap` | 32 |
-| `T5_2-injected-into-LAN.pcap` | 32 |
+| `T7_1-attacker-forges.pcap` | 32 |
+| `T7_2-injected-into-LAN.pcap` | 32 |
 
 ## Verdict
 

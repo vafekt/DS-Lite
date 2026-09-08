@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # snmpv3_client.py — legit SNMPv3 USM authNoPriv manager (the authorized OAM
-# station). Proves that with the T10/T11 defence ON, a holder of the user key
+# station). Proves that with the T12/T5 defence ON, a holder of the user key
 # can still GET/SET, while the unauthenticated attacker (snmp_attack.py, v2c)
 # is dropped. engineID is pinned (no discovery), per "Under New Management".
 import argparse

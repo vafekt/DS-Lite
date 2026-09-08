@@ -59,7 +59,7 @@ bash "$AP" ESP_AEAD off >/dev/null 2>&1; esp_run OFF
 bash "$AP" ESP_AEAD on  >/dev/null 2>&1; esp_run ON
 bash "$AP" ESP_AEAD off >/dev/null 2>&1
 
-# ── PCP_OWNERSHIP (T6 THIRD_PARTY cross-sub DNAT) ───────────────────────────
+# ── PCP_OWNERSHIP (T8 THIRD_PARTY cross-sub DNAT) ───────────────────────────
 echo "PCP_OWNERSHIP"; mk PCP_OWNERSHIP
 own_run(){ nse aftr nft flush chain ip nat pcp_dnat 2>/dev/null
   cap b4-1 eth-isp "$OUT/PCP_OWNERSHIP/$1.pcap" "udp port 5351"; sleep 0.6
@@ -67,7 +67,7 @@ own_run(){ nse aftr nft flush chain ip nat pcp_dnat 2>/dev/null
   sleep 1; stopcap
   nse aftr sh -c "nft list chain ip nat pcp_dnat 2>/dev/null | grep 10.0.2.100 || echo '(no cross-subscriber DNAT installed)' > /dev/null; nft list chain ip nat pcp_dnat 2>/dev/null | grep 10.0.2.100 > $OUT/PCP_OWNERSHIP/$1.dnat.txt || echo '(no cross-subscriber DNAT installed)' > $OUT/PCP_OWNERSHIP/$1.dnat.txt"; }
 restart_pcp ""; own_run OFF
-restart_pcp "T10_THIRD_PARTY_OWNERSHIP_CHECK=1"; own_run ON
+restart_pcp "T12_THIRD_PARTY_OWNERSHIP_CHECK=1"; own_run ON
 restart_pcp ""
 
 # ── PCP_QUOTA (TS2 shared-pool exhaustion, cross-sub) ────────────────────────
@@ -109,7 +109,7 @@ bash "$AP" NAT_LOG off >/dev/null 2>&1; nat_run OFF
 bash "$AP" NAT_LOG on  >/dev/null 2>&1; sleep 0.5; nat_run ON
 bash "$AP" NAT_LOG off >/dev/null 2>&1; dxsh ": > $LOG 2>/dev/null || true"
 
-# ── SNMP_USM (T10 alarm write) ──────────────────────────────────────────────
+# ── SNMP_USM (T12 alarm write) ──────────────────────────────────────────────
 echo "SNMP_USM"; mk SNMP_USM
 OIDP=1.3.6.1.2.1.240.1.3.1.8
 snmp_run(){ # $1 tag, $2 read-mode (v2c|usm)
@@ -127,14 +127,14 @@ snmp_run OFF v2c
 bash "$AP" SNMP_USM on >/dev/null 2>&1; sleep 0.5; snmp_run ON usm
 bash "$AP" SNMP_USM off >/dev/null 2>&1
 
-# ── DHCPV6_AUTH (T9/T9 rogue DHCPv6 AFTR-Name) ────────────────────────────
+# ── DHCPV6_AUTH (T11/T11 rogue DHCPv6 AFTR-Name) ────────────────────────────
 echo "DHCPV6_AUTH"; mk DHCPV6_AUTH
 dx test -f /testbed/defenses/keys/dhcpv6_ed25519.sec || dx python3 /testbed/defenses/dhcpv6auth.py keygen --out /testbed/defenses/keys >/dev/null 2>&1
 dhcp_run(){ # $1 tag, $2 mode (insecure|secure)
   dx pkill -9 -f 'dhcpd -6' 2>/dev/null
   nse b4-1 pkill -9 -f 'dhclient.*b4-1' 2>/dev/null; dx pkill -9 -f 'dhclient6-b4-1' 2>/dev/null
   cap attacker eth-isp "$OUT/DHCPV6_AUTH/$1.pcap" "udp port 546 or udp port 547"; sleep 0.4
-  dx ip netns exec attacker python3 $T/infra/dhcpv6_hijack.py dhcp --interface eth-isp --attack-id T9 --attacker-ip6 $ATK6 --fake-aftr-fqdn aftr-evil.attacker.example. --fake-aftr-ip6 $ATK6 >/dev/null 2>&1 &
+  dx ip netns exec attacker python3 $T/infra/dhcpv6_hijack.py dhcp --interface eth-isp --attack-id T11 --attacker-ip6 $ATK6 --fake-aftr-fqdn aftr-evil.attacker.example. --fake-aftr-ip6 $ATK6 >/dev/null 2>&1 &
   sleep 1.5
   if [ "$2" = insecure ]; then
     nse b4-1 sh -c "python3 /testbed/defenses/dhcpv6auth.py client --iface eth-isp --key /testbed/defenses/keys --insecure --wait 4 2>&1 | grep -oE 'AFTR=[^ ]+' | head -1 > $OUT/DHCPV6_AUTH/$1.result.txt"
@@ -148,17 +148,17 @@ dhcp_run(){ # $1 tag, $2 mode (insecure|secure)
 dhcp_run OFF insecure
 dhcp_run ON  secure
 
-# ── DNS_0X20 (T8 off-path DNS poisoning) — via runner ──────────────────────
+# ── DNS_0X20 (T10 off-path DNS poisoning) — via runner ──────────────────────
 echo "DNS_0X20"; mk DNS_0X20
 nse b4-1 pkill -9 -f dns_0x20_forwarder 2>/dev/null; nse dns-server pkill -9 -f dns_sink 2>/dev/null
 nse dns-server ip -6 addr del $CP::5/64 dev eth-isp 2>/dev/null
 bash "$AP" DNS_0X20 off >/dev/null 2>&1
-dxsh "bash /testbed/scripts/run_attack_live.sh T8 2>&1 | grep -oE 'resolved to [0-9a-f:]+|resolved to <none>' | tail -1 > $OUT/DNS_0X20/OFF.result.txt"
+dxsh "bash /testbed/scripts/run_attack_live.sh T10 2>&1 | grep -oE 'resolved to [0-9a-f:]+|resolved to <none>' | tail -1 > $OUT/DNS_0X20/OFF.result.txt"
 bash "$AP" DNS_0X20 on >/dev/null 2>&1
-dxsh "bash /testbed/scripts/run_attack_live.sh T8 2>&1 | grep -oE 'resolved to [0-9a-f:]+|resolved to <none>' | tail -1 > $OUT/DNS_0X20/ON.result.txt"
+dxsh "bash /testbed/scripts/run_attack_live.sh T10 2>&1 | grep -oE 'resolved to [0-9a-f:]+|resolved to <none>' | tail -1 > $OUT/DNS_0X20/ON.result.txt"
 bash "$AP" DNS_0X20 off >/dev/null 2>&1
 
-# ── FEISTEL_IPID (T5 inner IP-ID predictability) — algorithmic self-test ────
+# ── FEISTEL_IPID (T7 inner IP-ID predictability) — algorithmic self-test ────
 echo "FEISTEL_IPID"; mk FEISTEL_IPID
 dxsh "python3 /testbed/defenses/ipid_feistel.py > $OUT/FEISTEL_IPID/selftest.txt 2>&1"
 

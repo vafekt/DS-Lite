@@ -15,7 +15,7 @@
 #      the two subscribers now egress on different addresses, so the
 #      Shared-IPv4 consequence reaches only the co-address subscriber and is
 #      strictly smaller than AFTR-Wide;
-#   3. runs an AFTR-hosted attack (T11 MIB disclosure) as the AFTR-Wide
+#   3. runs an AFTR-hosted attack (T5 MIB disclosure) as the AFTR-Wide
 #      contrast: it discloses BOTH subscribers' bindings regardless of which
 #      public address they egress on, so its reach is unchanged by the split.
 #   4. restores the single-address default.
@@ -79,7 +79,7 @@ if [ -n "$b1" ] && [ -n "$b2" ] && [ "$b1" != "$b2" ]; then
 echo
 
 hr
-echo "STAGE 3 — AFTR-Wide contrast: MIB disclosure (T11) under the two-address split"
+echo "STAGE 3 — AFTR-Wide contrast: MIB disclosure (T5) under the two-address split"
 hr
 # Warm one binding for each subscriber so both appear in the AFTR NAT table.
 nse client1 curl -s -o /dev/null --max-time 5 "http://$SRV/" >/dev/null 2>&1
@@ -108,6 +108,6 @@ echo
 echo "================================================================"
 echo "  RESULT  stage1(shared)=$S1  stage2(separated)=$S2  stage3(AFTR-wide)=$S3"
 echo "  1-address: B4-1=$a1 B4-2=$a2   |   2-address: B4-1=$b1 B4-2=$b2"
-echo "  T11 under split: B4-1 disclosed=$([ "${g1:-0}" -gt 0 ] && echo yes || echo no),"\
+echo "  T5 under split: B4-1 disclosed=$([ "${g1:-0}" -gt 0 ] && echo yes || echo no),"\
      "B4-2 disclosed=$([ "${g2:-0}" -gt 0 ] && echo yes || echo no)"
 echo "================================================================"

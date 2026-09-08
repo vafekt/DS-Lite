@@ -27,7 +27,7 @@ Plain-mode flow (per draft-ietf-pcp-dslite-00 §2):
 Port pool  (shared with CGNAT SNAT – mirrors real AFTR behavior)
   Range 1024-65534, matching the AFTR's nftables SNAT pool. Each
   PCP allocation also inserts a conntrack entry so that PCP port
-  exhaustion (T6) consumes the same session table as regular
+  exhaustion (T8) consumes the same session table as regular
   SNAT traffic, matching real CGNAT/AFTR behavior where PCP and
   SNAT share a single port/session allocation table.
 """
@@ -44,19 +44,19 @@ import time
 from ipaddress import IPv6Address, ip_address, ip_network
 
 
-# ── T6/T7 defence: PCP THIRD_PARTY ownership binding (env-gated) ────
+# ── T8/T9 defence: PCP THIRD_PARTY ownership binding (env-gated) ────
 # Mechanism from Müller & Rytilahti et al., "On Using Application-Layer
 # Middlebox Protocols for Peeking Behind NAT Gateways" (NDSS 2020),
 # §Potential Remediations: a PCP server must enforce access control so a
 # client cannot create a forward to (or learn the mapping of) an address
-# it does not own. When T10_THIRD_PARTY_OWNERSHIP_CHECK=1, MAP and PEER
+# it does not own. When T12_THIRD_PARTY_OWNERSHIP_CHECK=1, MAP and PEER
 # requests carrying a THIRD_PARTY option are rejected with NOT_AUTHORIZED
 # unless the claimed internal IPv4 address falls inside the prefix
 # delegated to the requesting B4. (This is the paper's ownership/access-
 # control remediation, not an RFC default — stock PCP performs no such
 # check, which is exactly the gap the paper exploits.)
 _THIRD_PARTY_OWNERSHIP_CHECK = os.environ.get(
-    "T10_THIRD_PARTY_OWNERSHIP_CHECK", "0") == "1"
+    "T12_THIRD_PARTY_OWNERSHIP_CHECK", "0") == "1"
 
 # Static prefix delegation table for the testbed. Maps each B4's
 # tunnel-local IPv6 address to the inner-IPv4 prefix authorised for
@@ -145,7 +145,7 @@ def _auth_ok(data: bytes, payload_size: int) -> bool:
 EXT_IP         = "192.0.2.1"    # public IP for PCP DNAT mappings
 MAX_LIFETIME   = 7200            # 2-hour cap (seconds)
 
-# Port range matches the SNAT pool so PCP exhaustion (T6) directly
+# Port range matches the SNAT pool so PCP exhaustion (T8) directly
 # competes with regular subscriber traffic (RFC 6056 §3.3.4 / RFC 6888).
 # For lab demos, PCP_POOL_SIZE limits the effective pool so exhaustion is
 # reachable in a short trial.  Real AFTRs use the full 1024-65534 range.

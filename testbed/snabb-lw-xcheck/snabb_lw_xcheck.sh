@@ -1,5 +1,5 @@
 #!/bin/bash
-# Independent cross-check of the T11/T12 isolation breaks on the Snabb lwAFTR,
+# Independent cross-check of the T5/T6 isolation breaks on the Snabb lwAFTR,
 # an independent RFC 7596 Lightweight-4over6 implementation (userspace, Lua/C),
 # unrelated to the paper's nftables/ip6tnl emulation.
 #
@@ -27,6 +27,6 @@ run() {  # name  v6-in-pcap
 echo "lwAFTR binding config: no_icmp.conf (provisions e.g. 178.79.150.233 psid 54192, b4 127:11:12:13:14:15:16:128)"
 echo "--- real Snabb lwAFTR data plane, three cases ---"
 run baseline_provisioned      tcp-fromb4-ipv6.pcap                 # provisioned softwire -> forwarded
-run T11_unprovisioned         tcp-fromb4-ipv6-unbound.pcap         # source not in binding table -> dropped
-run T12_out-of-portset        tcp-fromb4-ipv6-bound-port-unbound.pcap  # right IPv4, wrong port-set -> dropped
-echo "Expected: baseline egress=1 drop=0 ; T11 egress=0 drop=1 ; T12 egress=0 drop=1"
+run T5_unprovisioned         tcp-fromb4-ipv6-unbound.pcap         # source not in binding table -> dropped
+run T6_out-of-portset        tcp-fromb4-ipv6-bound-port-unbound.pcap  # right IPv4, wrong port-set -> dropped
+echo "Expected: baseline egress=1 drop=0 ; T5 egress=0 drop=1 ; T6 egress=0 drop=1"

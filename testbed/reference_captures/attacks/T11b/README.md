@@ -1,6 +1,6 @@
-# T9 — Transparent AFTR Hijack
+# T11 — Transparent AFTR Hijack
 
-Reference packet captures for T9, regenerated from the testbed by
+Reference packet captures for T11, regenerated from the testbed by
 `testbed/scripts/capture_references.sh` (one capture point per file).
 The step-by-step narration, measured signal, and verdict are in
 [`RESULT.txt`](RESULT.txt).

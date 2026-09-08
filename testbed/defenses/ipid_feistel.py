@@ -3,7 +3,7 @@
 # proposed by Gilad & Herzberg, "Fragmentation Considered Vulnerable"
 # (ACM TISSEC 15(4), 2013), Section 8.3.
 #
-# The T5 attack (Softwire Reassembly Poisoning) works because the inner-IPv4
+# The T7 attack (Softwire Reassembly Poisoning) works because the inner-IPv4
 # IP-ID is a PREDICTABLE per-destination counter: an off-path / spoofing
 # attacker guesses the victim's next IP-ID and injects a spoofed fragment that
 # shares the victim's reassembly four-tuple (src, dst, proto, id), colliding

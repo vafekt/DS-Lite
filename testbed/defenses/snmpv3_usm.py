@@ -11,7 +11,7 @@
 # pinned at the manager, and every request must carry a valid HMAC
 # msgAuthenticationParameters keyed by the user's localized key, inside the
 # engineBoots/engineTime timeliness window (anti-replay). Unauthenticated
-# SNMPv1/v2c (the T10/T11 attack) is dropped.
+# SNMPv1/v2c (the T12/T5 attack) is dropped.
 #
 # Authentication protocol. The DS-Lite MIB's own Security Considerations
 # (RFC 7870 §9) require SNMPv3 USM with authentication and privacy. USM's
@@ -22,8 +22,8 @@
 # the chosen hash.
 #
 # authNoPriv (not authPriv) because the lab container has no AES (no
-# cryptography/pycryptodome, no network). Auth alone already blocks T10 (SET)
-# and T11 (GET): an attacker without the user key cannot forge a valid request,
+# cryptography/pycryptodome, no network). Auth alone already blocks T12 (SET)
+# and T5 (GET): an attacker without the user key cannot forge a valid request,
 # so the agent never acts on or replies to it. Adding privacy (AES-CFB) would
 # additionally encrypt responses on the wire and is a drop-in once AES exists.
 #

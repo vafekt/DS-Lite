@@ -14,7 +14,7 @@ source "$HERE/attack_lib.sh"
 
 ID="${1:-}"; [ $# -gt 0 ] && shift
 if [ -z "$ID" ] || ! declare -f "do_$ID" >/dev/null 2>&1; then
-    echo "usage: run_attack_live.sh <T1..T12 | T9b | TS1..TS3> [knob=value ...]"
+    echo "usage: run_attack_live.sh <T1..T6 | T11b | TS1..TS3> [knob=value ...]"
     echo "unknown or missing attack id: '${ID:-}'"
     exit 2
 fi

@@ -1,4 +1,4 @@
-# T7 — Cross-Subscriber PCP PEER Enumeration
+# T7 — Softwire Reassembly Poisoning
 
 Reference packet captures for T7, regenerated from the testbed by
 `testbed/scripts/capture_references.sh` (one capture point per file).
@@ -9,13 +9,13 @@ The step-by-step narration, measured signal, and verdict are in
 
 | file | packets |
 |---|---|
-| `T10_1-cross-sub-peer-leak.pcap` | 409 |
-| `T10_2-aftr-pcp.pcap` | 409 |
+| `T8_1-attacker-preseed.pcap` | 2217 |
+| `T8_2-aftr-collide.pcap` | 2217 |
 
 ## Verdict
 
 ```
-reference: cross-subscriber observation-isolation broken (leaked external port == victim's real port)
-this run:  trials passed: 2/2 aggregate TP=2 FP=0 FN=4, precision=100.00%, recall=33.33% 
+reference: victim's fragmented flow collides on overlap and is dropped (high loss)
+this run:  victim oversized-ping packet loss = 90%
 verdict:   MATCH   (attack reproduced the stored result)
 ```

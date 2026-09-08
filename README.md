@@ -70,14 +70,14 @@ The 12 attacks span the data, control, and management planes of the DS-Lite stac
 | T2 | Softwire endpoint spoofing and on-path interception | Data: softwire |
 | T3 | Unencrypted-tunnel interception | Data: softwire |
 | T4 | Downstream softwire injection | Data: softwire |
-| T5 | Softwire reassembly poisoning | Data: fragmentation |
-| T6 | Unauthorized PCP THIRD_PARTY forwarding | Control: PCP |
-| T7 | Cross-subscriber PCP PEER enumeration | Control: PCP |
-| T8 | B4 DNS cache poisoning | Control: DNS |
-| T9 | Rogue AFTR discovery hijack | Control: DHCPv6 |
-| T10 | DS-Lite MIB unauthenticated access | Management: SNMP |
-| T11 | Unauthenticated softwire decapsulation (open relay) | Data: softwire |
-| T12 | Softwire identity multiplication | Data: softwire |
+| T5 | Unauthenticated softwire decapsulation (open relay) | Data: softwire |
+| T6 | Softwire identity multiplication | Data: softwire |
+| T7 | Softwire reassembly poisoning | Data: fragmentation |
+| T8 | Unauthorized PCP THIRD_PARTY forwarding | Control: PCP |
+| T9 | Cross-subscriber PCP PEER enumeration | Control: PCP |
+| T10 | B4 DNS cache poisoning | Control: DNS |
+| T11 | Rogue AFTR discovery hijack | Control: DHCPv6 |
+| T12 | DS-Lite MIB unauthenticated access | Management: SNMP |
 
 Three supplementary carrier-grade-NAT tools ship alongside the corpus, documented
 but outside the paper's executed set: `TS1` shared-IPv4 reputation poisoning,
@@ -104,13 +104,13 @@ each attack is listed below.
 | Defense | Closes | Mechanism |
 |---|---|---|
 | `TRABELSI` | T1 | Split half-open and established session table with a per-subscriber cap |
-| `SAVI` | T2, T4, T5, T12 | Source-address validation at the softwire ingress |
+| `SAVI` | T2, T4, T6, T7 | Source-address validation at the softwire ingress |
 | `ESP_AEAD` | T3 | Authenticated encryption (IPsec ESP) on the softwire |
-| `PCP_OWNERSHIP` | T6, T7 | THIRD_PARTY ownership check on port requests |
-| `DNS_COOKIES` | T8 | DNS Cookies (RFC 7873) at the B4 resolver |
-| `AFTR_PIN` | T9 | Provisioned AFTR-name and resolver pinning, a keyless public pin (closes both the rogue-name T9a and the rogue-resolver T9b) |
-| `SNMP_USM` | T10 | SNMPv3 USM authenticated management access |
-| `DECAP_BIND` | T11 | Decapsulation-time provisioned-softwire binding, the customer filter RFC 6333 leaves optional |
+| `PCP_OWNERSHIP` | T8, T9 | THIRD_PARTY ownership check on port requests |
+| `DNS_COOKIES` | T10 | DNS Cookies (RFC 7873) at the B4 resolver |
+| `AFTR_PIN` | T11 | Provisioned AFTR-name and resolver pinning, a keyless public pin (closes both the rogue-name T11a and the rogue-resolver T11b) |
+| `SNMP_USM` | T12 | SNMPv3 USM authenticated management access |
+| `DECAP_BIND` | T5 | Decapsulation-time provisioned-softwire binding, the customer filter RFC 6333 leaves optional |
 
 Toggle a defense from the host:
 
@@ -119,7 +119,7 @@ bash testbed/defenses/article_defenses.sh SAVI on
 bash testbed/defenses/article_defenses.sh SAVI off
 ```
 
-Then re-run the attack it closes (for `SAVI` that is T2, T4, T5, or T12) and compare.
+Then re-run the attack it closes (for `SAVI` that is T2, T4, T6, or T7) and compare.
 
 Verify all defenses in one pass:
 

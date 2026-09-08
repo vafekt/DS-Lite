@@ -4,7 +4,7 @@
 # not under its provisioned ISP domain. The pin is a PUBLIC domain string set
 # out-of-band at provisioning (/etc/ds-lite/aftr-pin), so nothing secret is
 # bootstrapped -- unlike signed-DHCPv6, which needs a per-server key the B4 has
-# no way to obtain at first contact. This closes the rogue-NAME hijack (T9).
+# no way to obtain at first contact. This closes the rogue-NAME hijack (T11).
 
 AFTR_FILE="/var/run/ds-lite-aftr-name"
 HIJACK_LOG="/var/log/ds-lite-hijack.log"
@@ -18,7 +18,7 @@ OLD_FQDN=""
 [ -f "$AFTR_FILE" ] && OLD_FQDN=$(tr -d '[:space:]' <"$AFTR_FILE")
 NEW_FQDN=$(printf '%s' "$new_dhcp6_aftr_name" | tr -d '[:space:]')
 
-# ── AFTR-name pinning (T9 defense) ───────────────────────────────────
+# ── AFTR-name pinning (T11 defense) ───────────────────────────────────
 # Reject any AFTR FQDN not under the provisioned ISP domain. The pin is
 # public (a domain name), set out-of-band, so no secret key is required.
 PIN_FILE="/etc/ds-lite/aftr-pin"
@@ -28,7 +28,7 @@ if [ -f "$PIN_FILE" ]; then
     case ".$CHK" in
         *".$PIN") : ;;   # under the pinned domain: accept
         *)
-            logger -t ds-lite "AFTR name '$NEW_FQDN' outside pinned domain '$PIN' -- REJECTED (T9 pin)"
+            logger -t ds-lite "AFTR name '$NEW_FQDN' outside pinned domain '$PIN' -- REJECTED (T11 pin)"
             printf '{"event":"pin_reject","fqdn":"%s","pin":"%s","ts":"%s"}\n' \
                 "$NEW_FQDN" "$PIN" "$(date -u +%FT%TZ)" >>"$HIJACK_LOG" 2>/dev/null
             exit 0        # keep the current (legit) AFTR, do not adopt or rebuild
@@ -41,7 +41,7 @@ printf '%s\n' "$new_dhcp6_aftr_name" >"$AFTR_FILE"
 [ -z "$OLD_FQDN" ] && exit 0
 ip link show ds-lite >/dev/null 2>&1 || exit 0
 
-# Resolver pinning (T9b defense): resolve the AFTR name through the provisioned
+# Resolver pinning (T11b defense): resolve the AFTR name through the provisioned
 # resolver, not the DHCPv6-supplied one (Option 23), so a rogue resolver cannot
 # redirect the legit name. The pinned resolver is public config, no secret key.
 RPIN_FILE="/etc/ds-lite/aftr-resolver"

@@ -14,7 +14,7 @@
 #               Ed25519-signed DHCPv6 server messages carrying a Signature
 #               Authentication (SA) option + Replay-Detection field; the B4
 #               verifies the signature before adopting Option 64 (AFTR-Name).
-#               -> T9 (Rogue AFTR Substitution), T9b (Transparent AFTR Hijack)
+#               -> T11 (Rogue AFTR Substitution), T11b (Transparent AFTR Hijack)
 #
 #  AFTR_PIN     Provisioned AFTR-name and resolver pinning (a novel composition
 #               for DS-Lite AFTR discovery). The B4 rejects any DHCPv6-supplied
@@ -22,13 +22,13 @@
 #               pinned name only through the provisioned resolver, routing trust
 #               through a PUBLIC pin (no secret key), not the server key
 #               DHCPv6 lacks.
-#               -> T9 (Rogue AFTR Substitution), T9b (Transparent AFTR Hijack)
+#               -> T11 (Rogue AFTR Substitution), T11b (Transparent AFTR Hijack)
 #
 #  PCP_OWNERSHIP  Müller & Rytilahti et al., "Peeking Behind NAT Gateways",
 #               NDSS 2020 (§Potential Remediations). PCP server enforces
 #               ownership binding: a client may only MAP/PEER/THIRD_PARTY an
 #               internal address inside its own delegated prefix.
-#               -> T6 (Unauthorized THIRD_PARTY Forwarding); T7 (cross-subscriber PEER enumeration)
+#               -> T8 (Unauthorized THIRD_PARTY Forwarding); T9 (cross-subscriber PEER enumeration)
 #
 #  (more migrated from apply_defense.sh as each article mechanism is built)
 set -u
@@ -56,7 +56,7 @@ AFTR_LEGIT="${AFTR_LEGIT:-aftr.dslite.example.com.}"
 AFTR_FILE=/var/run/ds-lite-aftr-name
 ISP_IFACE="${ISP_IFACE:-eth-isp}"
 
-# ── DHCPV6_AUTH (T9/T9b): Ed25519-signed DHCPv6 (DHCPv6Auth, Sadhana 2020) ──
+# ── DHCPV6_AUTH (T11/T11b): Ed25519-signed DHCPv6 (DHCPv6Auth, Sadhana 2020) ──
 dhcpv6_auth() {
   case "$1" in
   on)
@@ -92,12 +92,12 @@ dhcpv6_auth() {
   esac
 }
 
-# ── PCP_OWNERSHIP (T6/T7): ownership binding in pcp_server (NDSS 2020) ──────
+# ── PCP_OWNERSHIP (T8/T9): ownership binding in pcp_server (NDSS 2020) ──────
 pcp_ownership() {
   dx ip netns exec aftr pkill -9 -f pcp_server.py 2>/dev/null
   _kill_proxy() { dx ip netns exec "$1" pkill -9 -f pcp_proxy.py 2>/dev/null; }
   for_each_b4 _kill_proxy; sleep 0.5
-  local env=""; [ "$1" = on ] && env="T10_THIRD_PARTY_OWNERSHIP_CHECK=1"
+  local env=""; [ "$1" = on ] && env="T12_THIRD_PARTY_OWNERSHIP_CHECK=1"
   dxd ip netns exec aftr env PCP_POOL_SIZE="${PCP_POOL_SIZE:-1024}" $env python3 /testbed/aftr/pcp_server.py
   _start_proxy() {  # <ns> <lan_ip4> <b4_ip6> ...
     dxd ip netns exec "$1" python3 /testbed/b4/pcp_proxy.py \
@@ -107,7 +107,7 @@ pcp_ownership() {
   echo "PCP_OWNERSHIP $1 (ownership binding: THIRD_PARTY/PEER restricted to requester's prefix)"
 }
 
-# ── SNMP_USM (T10): SNMPv3 USM authNoPriv + engineID pinning ────────────────
+# ── SNMP_USM (T12): SNMPv3 USM authNoPriv + engineID pinning ────────────────
 #    Under New Management (WOOT'12): authenticate every request, pin engineID.
 snmp_usm() {
   dx ip netns exec aftr pkill -9 -f snmp_agent.py 2>/dev/null; sleep 0.4
@@ -125,7 +125,7 @@ snmp_usm() {
   sleep 1
 }
 
-# ── SAVI (T2/T4/T5): per-port source-address binding on the carrier bridge ──
+# ── SAVI (T2/T4/T7): per-port source-address binding on the carrier bridge ──
 #    Mechanism from Chen, Liu et al., "SAVI-based IPv6 source address validation
 #    implementation of the access network": build a binding (source-IP <-> MAC
 #    <-> switch port) and drop packets whose source does not match the binding
@@ -133,7 +133,7 @@ snmp_usm() {
 #    Adapted to DS-Lite: each carrier-bridge port is bound to the softwire/infra
 #    source it legitimately owns; a port emitting any OTHER carrier-prefix global
 #    source is dropped. This kills the outer-source spoof that T2 (MITM), T4
-#    (downstream injection) and T5 (inner-fragment overlap injection) all rely on.
+#    (downstream injection) and T7 (inner-fragment overlap injection) all rely on.
 #    Bindings are configured from the provisioned roster here (RFC 7039 permits
 #    configured bindings for stable infrastructure); a dynamic deployment would
 #    learn them by snooping DHCPv6/ND exactly as the paper describes.
@@ -165,13 +165,13 @@ _savi_bind() {  # <bridge-port> <bound-global-addr>
   # Proper source-address validation (RFC 7039 / BCP 38) binds the port to the
   # ONE global-unicast source it owns and drops any other. Scope the match to all
   # global unicast (2000::/3), not just the carrier /64: an identity-multiplication
-  # flood (T12) forges outer sources from a DIFFERENT /64 (e.g. cafe:dead::/64), so
+  # flood (T6) forges outer sources from a DIFFERENT /64 (e.g. cafe:dead::/64), so
   # a carrier-/64-only rule misses it. Link-local (fe80::/10) and multicast are
   # left untouched so ND/RA still work.
   dx nft "add rule bridge savi pre iifname $1 ip6 saddr 2000::/3 ip6 saddr != $2 counter drop"
 }
 
-# ── FEISTEL_IPID (T5): in-path Feistel IP-ID randomisation at the B4 ─────────
+# ── FEISTEL_IPID (T7): in-path Feistel IP-ID randomisation at the B4 ─────────
 #    Gilad & Herzberg 2013 §8.3. nft sends the subscriber's outbound inner-IPv4
 #    (about to be encapsulated) to NFQUEUE; feistel_b4.py rewrites the IP-ID with
 #    a keyed 3-round Feistel permutation and accepts (in-path, conntrack kept).
@@ -258,16 +258,16 @@ trabelsi() {
   fi
 }
 
-# ── DNS_0X20 (T8): DNS-0x20 case randomisation at the B4 resolver (Dagon CCS'08) ─
+# ── DNS_0X20 (T10): DNS-0x20 case randomisation at the B4 resolver (Dagon CCS'08) ─
 #    Runs the 0x20-validating forwarder as the B4's recursive resolver for the
 #    AFTR-FQDN path. on = enforce 0x20 (random-case query + reply case-check);
 #    off = no 0x20 (vulnerable baseline). Production equivalent: unbound
 #    use-caps-for-id. The off-path poisoner is dns_offpath_poison.py.
 dns_0x20() {
-  # The T8 resolver (dns_0x20_forwarder) is brought up by the attack itself
-  # (do_T8), with the silent-upstream window the off-path SADDNS attack needs.
+  # The T10 resolver (dns_0x20_forwarder) is brought up by the attack itself
+  # (do_T10), with the silent-upstream window the off-path SADDNS attack needs.
   # This toggle just records whether 0x20 case-randomisation must be enforced;
-  # do_T8 reads /run/t11-0x20-mode on each B4 and starts the forwarder with it.
+  # do_T10 reads /run/t11-0x20-mode on each B4 and starts the forwarder with it.
   local v=0; [ "$1" = on ] && v=1
   local e
   for e in "${B4S[@]}"; do set -- $e
@@ -276,12 +276,12 @@ dns_0x20() {
   echo "DNS_0X20 $1 (Dagon 0x20 case-randomisation at the B4 resolver: mode=$v)"
 }
 
-# ── DNS_COOKIES (T8): DNS Cookies at the B4 resolver (Eastlake & Andrews, RFC ──
+# ── DNS_COOKIES (T10): DNS Cookies at the B4 resolver (Eastlake & Andrews, RFC ──
 #    7873). on = run the cookie-validating forwarder (random 64-bit Client Cookie,
 #    the reply must echo it); off = no cookies (vulnerable baseline). Production
 #    equivalent: unbound/BIND with DNS cookies enabled (BIND default). The
 #    off-path poisoner cannot see the query, so its forged replies carry no valid
-#    cookie and are dropped. do_T8 reads /run/t11-cookies-mode on each B4 and
+#    cookie and are dropped. do_T10 reads /run/t11-cookies-mode on each B4 and
 #    starts dns_cookies_forwarder.py when it is 1 (else the 0x20/baseline path).
 dns_cookies() {
   local v=0; [ "$1" = on ] && v=1
@@ -387,11 +387,11 @@ decap_bind() {
   echo "DECAP_BIND on (per-softwire inner source+dest binding at decapsulation; relay, RFC 6324 loop, and cross-plane management access dropped)"
 }
 
-# ── AFTR_PIN (T9/T9b): provisioned AFTR-name + resolver pinning ──────────────
+# ── AFTR_PIN (T11/T11b): provisioned AFTR-name + resolver pinning ──────────────
 #    The B4 rejects any DHCPv6-supplied AFTR-Name (Option 64) outside its
 #    provisioned ISP domain and resolves the pinned name only through the
 #    provisioned resolver, so a carrier attacker can neither substitute a rogue
-#    name (T9) nor redirect the legit name via a rogue resolver (T9b). Trust is
+#    name (T11) nor redirect the legit name via a rogue resolver (T11b). Trust is
 #    routed through a PUBLIC pin (a domain the CPE is provisioned with)
 #    rather than a DHCPv6 server key no deployed standard
 #    bootstraps. The exit hook is backward-compatible: absent the pin files it

@@ -59,9 +59,9 @@ immediate but volatile denial) → **(3)** Phase-2 SIEGE (hold ESTABLISHED
 connections so the cap stays full; makes the denial durable). Phase 1 then Phase
 2. The denial itself is the **root goal**, not a step.
 
-The same surgery was applied to TS1, T4, T5, TS2, T6, TS3, T7, T8, T9, T9, T10,
-T11. T2 and T3 were already action-only and were left unchanged. Some trees are
-now genuinely short (TS1 = one action; TS3/T9 = two) — that is honest: those
+The same surgery was applied to TS1, T4, T7, TS2, T8, TS3, T9, T10, T11, T11, T12,
+T5. T2 and T3 were already action-only and were left unchanged. Some trees are
+now genuinely short (TS1 = one action; TS3/T11 = two) — that is honest: those
 attacks really are few-step. Defence relocations: TS3 `Authenticated ANNOUNCE` →
 *Forge an ANNOUNCE*; the PCP-ownership / SAVI / ESP defences on removed reaction
 leaves were already duplicated on the corresponding action leaf.
@@ -147,17 +147,17 @@ defence closes its attack), so the quantitative bridge is unaffected.
 ## Update 2026-07-04 — reviewer sharpening (DS-Lite specificity + defense de-duplication)
 Two issues raised on review of the trees:
 1. **Duplicate defense across SAND/AND conjuncts.** 6 trees attached the SAME defense to
-   more than one *conjunctive* sibling (T1 D_trabelsi; T3 D_esp; T5 D_feistel; T8 D_0x20;
-   T9 D_dhcpauth; T9 D_dhcpauth). Per Kordy et al., a countermeasure attaches to the node it
+   more than one *conjunctive* sibling (T1 D_trabelsi; T3 D_esp; T7 D_feistel; T10 D_0x20;
+   T11 D_dhcpauth; T11 D_dhcpauth). Per Kordy et al., a countermeasure attaches to the node it
    *directly* neutralizes, and for a conjunction breaking ONE required step defeats the goal —
-   so the duplicate is redundant (and, e.g. for T9, semantically wrong: signed DHCPv6 is not a
+   so the duplicate is redundant (and, e.g. for T11, semantically wrong: signed DHCPv6 is not a
    DNS control). Fixed: each defense now sits on the single action it neutralizes
-   (T1->Phase1; T3->Capture; T5->Inject; T8->Flood; T9->rogue-Advertise; T9->rogue-DHCPv6).
+   (T1->Phase1; T3->Capture; T7->Inject; T10->Flood; T11->rogue-Advertise; T11->rogue-DHCPv6).
    Repeats across **OR-branches are kept** (T2 D_esp on the three escalate branches) — closing an
    OR *requires* the defense on every branch; that is correct, not redundant.
    Coverage matrix UNCHANGED (same defense still closes each attack), so the paper's coverage
    claims are unaffected.
-2. **Too generic labels (T9).** "DHCPv6 race / rogue DNS" read as any-network. Relabeled to the
+2. **Too generic labels (T11).** "DHCPv6 race / rogue DNS" read as any-network. Relabeled to the
    DS-Lite mechanisms: AFTR-Name option (Option 64), the B4's AFTR provisioning, the AFTR FQDN,
    and softwire re-termination — so a reviewer sees it is unmistakably DS-Lite.
 Source of truth: results/adtool_trees/build_trees.py; re-rendered via render_with_quadtool.sh;
@@ -166,10 +166,10 @@ paper fig_adtree_t13 + adtree.tex prose/caption updated; testbed figures re-expo
 ## Update 2026-07-04 (b) — QuADTool-style detail + layout + tool name
 Reviewer: our trees were too abstract (short SAND chains, fat nodes, wasted horizontal space)
 next to the QuADTool paper's example (branching AND/OR, short labels, concrete path). Fixes:
-- T9 decomposed to the concrete path: join provisioning segment -> AND(keep AFTR-Name Opt 64,
+- T11 decomposed to the concrete path: join provisioning segment -> AND(keep AFTR-Name Opt 64,
   set attacker as resolver Opt 23, win the DHCPv6 race) -> rogue resolver maps AFTR FQDN. The AND
   spreads it horizontally (aspect 2.24 -> 1.60).
-- T10/T11 gained an OR for reaching the agent (P3 management network / P1 softwire-to-mgmt gap),
+- T12/T5 gained an OR for reaching the agent (P3 management network / P1 softwire-to-mgmt gap),
   both real; aspect fixed to landscape.
 - TS1 "obtain sending position" -> OR(co-subscriber LAN host / own subscription).
 - TS2, TS3 kept short: they are genuinely 2 attacker actions; padding with "NO_RESOURCES returned" /
@@ -177,38 +177,38 @@ next to the QuADTool paper's example (branching AND/OR, short labels, concrete p
 - Caption fixed: the tool is QuADTool (QRender drives QuADTool's GraphFrame), not ADTool.
 All 15 re-rendered; aspects now 0.5-1.6 except TS2 (1.98, honest 2-step). Coverage matrix unchanged.
 
-## Correction 2026-07-04 (c) — reverted a fabricated refinement in T9
+## Correction 2026-07-04 (c) — reverted a fabricated refinement in T11
 On review against the QuADTool paper's formal ADT (Def.: leaves are BASIC ATTACK STEPS / basic
 events with a success valuation; OR = alternative methods; AND = distinct necessary sub-goals):
-the T9 "AND(keep Opt 64, set Opt 23, win race)" I had added was NON-canonical — "keep Option 64"
+the T11 "AND(keep Opt 64, set Opt 23, win race)" I had added was NON-canonical — "keep Option 64"
 and "set Option 23" are FIELDS of one crafted packet, not basic events (no independent
 success/failure). Reverted to the faithful SAND chain: join segment -> win the DHCPv6 race with a
 rogue Reply (Opt 64 kept, Opt 23 rogue resolver; details in the node LABEL) -> rogue resolver maps
 the AFTR FQDN. The 3-step SAND still spreads horizontally (aspect 1.70), so fidelity did not cost
-much layout. KEPT: T10/T11/TS1 "obtain-X -> OR[alternative access/positions]" and T10/T11 separate
+much layout. KEPT: T12/T5/TS1 "obtain-X -> OR[alternative access/positions]" and T12/T5 separate
 "authenticate" node with the USM defense — both match the QuADTool example (obtain-credentials OR;
 authenticate node with the password-auth defense). Rule followed: no packet-field / system-reaction
 / goal-restating leaves; only real basic attack steps.
 
-## Update 2026-08-13 — T9-T12 reconciliation to the 12-attack paper scheme
-The bundle now matches the paper's T1-T12 (+ T9b variant, + TS1-TS3 supplementary): 16 trees, each
+## Update 2026-08-13 — T11-T6 reconciliation to the 12-attack paper scheme
+The bundle now matches the paper's T1-T6 (+ T11b variant, + TS1-TS3 supplementary): 16 trees, each
 .dot/.prism/.xml + figure. Four fixes in the source-of-truth dict (build_trees.py), all formalism-
 faithful (basic attacker actions only; impact at the root; each credited defense on the single step
 it neutralises):
-1. **T10 (MIB) merged.** The two former MIB facets (disclosure + alarm suppression, split across two
+1. **T12 (MIB) merged.** The two former MIB facets (disclosure + alarm suppression, split across two
    trees) are one attack again: SAND[ OR(reach agent: P3 mgmt net / P1 softwire-mgmt gap),
    authenticate with default community {D_snmpusm}, AND(set alarm-threshold to Integer32-max,
    walk the binding table) ]. USM on the required authenticate step closes both facets.
-2. **T11 (unauthenticated softwire decapsulation).** New: SAND[ obtain unprovisioned carrier
+2. **T5 (unauthenticated softwire decapsulation).** New: SAND[ obtain unprovisioned carrier
    position, send IPv4-in-IPv6 under own carrier source {D_decap} ]. Only the decapsulation-time
    provisioning check (DECAP-BIND / RFC 6333 §11 optional ingress filter) closes it; SAVI/uRPF do
    not (the outer source is the attacker's own valid carrier address).
-3. **T12 (softwire source spoofing / identity multiplication).** New: SAND[ obtain on-path carrier
+3. **T6 (softwire source spoofing / identity multiplication).** New: SAND[ obtain on-path carrier
    position, mint many forged identities {D_savi}, flood bindings to fill the shared pool ]. SAVI
    binds the identity, closing forgery and exhaustion together.
-4. **T9/T9b duplicate-key bug.** The dict had two `"T9"` keys; the second silently overwrote the
-   first, so only one variant was emitted. The name-preserving variant is now `"T9b"`; the orphan
-   alarm-suppression tree is gone (folded into T10).
+4. **T11/T11b duplicate-key bug.** The dict had two `"T11"` keys; the second silently overwrote the
+   first, so only one variant was emitted. The name-preserving variant is now `"T11b"`; the orphan
+   alarm-suppression tree is gone (folded into T12).
 Tooling: build_quadtool.py now also emits the UPPAAL .xml (dot2uppaal, which — unlike the ADTool
 dot2xml, whose stricter schema rejects some countermeasure placements — converts every shape and
 matches the shipped <nta> files); file stems preserve id case (TS1 -> tS1). export.sh and
@@ -218,13 +218,13 @@ Boolean reachability: 16/16 goals reachable with no defense; every credited defe
 unreachable (T1's SAVI is a known non-closer standing alone — it guards only the forge-source branch
 of T1's OR; T1's closer is the two-structure session table, unchanged).
 
-## Update 2026-08-20 — T9/T9b mitigation relabelled to AFTR-PIN (paper Round-4 alignment)
-The T9 and T9b defence label `D_dhcpauth` changed from "Ed25519-signed DHCPv6" to
+## Update 2026-08-20 — T11/T11b mitigation relabelled to AFTR-PIN (paper Round-4 alignment)
+The T11 and T11b defence label `D_dhcpauth` changed from "Ed25519-signed DHCPv6" to
 "AFTR-PIN name + resolver pin" in `results/adtool_trees/build_trees.py`, matching the paper's
 Round-4 reframing: signed DHCPv6 is not bootstrappable at first contact (RFC 8415 removed the
 delayed-authentication option), so the discovery hijack is closed by AFTR-PIN — a keyless public
 pin of the provisioned AFTR name and resolver, not a server key. This is a label-only change: the
-Defender node still attaches to the same rogue-Advertise (T9) and rogue-resolver (T9b) action, so
+Defender node still attaches to the same rogue-Advertise (T11) and rogue-resolver (T11b) action, so
 the tree structure, the boolean reachability (16/16 goals reachable with no defence; every credited
 defence closes its goal), and the coverage claims are all unchanged. Bundle re-exported via
 `export.sh` (16 QuADTool trees + 16 figures).

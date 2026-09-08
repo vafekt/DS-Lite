@@ -93,7 +93,7 @@ render() {
     # Alerts
     [ "$CT_PCT" -ge 90 ] && printf "\n  ${R}[!] Conntrack near full (${CT_PCT}%%) -- T1 NAT exhaustion${N}\n"
     [ "$ESTAB" -gt 100 ] 2>/dev/null && printf "  ${R}[!] High ESTABLISHED (${ESTAB}) -- T3 Slowloris / T1-Hold${N}\n"
-    [ "$UNREP" -gt 500 ] 2>/dev/null && printf "  ${R}[!] High UNREPLIED (${UNREP}) -- UDP flood / T6 fragment${N}\n"
+    [ "$UNREP" -gt 500 ] 2>/dev/null && printf "  ${R}[!] High UNREPLIED (${UNREP}) -- UDP flood / T8 fragment${N}\n"
     echo ""
 
     # -- 2. Top sources --
@@ -180,7 +180,7 @@ render() {
     [ "${PCP_N:-0}" -gt 100 ] 2>/dev/null && EXTRA+="${R}[!PCP]${N}  "
     [ "$FRAG_OK" -gt 0 ] || [ "$FRAG_FAIL" -gt 0 ] && \
         EXTRA+="Frag: ${G}OK=${FRAG_OK}${N} ${R}Fail=${FRAG_FAIL}${N}  "
-    [ "${FRAG_FAIL:-0}" -gt 100 ] 2>/dev/null && EXTRA+="${R}[!T6]${N}  "
+    [ "${FRAG_FAIL:-0}" -gt 100 ] 2>/dev/null && EXTRA+="${R}[!T8]${N}  "
     [ -n "$EXTRA" ] && printf "  ${C}Services${N}  ${EXTRA}\n"
 
     printf "\n  ${D}Press Enter to refresh  |  Ctrl+C to exit${N}\n"

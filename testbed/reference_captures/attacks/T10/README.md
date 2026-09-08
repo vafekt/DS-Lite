@@ -1,4 +1,4 @@
-# T10 — DS-Lite MIB Unauthenticated Access
+# T10 — Softwire DNS-Discovery Hijack
 
 Reference packet captures for T10, regenerated from the testbed by
 `testbed/scripts/capture_references.sh` (one capture point per file).
@@ -9,13 +9,13 @@ The step-by-step narration, measured signal, and verdict are in
 
 | file | packets |
 |---|---|
-| `t10_1-snmp-set.pcap` | 564 |
-| `t10_2-mgmt-station.pcap` | 564 |
+| `T5_1-offpath-flood.pcap` | 4000 |
+| `T5_2-b4-resolver.pcap` | 4000 |
 
 ## Verdict
 
 ```
-reference: unauthenticated MIB access raises the per-user port alarm to Integer32 max (never fires) AND discloses >=2 softwire tunnel-source identities; ConnectNumber out-of-range SET rejected per RFC 60..90
-this run:  PortNumber 1000->2147483647; subscribers disclosed 2; ConnectNumber stayed 60
+reference: off-path flood poisons the B4 cache: aftr.dslite.example.com -> attacker (2001:db8:cafe:0:2829:47ff:feaa:9c56)
+this run:  aftr.dslite.example.com resolved to 2001:db8:cafe:0:2829:47ff:feaa:9c56 at the B4 resolver
 verdict:   MATCH   (attack reproduced the stored result)
 ```

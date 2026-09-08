@@ -14,15 +14,15 @@ Scripts: scratchpad/lw4o6_setup.sh, lw4o6_attacks.sh.
 ## Attack results (the isolation breaks DS-Lite suffers, run identically here)
 | Attack | DS-Lite (paper) | lw4o6 (this run) | Mechanism that blocks it |
 |--------|------------------|-------------------|--------------------------|
-| **T11** unprovisioned relay | AFTR relays it out as shared IPv4 (catch-all + no binding) | **BLOCKED**: ingress=20 packets reached lwAFTR, **egress=0**, catch-all ip6tnl0 rx=0 | no catch-all + no binding for the unprovisioned source |
-| **T12(a)** forge 32 identities | each forged id gets its own budget -> drains shared pool | **BLOCKED**: ingress=960 reached, **egress=0** | forged sources have no binding -> not decapsulated/forwarded |
-| **T12(b)** spoof real id ::101, out-of-set ports | n/a (DS-Lite has no port-set/binding) | **BLOCKED**: **40/40 dropped** by inner-source binding validation | RFC 7596 §5.1 source+port binding |
+| **T5** unprovisioned relay | AFTR relays it out as shared IPv4 (catch-all + no binding) | **BLOCKED**: ingress=20 packets reached lwAFTR, **egress=0**, catch-all ip6tnl0 rx=0 | no catch-all + no binding for the unprovisioned source |
+| **T6(a)** forge 32 identities | each forged id gets its own budget -> drains shared pool | **BLOCKED**: ingress=960 reached, **egress=0** | forged sources have no binding -> not decapsulated/forwarded |
+| **T6(b)** spoof real id ::101, out-of-set ports | n/a (DS-Lite has no port-set/binding) | **BLOCKED**: **40/40 dropped** by inner-source binding validation | RFC 7596 §5.1 source+port binding |
 | **T1** flood isolation | holds via per-subscriber cap (RFC 6888) | **holds structurally**: disjoint port-sets lwB4-1=1024-2047, lwB4-2=2048-3071 | fixed A+P port-set partition |
 
 ## The point (for the paper)
 lw4o6's decapsulation-time binding is MANDATORY (RFC 7596 §5.1) because lw4o6 is STATEFUL
 (each lwB4 provisioned with a binding). DS-Lite is STATELESS (no binding) and OMITS it ->
-T11/T12. This converts the paper's previously "analytical, not empirically tested"
+T5/T6. This converts the paper's previously "analytical, not empirically tested"
 generalization into a DEMONSTRATED cross-technology result, and gives DECAP-BIND its honest
 identity: **the binding lw4o6 mandates by design, backported to stateless DS-Lite and verified.**
 

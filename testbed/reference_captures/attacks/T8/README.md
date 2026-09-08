@@ -1,4 +1,4 @@
-# T8 — Softwire DNS-Discovery Hijack
+# T8 — Unauthorized THIRD_PARTY Forwarding
 
 Reference packet captures for T8, regenerated from the testbed by
 `testbed/scripts/capture_references.sh` (one capture point per file).
@@ -9,13 +9,14 @@ The step-by-step narration, measured signal, and verdict are in
 
 | file | packets |
 |---|---|
-| `T11_1-offpath-flood.pcap` | 4000 |
-| `T11_2-b4-resolver.pcap` | 4000 |
+| `T10_1-thirdparty-map.pcap` | 10 |
+| `T10_2-aftr-pcp.pcap` | 10 |
+| `T10_3-inbound-to-victim.pcap` | 8 |
 
 ## Verdict
 
 ```
-reference: off-path flood poisons the B4 cache: aftr.dslite.example.com -> attacker (2001:db8:cafe:0:2829:47ff:feaa:9c56)
-this run:  aftr.dslite.example.com resolved to 2001:db8:cafe:0:2829:47ff:feaa:9c56 at the B4 resolver
+reference: attacker opens an inbound port on the shared IP to a NON-OWNED co-sub; external traffic then reaches the victim
+this run:  forged inbound-forwarding rules=5 (192.0.2.1:1024->10.0.2.100:9447); external probe reached victim=yes
 verdict:   MATCH   (attack reproduced the stored result)
 ```

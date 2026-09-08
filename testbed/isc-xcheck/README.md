@@ -1,6 +1,6 @@
-# Independent cross-check of T11 on the ISC reference AFTR
+# Independent cross-check of T5 on the ISC reference AFTR
 
-This directory cross-validates **T11 (unauthenticated softwire decapsulation /
+This directory cross-validates **T5 (unauthenticated softwire decapsulation /
 relay)** against the **ISC AFTR**, the Address Family Transition Router reference
 implementation for DS-Lite (RFC 6333). It is a userspace C daemon written by ISC
 in 2009-2010, entirely independent of the paper's main testbed (which uses the
@@ -28,7 +28,7 @@ Driving an **unprovisioned** on-carrier host through the ISC AFTR, end to end:
    interface, shows `IP 203.0.113.1.<port> > 203.0.113.9.9999` and
    `server_rx.txt` holds the five `RELAY-PKT-*-from-unprovisioned-B4` payloads.
 
-This is the "open one-way relay laundered through the carrier" of T11, egressing
+This is the "open one-way relay laundered through the carrier" of T5, egressing
 as the public IPv4 the real subscribers share.
 
 ## Root cause of the earlier incomplete egress

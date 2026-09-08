@@ -1,5 +1,5 @@
 #!/bin/bash
-# Attacks against the conformant lw4o6 stack (parallel to the DS-Lite T11/T12/T1).
+# Attacks against the conformant lw4o6 stack (parallel to the DS-Lite T5/T6/T1).
 # Shows RFC 7596 §5.1 binding + no-catch-all + fixed port-sets block the breaks.
 set +e
 PFX=2001:db8:1a06
@@ -8,7 +8,7 @@ AFTR_MAC=02:00:00:00:00:10
 # Conformant lw4o6: NO catch-all decapsulator. Only per-binding tunnels.
 ip netns exec lwaftr ip link set ip6tnl0 down 2>/dev/null
 
-echo "############### T11: UNPROVISIONED softwire relay ###############"
+echo "############### T5: UNPROVISIONED softwire relay ###############"
 echo "(attacker ::150 has NO binding; on DS-Lite the catch-all AFTR relays it out as the shared IPv4)"
 # capture: ingress 4in6 at AFTR, and any egress as shared IPv4 on WAN
 ip netns exec lwaftr sh -c 'timeout 5 tcpdump -i eth-isp -n -c 50 "ip6 proto 4 and src '"${PFX}"'::150" >/tmp/t11_in.txt 2>&1 &
@@ -25,7 +25,7 @@ echo "   [relayed to Internet?]    packets egressing WAN as shared 198.51.100.1:
 echo "   ip6tnl0 (catch-all) RX packets (should be 0 = down/no decap):"; ip netns exec lwaftr sh -c 'x=$(cat /sys/class/net/ip6tnl0/statistics/rx_packets 2>/dev/null); echo "     ip6tnl0_rx=${x:-NA}"'
 
 echo ""
-echo "############### T12: identity forgery / shared-pool drain ###############"
+echo "############### T6: identity forgery / shared-pool drain ###############"
 echo "(a) forge MANY unprovisioned identities (::200..::231) -> no binding -> dropped"
 ip netns exec lwaftr sh -c 'timeout 5 tcpdump -i eth-wan -n -c 100 "ip src 198.51.100.1" >/tmp/t12_wan.txt 2>&1 &'
 sleep 0.5

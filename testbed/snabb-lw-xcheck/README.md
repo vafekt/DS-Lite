@@ -1,4 +1,4 @@
-# Independent cross-check of T11/T12 on the Snabb lwAFTR
+# Independent cross-check of T5/T6 on the Snabb lwAFTR
 
 This directory cross-validates the paper's Lightweight-4over6 generalization
 (Section `sec:lw4o6`) against the **Snabb lwAFTR** (`snabb lwaftr`, version
@@ -11,21 +11,21 @@ is a property of Lightweight 4over6, not of our emulation.
 
 The paper's claim is that Lightweight 4over6's mandatory per-subscriber
 decapsulation binding (RFC 7596 Section 5.1) refuses exactly the two softwire
-isolation breaks DS-Lite suffers, T11 (unprovisioned relay) and T12 (forged /
+isolation breaks DS-Lite suffers, T5 (unprovisioned relay) and T6 (forged /
 out-of-port-set identity), while forwarding a provisioned softwire. Running the
 real Snabb data plane on three softwires confirms it:
 
 | Case | softwire in | egress to Internet | drop counter |
 |------|:---:|:---:|---|
 | **baseline** provisioned softwire (in binding table) | 1 | **1** (decapsulated + forwarded as `178.79.150.233`) | none |
-| **T11** source not in binding table | 1 | **0** | `drop-no-source-softwire-ipv6-packets = 1` |
-| **T12** right IPv4 but out-of-port-set | 1 | **0** | `drop-no-source-softwire-ipv6-packets = 1` |
+| **T5** source not in binding table | 1 | **0** | `drop-no-source-softwire-ipv6-packets = 1` |
+| **T6** right IPv4 but out-of-port-set | 1 | **0** | `drop-no-source-softwire-ipv6-packets = 1` |
 
 The `drop-no-source-softwire-ipv6-packets` counter is Snabb's own name for
 "no provisioned softwire matches this decapsulated packet," i.e., the RFC 7596
 Section 5.1 binding refusing the source. Evidence in `evidence/`:
 `baseline_provisioned-v4out.pcap` holds the one forwarded packet;
-`T11_unprovisioned-v4out.pcap` and `T12_out-of-portset-v4out.pcap` are empty;
+`T5_unprovisioned-v4out.pcap` and `T6_out-of-portset-v4out.pcap` are empty;
 `counters-*.lua` are the counter sets regenerated from the actual runs.
 
 ## Method
@@ -55,7 +55,7 @@ docker cp snabb_lw_xcheck.sh snabb-lw:/root/
 docker exec snabb-lw bash /root/snabb_lw_xcheck.sh
 ```
 
-Expected: `baseline egress=1 drop=0 ; T11 egress=0 drop=1 ; T12 egress=0 drop=1`.
+Expected: `baseline egress=1 drop=0 ; T5 egress=0 drop=1 ; T6 egress=0 drop=1`.
 
 ## Note
 
@@ -70,5 +70,5 @@ binding) refuses it.
 - `snabb_lw_xcheck.sh` -- the cross-check (three `snabb lwaftr check` runs).
 - `inputs/` -- Snabb's binding config `no_icmp.conf` and the three softwire test
   vectors, plus `empty.pcap` and the reference `decap-ipv4.pcap`.
-- `evidence/` -- output v4 pcaps (baseline holds 1 packet, T11/T12 empty) and the
+- `evidence/` -- output v4 pcaps (baseline holds 1 packet, T5/T6 empty) and the
   regenerated counter sets.

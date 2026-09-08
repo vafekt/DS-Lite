@@ -63,12 +63,12 @@ bash "$AP" ESP_AEAD on  >/dev/null 2>&1; n=$(t4)
 bash "$AP" ESP_AEAD off >/dev/null 2>&1
 { [ "${o:-0}" -gt 0 ] && [ "${n:-0}" -eq 0 ]; } && ok ESP_AEAD "OFF $o cleartext markers | ON $n" || no ESP_AEAD "OFF $o | ON $n"
 
-# ── T2/T4/T5 SAVI (forged softwire source) ──────────────────────────────────
+# ── T2/T4/T7 SAVI (forged softwire source) ──────────────────────────────────
 # SAVI per-port source validation drops any carrier packet whose source the
 # sending port does not own. All three spoofing attacks forge the victim B4
-# source (T2 takeover, T4 downstream injection, T5 reassembly collision), so
-# this one check covers the family. SAVI is the reliable T5 defence.
-hdr "T2/T4/T5  SAVI  (forged softwire source)"
+# source (T2 takeover, T4 downstream injection, T7 reassembly collision), so
+# this one check covers the family. SAVI is the reliable T7 defence.
+hdr "T2/T4/T7  SAVI  (forged softwire source)"
 t3(){ dx ip netns exec aftr rm -f /tmp/t.pcap 2>/dev/null
   dx ip netns exec aftr timeout 8 tcpdump -i eth-isp -n "ip6 src $VB4 and ip6 dst $AFTR and ip6 proto 4" -w /tmp/t.pcap >/dev/null 2>&1 &
   sleep 0.5; nse attacker sh -c "timeout 6 python3 $T/tunnel/tunnel_spoof.py spoof --interface eth-isp --src-ip6 $ATK6 --victim-b4-ip6 $VB4 --aftr-ip6 $AFTR --inner-src-ip4 10.0.1.77 --inner-dst-ip4 $SRV --proto udp --focused --dst-port 9999 --count 8 --batch 1 --interval 0.2" >/dev/null 2>&1; sleep 8
@@ -76,15 +76,15 @@ t3(){ dx ip netns exec aftr rm -f /tmp/t.pcap 2>/dev/null
 bash "$AP" SAVI off >/dev/null 2>&1; o=$(t3)
 bash "$AP" SAVI on  >/dev/null 2>&1; n=$(t3)
 bash "$AP" SAVI off >/dev/null 2>&1
-{ [ "${o:-0}" -gt 0 ] && [ "${n:-0}" -eq 0 ]; } && ok SAVI "OFF $o forged reach provider | ON $n (closes T2/T4/T5)" || no SAVI "OFF $o | ON $n"
+{ [ "${o:-0}" -gt 0 ] && [ "${n:-0}" -eq 0 ]; } && ok SAVI "OFF $o forged reach provider | ON $n (closes T2/T4/T7)" || no SAVI "OFF $o | ON $n"
 
-# ── T12 SAVI (softwire identity multiplication / shared-pool drain) ──────────
-# T12 forges MANY outer softwire identities from a DIFFERENT /64 (cafe:dead::/64)
+# ── T6 SAVI (softwire identity multiplication / shared-pool drain) ──────────
+# T6 forges MANY outer softwire identities from a DIFFERENT /64 (cafe:dead::/64)
 # to drain the shared 64,512-port pool and deny co-residents. Proper SAVI binds
 # each access port to the source it owns and drops every forged identity, so the
 # pool never fills and the co-resident stays up. A carrier-/64-only rule MISSES
 # this off-prefix forgery; the bind must cover all global unicast (2000::/3).
-hdr "T12  SAVI  (softwire identity multiplication / shared-pool drain)"
+hdr "T6  SAVI  (softwire identity multiplication / shared-pool drain)"
 nse aftr sh -c 'for f in /proc/sys/net/ipv4/conf/*/rp_filter; do echo 0 > $f; done' 2>/dev/null
 t12(){ nse aftr conntrack -F >/dev/null 2>&1
   nse attacker sh -c "timeout 20 python3 $T/nat/nat_exhaustion.py eth-isp --tunnel --src-ip6-prefix ${CP}:dead::/64 --fixed-dport 80 --proto tcp --dst-ip4 $SRV --aftr-ip6 $AFTR --inner-src-prefix 10.90.0.0/16 --threads 8 --batch 256 >/dev/null 2>&1" &
@@ -97,21 +97,21 @@ bash "$AP" SAVI off >/dev/null 2>&1; read po co2 <<<"$(t12)"
 bash "$AP" SAVI on  >/dev/null 2>&1; read pn cn2 <<<"$(t12)"
 bash "$AP" SAVI off >/dev/null 2>&1
 { [ "${po:-0}" -gt 40000 ] && [ "${co2:-200}" = 000 ] && [ "${pn:-99999}" -lt 10000 ] && [ "${cn2:-000}" = 200 ]; } \
-  && ok SAVI_T12 "OFF pool=$po co-res=$co2 | ON pool=$pn co-res=$cn2 (identity flood blocked)" \
-  || no SAVI_T12 "OFF pool=$po co-res=$co2 | ON pool=$pn co-res=$cn2"
+  && ok SAVI_T6 "OFF pool=$po co-res=$co2 | ON pool=$pn co-res=$cn2 (identity flood blocked)" \
+  || no SAVI_T6 "OFF pool=$po co-res=$co2 | ON pool=$pn co-res=$cn2"
 
-# ── T6/T7 PCP_OWNERSHIP (cross-subscriber PCP) ─────────────────────────────
-hdr "T6/T7  PCP_OWNERSHIP  (THIRD_PARTY / PEER cross-subscriber)"
+# ── T8/T9 PCP_OWNERSHIP (cross-subscriber PCP) ─────────────────────────────
+hdr "T8/T9  PCP_OWNERSHIP  (THIRD_PARTY / PEER cross-subscriber)"
 t8(){ nse aftr nft flush chain ip nat pcp_dnat 2>/dev/null
   nse client1 sh -c "timeout 8 python3 $T/infra/pcp_attack.py thirdparty --proxy-ip $GW1 --target-internal 10.0.2.100" >/dev/null 2>&1
   nse aftr nft list chain ip nat pcp_dnat 2>/dev/null | grep -c 10.0.2.100; }
 restart_pcp "" ; o=$(t8)
-restart_pcp "T10_THIRD_PARTY_OWNERSHIP_CHECK=1"; n=$(t8)
+restart_pcp "T12_THIRD_PARTY_OWNERSHIP_CHECK=1"; n=$(t8)
 restart_pcp ""
 { [ "${o:-0}" -gt 0 ] && [ "${n:-0}" -eq 0 ]; } && ok PCP_OWNERSHIP "OFF $o cross-sub DNAT | ON $n" || no PCP_OWNERSHIP "OFF $o | ON $n"
 
-# ── T10 SNMP_USM (management-plane) ─────────────────────────────────────────
-hdr "T10  SNMP_USM  (MIB write + disclosure)"
+# ── T12 SNMP_USM (management-plane) ─────────────────────────────────────────
+hdr "T12  SNMP_USM  (MIB write + disclosure)"
 # Target the WRITABLE, UNconstrained port-usage alarm threshold (RFC 7870 re-lay):
 # dsliteAFTRAlarmPortNumber = .240.1.3.1.8 (Integer32, default -1). NOTE .1 is
 # B4AddrType (read-only) and .6 ConnectNumber is range-clamped 60..90 -> a 2^31
@@ -128,14 +128,14 @@ bash "$AP" SNMP_USM off >/dev/null 2>&1
 # SET so the OAM read stays at the (legit) default, never the attacker's value.
 { [ "${o:-0}" -gt 1000000 ] && [ "${n:-2147483647}" -lt 1000000 ]; } && ok SNMP_USM "OFF v2c-SET=$o | ON OAM reads $n" || no SNMP_USM "OFF $o | ON $n"
 
-# ── T9/T9b AFTR_PIN (rogue AFTR-Name + rogue-resolver pinning) - via runner ──
+# ── T11/T11b AFTR_PIN (rogue AFTR-Name + rogue-resolver pinning) - via runner ──
 # Runs BEFORE DHCPV6_AUTH: that block kills dhcpd6 and the B4 dhclient without
 # restoring them, so AFTR_PIN must measure on the clean boot-state B4.
-hdr "T9/T9b  AFTR_PIN  (provisioned name + resolver pinning, no server key)"
+hdr "T11/T11b  AFTR_PIN  (provisioned name + resolver pinning, no server key)"
 # Deterministic hook-level check, free of run-to-run attack timing: drive the B4
 # dhclient6 exit hook exactly as dhclient6 would on a BOUND event, once with a
-# rogue AFTR-Name (name-pin leg, T9) and once with a rogue Option-23 resolver
-# under the legit name (resolver-pin leg, T9b). OFF (stock hook) adopts each
+# rogue AFTR-Name (name-pin leg, T11) and once with a rogue Option-23 resolver
+# under the legit name (resolver-pin leg, T11b). OFF (stock hook) adopts each
 # rogue; ON (pinned hook) rejects the rogue name and resolves only through the
 # pinned resolver. Both pin DECISIONS are verified here.
 _apname() { nse b4-1 sh -c "echo 'aftr.dslite.example.com.' >/var/run/ds-lite-aftr-name; new_dhcp6_aftr_name='aftr-evil.attacker.example.' reason=BOUND bash /etc/dhcp/dhclient-exit-hooks.d/ds-lite >/dev/null 2>&1; tr -d '[:space:]' </var/run/ds-lite-aftr-name"; }
@@ -145,14 +145,14 @@ bash "$AP" AFTR_PIN on  >/dev/null 2>&1; n=$(_apname); nrr=$(_apresolver)
 bash "$AP" AFTR_PIN off >/dev/null 2>&1
 { echo "$o"|grep -qi evil && echo "$n"|grep -qi 'aftr.dslite' && echo "$orr"|grep -qi 'dead:beef' && ! echo "$nrr"|grep -qi 'dead:beef'; } && ok AFTR_PIN "name OFF adopts rogue, ON keeps $n | resolver OFF uses rogue, ON pins it out" || no AFTR_PIN "name OFF $o ON $n | resolver OFF $orr ON $nrr"
 
-# ── T9 DHCPV6_AUTH (rogue AFTR) ───────────────────────────────────────────
-hdr "T9  DHCPV6_AUTH  (rogue DHCPv6 AFTR-Name)"
+# ── T11 DHCPV6_AUTH (rogue AFTR) ───────────────────────────────────────────
+hdr "T11  DHCPV6_AUTH  (rogue DHCPv6 AFTR-Name)"
 dx test -f /testbed/defenses/keys/dhcpv6_ed25519.sec || dx python3 /testbed/defenses/dhcpv6auth.py keygen --out /testbed/defenses/keys >/dev/null 2>&1
 dx pkill -9 -f 'dhcpd -6' 2>/dev/null
 # the B4 dhclient holds the client port 546; the verifying client cannot bind
 # until it is stopped (otherwise the SOLICIT/ADVERTISE never reaches our client).
 nse b4-1 pkill -9 -f 'dhclient.*b4-1' 2>/dev/null; dx pkill -9 -f 'dhclient6-b4-1' 2>/dev/null
-dx ip netns exec attacker python3 $T/infra/dhcpv6_hijack.py dhcp --interface eth-isp --attack-id T9 --attacker-ip6 $ATK6 --fake-aftr-fqdn aftr-evil.attacker.example. --fake-aftr-ip6 $ATK6 >/dev/null 2>&1 &
+dx ip netns exec attacker python3 $T/infra/dhcpv6_hijack.py dhcp --interface eth-isp --attack-id T11 --attacker-ip6 $ATK6 --fake-aftr-fqdn aftr-evil.attacker.example. --fake-aftr-ip6 $ATK6 >/dev/null 2>&1 &
 sleep 1.5
 o=$(nse b4-1 python3 /testbed/defenses/dhcpv6auth.py client --iface eth-isp --key /testbed/defenses/keys --insecure --wait 4 2>&1 | grep -oE 'AFTR=[^ ]+' | head -1)
 dx ip netns exec dhcpv6server python3 /testbed/defenses/dhcpv6auth.py server --iface eth-isp --key /testbed/defenses/keys --aftr aftr.dslite.example.com. --dns $CP::2 >/dev/null 2>&1 &
@@ -161,8 +161,8 @@ n=$(nse b4-1 python3 /testbed/defenses/dhcpv6auth.py client --iface eth-isp --ke
 dx pkill -9 -f 'dhcpv6_hijack.py' 2>/dev/null; dx pkill -9 -f 'dhcpv6auth.py server' 2>/dev/null
 { echo "$o"|grep -qi evil && echo "$n"|grep -qi 'aftr.dslite'; } && ok DHCPV6_AUTH "OFF $o | ON $n" || no DHCPV6_AUTH "OFF $o | ON $n"
 
-# ── T8 DNS_COOKIES (off-path AFTR-FQDN poisoning) - via runner ─────────────
-hdr "T8  DNS_COOKIES  (off-path DNS poisoning)"
+# ── T10 DNS_COOKIES (off-path AFTR-FQDN poisoning) - via runner ─────────────
+hdr "T10  DNS_COOKIES  (off-path DNS poisoning)"
 nse b4-1 pkill -9 -f 'dns_0x20_forwarder|dns_cookies_forwarder' 2>/dev/null
 nse dns-server pkill -9 -f dns_sink 2>/dev/null
 nse dns-server ip -6 addr del $CP::5/64 dev eth-isp 2>/dev/null
@@ -176,18 +176,18 @@ bash "$AP" DNS_COOKIES off >/dev/null 2>&1
 # lose and return <none>, so retry the OFF baseline until the poison lands.
 o=""
 for _try in 1 2 3 4 5 6; do
-  o=$(dx bash /testbed/scripts/run_attack_live.sh T8 2>&1 | grep -oE 'resolved to [0-9a-f:]+|resolved to <none>' | tail -1)
+  o=$(dx bash /testbed/scripts/run_attack_live.sh T10 2>&1 | grep -oE 'resolved to [0-9a-f:]+|resolved to <none>' | tail -1)
   echo "$o" | grep -qiE '::13a|cafe:0:' && break
   nse b4-1 pkill -9 -f 'dns_0x20_forwarder|dns_cookies_forwarder' 2>/dev/null
   nse b4-1 pkill -HUP dnsmasq 2>/dev/null; sleep 1
 done
 bash "$AP" DNS_COOKIES on >/dev/null 2>&1
-n=$(dx bash /testbed/scripts/run_attack_live.sh T8 2>&1 | grep -oE 'resolved to [0-9a-f:]+|resolved to <none>' | tail -1)
+n=$(dx bash /testbed/scripts/run_attack_live.sh T10 2>&1 | grep -oE 'resolved to [0-9a-f:]+|resolved to <none>' | tail -1)
 bash "$AP" DNS_COOKIES off >/dev/null 2>&1
 { echo "$o"|grep -qiE '::13a|cafe:0:' && ! echo "$n"|grep -qiE '::13a|cafe:0:'; } && ok DNS_COOKIES "OFF $o | ON $n" || no DNS_COOKIES "OFF $o | ON $n"
 
 # ── DECAP_BIND (softwire open-relay / RFC 6324 loop) ────────────────────────
-hdr "D11  DECAP_BIND  (T11 softwire decap relay + RFC 6324 loop + cross-plane mgmt access)"
+hdr "D11  DECAP_BIND  (T5 softwire decap relay + RFC 6324 loop + cross-plane mgmt access)"
 # An UNPROVISIONED carrier host builds a softwire to the AFTR (no DHCPv6/PCP) and
 # relays IPv4 to the Internet, laundered as the shared public IPv4
 # (CVE-2025-23018 / Beitis & Vanhoef USENIX'25 class). DECAP_BIND drops it by

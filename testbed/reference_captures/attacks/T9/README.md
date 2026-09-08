@@ -1,4 +1,4 @@
-# T9 — Rogue AFTR Substitution
+# T9 — Cross-Subscriber PCP PEER Enumeration
 
 Reference packet captures for T9, regenerated from the testbed by
 `testbed/scripts/capture_references.sh` (one capture point per file).
@@ -9,14 +9,13 @@ The step-by-step narration, measured signal, and verdict are in
 
 | file | packets |
 |---|---|
-| `T12_1-rogue-dhcpv6.pcap` | 5 |
-| `T12_2-b4-receives.pcap` | 5 |
-| `T12_3-victim-tunnels-to-attacker.pcap` | 6 |
+| `T12_1-cross-sub-peer-leak.pcap` | 409 |
+| `T12_2-aftr-pcp.pcap` | 409 |
 
 ## Verdict
 
 ```
-reference: B4 adopts attacker name (aftr-evil.attacker.example) AND rebuilds its softwire to the attacker (2001:db8:cafe:0:2829:47ff:feaa:9c56); victim loses service
-this run:  name=aftr-evil.attacker.example., softwire remote 2001:db8:cafe::10->2001:db8:cafe:0:2829:47ff:feaa:9c56, victim HTTP=000, frames-to-attacker=4
+reference: cross-subscriber observation-isolation broken (leaked external port == victim's real port)
+this run:  trials passed: 2/2 aggregate TP=2 FP=0 FN=4, precision=100.00%, recall=33.33% 
 verdict:   MATCH   (attack reproduced the stored result)
 ```

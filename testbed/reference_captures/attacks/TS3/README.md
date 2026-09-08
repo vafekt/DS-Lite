@@ -9,8 +9,8 @@ The step-by-step narration, measured signal, and verdict are in
 
 | file | packets |
 |---|---|
-| `T9_1-attacker-announce.pcap` | 1212 |
-| `T9_2-b4-renew-storm.pcap` | 1212 |
+| `T11_1-attacker-announce.pcap` | 1212 |
+| `T11_2-b4-renew-storm.pcap` | 1212 |
 
 ## Verdict
 

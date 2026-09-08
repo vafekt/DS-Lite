@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # dns_offpath_poison.py — off-path DNS cache poisoning of the B4's AFTR-FQDN
-# resolution (the evolved T8, "Softwire DNS-Discovery Hijack").
+# resolution (the evolved T10, "Softwire DNS-Discovery Hijack").
 #
 # Threat model (Man et al. SADDNS + classic Kaminsky): an OFF-PATH attacker that
 # cannot see the resolver's query. It is ASSUMED to know the resolver's upstream

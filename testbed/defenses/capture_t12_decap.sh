@@ -1,7 +1,7 @@
 #!/bin/bash
 # capture_t12_decap.sh — per-defense OFF/ON evidence for the two mitigations that
-# post-date the original capture set: SAVI vs T12 (softwire identity
-# multiplication / shared-pool drain) and DECAP_BIND vs T11 (softwire decap
+# post-date the original capture set: SAVI vs T6 (softwire identity
+# multiplication / shared-pool drain) and DECAP_BIND vs T5 (softwire decap
 # relay). Mirrors capture_defenses.sh conventions. Artifacts are written INSIDE
 # the container under the bind-mounted /testbed/pcaps/defcap/ so they surface on
 # the host; copy them into reference_captures/defenses/ from the host.
@@ -33,15 +33,15 @@ hub_bridge(){ dx ip link set br-isp type bridge ageing_time 0 2>/dev/null
 prov_attacker; hub_bridge
 nse aftr sh -c 'for f in /proc/sys/net/ipv4/conf/*/rp_filter; do echo 0 > $f; done' 2>/dev/null  # default build, uRPF off
 
-# ── SAVI vs T12 (softwire identity multiplication) ──────────────────────────
-# T12 forges MANY outer softwire identities from cafe:dead::/64 (a DIFFERENT /64
+# ── SAVI vs T6 (softwire identity multiplication) ──────────────────────────
+# T6 forges MANY outer softwire identities from cafe:dead::/64 (a DIFFERENT /64
 # than the carrier prefix) to drain the shared 64,512-port pool. Proper SAVI
 # (2000::/3 scope) drops every forged identity at the carrier bridge, so none
 # reach the AFTR and the pool never fills.
-echo "SAVI_T12"; mk SAVI_T12
+echo "SAVI_T6"; mk SAVI_T6
 t12cap(){ # $1 = OFF|ON
   nse aftr conntrack -F >/dev/null 2>&1
-  nse aftr sh -c "timeout 12 tcpdump -U -ni eth-isp -c 500 -w '$OUT/SAVI_T12/SAVI_T12_$1_aftr_eth-isp.pcap' 'ip6 src net 2001:db8:cafe:dead::/64 and ip6 proto 4' >/dev/null 2>&1 &"
+  nse aftr sh -c "timeout 12 tcpdump -U -ni eth-isp -c 500 -w '$OUT/SAVI_T6/SAVI_T6_$1_aftr_eth-isp.pcap' 'ip6 src net 2001:db8:cafe:dead::/64 and ip6 proto 4' >/dev/null 2>&1 &"
   sleep 0.8
   nse attacker sh -c "timeout 12 python3 $T/nat/nat_exhaustion.py eth-isp --tunnel --src-ip6-prefix ${CP}:dead::/64 --fixed-dport 80 --proto tcp --dst-ip4 $SRV --aftr-ip6 $AFTR --inner-src-prefix 10.90.0.0/16 --threads 8 --batch 256 >/dev/null 2>&1" &
   sleep 9
@@ -50,14 +50,14 @@ t12cap(){ # $1 = OFF|ON
   c1=$(nse client1 curl -s -o /dev/null -w '%{http_code}' --max-time 4 http://$SRV/ 2>/dev/null)
   c2=$(nse client2 curl -s -o /dev/null -w '%{http_code}' --max-time 4 http://$SRV/ 2>/dev/null)
   nse attacker pkill -9 -f nat_exhaustion 2>/dev/null; stopcap
-  local reached; reached=$(nse aftr sh -c "tcpdump -nr '$OUT/SAVI_T12/SAVI_T12_$1_aftr_eth-isp.pcap' 2>/dev/null | wc -l")
-  dxsh "printf 'SAVI %s vs T12 (softwire identity multiplication)\nforged softwire packets (cafe:dead::/64) reaching the AFTR: %s\nshared-pool bindings (->:80): %s\nco-resident client1 HTTP: %s\nco-resident client2 HTTP: %s\n' '$1' '$reached' '$pool' '$c1' '$c2' > $OUT/SAVI_T12/SAVI_T12_$1.result.txt"; }
+  local reached; reached=$(nse aftr sh -c "tcpdump -nr '$OUT/SAVI_T6/SAVI_T6_$1_aftr_eth-isp.pcap' 2>/dev/null | wc -l")
+  dxsh "printf 'SAVI %s vs T6 (softwire identity multiplication)\nforged softwire packets (cafe:dead::/64) reaching the AFTR: %s\nshared-pool bindings (->:80): %s\nco-resident client1 HTTP: %s\nco-resident client2 HTTP: %s\n' '$1' '$reached' '$pool' '$c1' '$c2' > $OUT/SAVI_T6/SAVI_T6_$1.result.txt"; }
 bash "$AP" SAVI off >/dev/null 2>&1; t12cap OFF
 bash "$AP" SAVI on  >/dev/null 2>&1; t12cap ON
 bash "$AP" SAVI off >/dev/null 2>&1
 nse aftr conntrack -F >/dev/null 2>&1
 
-# ── DECAP_BIND vs T11 (softwire decap relay) ────────────────────────────────
+# ── DECAP_BIND vs T5 (softwire decap relay) ────────────────────────────────
 # An UNPROVISIONED carrier host builds a softwire to the AFTR and relays IPv4 to
 # the Internet, laundered as the shared public IPv4. DECAP_BIND drops it by
 # binding the decapsulated packet to a provisioned softwire; a legitimate
@@ -80,4 +80,4 @@ bash "$AP" DECAP_BIND on  >/dev/null 2>&1; decapcap ON attacker; decapcap ON-leg
 bash "$AP" DECAP_BIND off >/dev/null 2>&1
 nse attacker ip link del atkrelay 2>/dev/null
 
-echo "DONE — evidence in pcaps/defcap/{SAVI_T12,DECAP_BIND}/"
+echo "DONE — evidence in pcaps/defcap/{SAVI_T6,DECAP_BIND}/"

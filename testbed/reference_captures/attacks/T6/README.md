@@ -1,22 +1,21 @@
-# T6 — Unauthorized THIRD_PARTY Forwarding
+# T6 — Softwire Identity Multiplication
 
 Reference packet captures for T6, regenerated from the testbed by
-`testbed/scripts/capture_references.sh` (one capture point per file).
-The step-by-step narration, measured signal, and verdict are in
-[`RESULT.txt`](RESULT.txt).
+re-running the attack under capture (`testbed/scripts/run_attack_live.sh`;
+one capture point per file). The step-by-step narration, measured signal,
+and verdict are in [`RESULT.txt`](RESULT.txt).
 
 ## Capture points
 
 | file | packets |
 |---|---|
-| `T8_1-thirdparty-map.pcap` | 10 |
-| `T8_2-aftr-pcp.pcap` | 10 |
-| `T8_3-inbound-to-victim.pcap` | 8 |
+| `t6_1-attacker-4in6.pcap` | 4000 |
+| `t6_2-aftr-egress.pcap` | 4000 |
 
 ## Verdict
 
 ```
-reference: attacker opens an inbound port on the shared IP to a NON-OWNED co-sub; external traffic then reaches the victim
-this run:  forged inbound-forwarding rules=5 (192.0.2.1:1024->10.0.2.100:9447); external probe reached victim=yes
+reference: one forged identity is capped and leaves co-residents reachable (200); many forged identities fill the 64512-port pool and deny both co-residents (200->000)
+this run:  ONE: pool=2000 co-res=200/200; MANY: pool=64512 co-res=000/000
 verdict:   MATCH   (attack reproduced the stored result)
 ```

@@ -1,14 +1,14 @@
 ================================================================
   DS-Lite live attack  T4  —  Downstream Softwire Injection
-  saving to  ./pcaps/runs/20260706T112511Z_T5/
+  saving to  ./pcaps/runs/20260706T112511Z_T7/
   ground truth (reference) in  ./pcaps/per_attack/T4/
 ================================================================
 
   [1] Surface: Softwire downstream. AFTR->B4 direction is also unauthenticated.
   [2] Attack: attacker forges AFTR (2001:db8:cafe::10) -> B4 (2001:db8:cafe::b41) carrying inner src 203.0.113.66 -> 10.0.1.100.
       the B4 decapsulates it straight onto the victim LAN, bypassing the CGN.
-      1-attacker-forges (attacker/eth-isp) T5_1-attacker-forges.pcap          32 pkts
-      2-injected-into-LAN (b4-1/eth-lan) T5_2-injected-into-LAN.pcap        32 pkts
+      1-attacker-forges (attacker/eth-isp) T7_1-attacker-forges.pcap          32 pkts
+      2-injected-into-LAN (b4-1/eth-lan) T7_2-injected-into-LAN.pcap        32 pkts
   [3] Measure: do forged packets (src 203.0.113.66) appear on the victim LAN?
       injected packets with spoofed src 203.0.113.66 seen on B4-1 LAN = 15
 
@@ -17,4 +17,4 @@
   this run:  spoofed-src packets delivered onto B4-1 LAN = 15
   verdict:   MATCH   (attack reproduced the stored result)
   --------------------------------------------------------------
-  saved: ./pcaps/runs/20260706T112511Z_T5/  (pcaps + config.txt + RESULT.txt)
+  saved: ./pcaps/runs/20260706T112511Z_T7/  (pcaps + config.txt + RESULT.txt)

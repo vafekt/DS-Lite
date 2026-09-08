@@ -2,7 +2,7 @@
 # measure_isolation_load.sh - co-resident isolation under CONTINUOUS LOAD.
 # Beyond the 1 Hz liveness probe of verify_all.sh, this drives a co-resident
 # subscriber (client2, behind a second B4) with back-to-back requests and
-# reports success rate and latency, during the shared-pool drain (T12) with
+# reports success rate and latency, during the shared-pool drain (T6) with
 # source validation OFF then ON, plus a no-attack baseline. Run from the host:
 #   CONTAINER_NAME=ds-lite-lab bash testbed/defenses/measure_isolation_load.sh
 set -u
@@ -42,9 +42,9 @@ prov_attacker; hub_bridge
 nse aftr sh -c 'for f in /proc/sys/net/ipv4/conf/*/rp_filter; do echo 0 > $f; done' 2>/dev/null
 
 echo "== Baseline (no attack) =="; bash "$AP" SAVI off >/dev/null 2>&1; reset; measure | stats
-echo "== T12 shared-pool drain, SAVI OFF (isolation break) =="; reset; flood
+echo "== T6 shared-pool drain, SAVI OFF (isolation break) =="; reset; flood
 for i in $(seq 1 12); do sleep 2.5; [ "$(pool)" -gt 60000 ] && break; done
 echo "  co-resident under load at pool=$(pool):"; measure | stats; reset
-echo "== T12 shared-pool drain, SAVI ON (restored) =="; bash "$AP" SAVI on >/dev/null 2>&1; reset; flood; sleep 20
+echo "== T6 shared-pool drain, SAVI ON (restored) =="; bash "$AP" SAVI on >/dev/null 2>&1; reset; flood; sleep 20
 echo "  co-resident under load at pool=$(pool):"; measure | stats; reset
 bash "$AP" SAVI off >/dev/null 2>&1

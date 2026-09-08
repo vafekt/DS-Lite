@@ -1,8 +1,8 @@
 #!/bin/bash
 # Lightweight 4over6 (RFC 7596) emulation, parallel to the DS-Lite testbed.
-# Purpose: reproduce T1 (flood), T11 (unprovisioned relay), T12 (identity
+# Purpose: reproduce T1 (flood), T5 (unprovisioned relay), T6 (identity
 # forgery) against a CONFORMANT lw4o6 stack, to show the RFC 7596 §5.1
-# binding (which DS-Lite omits) blocks T11/T12 by design.
+# binding (which DS-Lite omits) blocks T5/T6 by design.
 #
 # lw4o6 vs DS-Lite differences realized here:
 #   - NAT is at the EDGE lwB4, into an ASSIGNED port-set on a shared IPv4.

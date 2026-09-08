@@ -1,5 +1,5 @@
 #!/bin/bash
-# ISC AFTR (reference DS-Lite) T11 relay egress cross-check.
+# ISC AFTR (reference DS-Lite) T5 relay egress cross-check.
 # Topology (all inside one privileged container, three netns):
 #
 #   [b4 ns]                 [root ns: ISC aftr + tun0]              [wan ns]

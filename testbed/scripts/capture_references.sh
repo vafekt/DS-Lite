@@ -47,11 +47,11 @@ prov_attacker(){ nse attacker ip link show eth-isp >/dev/null 2>&1 || dx sh -c '
 # lab_restore — FULL clean baseline between captures, so no attack's state or
 # config overlaps into the next. Stronger than the runner's reset_state: it also
 # restarts the PCP server+proxies (clears the in-memory pool from TS2), restarts
-# the SNMP agent (resets the alarm threshold a T10 SET left at max), restores the
+# the SNMP agent (resets the alarm threshold a T12 SET left at max), restores the
 # stock DHCPv6 + B4 resolver, and removes any leftover defence state.
 lab_restore(){
   # kill every attack tool + any defence daemon/scaffolding
-  dx pkill -9 -f 'nat_exhaustion|nat_hold|tunnel_spoof|reputation_poisoning|pcp_attack|fragment_attack|dhcpv6_hijack|dns_cache_poison|dns_offpath_poison|t4_softwire_inject|t7_peer_crosssub|dns_0x20_forwarder|dns_sink|trabelsi_guard|feistel_b4|snmpv3_client|dhcpv6auth.py|conntrack -E' 2>/dev/null
+  dx pkill -9 -f 'nat_exhaustion|nat_hold|tunnel_spoof|reputation_poisoning|pcp_attack|fragment_attack|dhcpv6_hijack|dns_cache_poison|dns_offpath_poison|t4_softwire_inject|t9_peer_crosssub|dns_0x20_forwarder|dns_sink|trabelsi_guard|feistel_b4|snmpv3_client|dhcpv6auth.py|conntrack -E' 2>/dev/null
   # PCP: restart server + proxies clean (no defence env, fresh pool)
   nse aftr pkill -9 -f pcp_server.py 2>/dev/null
   nse b4-1 pkill -9 -f pcp_proxy.py 2>/dev/null; nse b4-2 pkill -9 -f pcp_proxy.py 2>/dev/null; sleep 0.4
@@ -70,7 +70,7 @@ lab_restore(){
   nse b4-1 ip xfrm state flush 2>/dev/null; nse b4-2 ip xfrm state flush 2>/dev/null
   nse b4-1 nft delete table ip feistel 2>/dev/null; nse b4-2 nft delete table ip feistel 2>/dev/null
   nse aftr sysctl -qw net.netfilter.nf_conntrack_tcp_timeout_syn_recv=60 net.netfilter.nf_conntrack_tcp_timeout_syn_sent=60 net.netfilter.nf_conntrack_udp_timeout=30 >/dev/null 2>&1
-  # clear residual attack state: conntrack, PCP-DNAT, NDP, AFTR-name, softwire, T8 silent-upstream
+  # clear residual attack state: conntrack, PCP-DNAT, NDP, AFTR-name, softwire, T10 silent-upstream
   nse aftr conntrack -F >/dev/null 2>&1
   nse aftr nft flush chain ip nat pcp_dnat 2>/dev/null
   nse aftr ip -6 neigh flush dev eth-isp 2>/dev/null
@@ -142,11 +142,11 @@ EOF
 # 2. ATTACKS — each attack run cleanly via the runner (attack SUCCEEDS)
 # ─────────────────────────────────────────────────────────────────────────
 hdr "Attacks (clean per-attack captures)"
-# The paper's 16-tree corpus: T1-T12 executed attacks, the T9b name-preserving
+# The paper's 16-tree corpus: T1-T6 executed attacks, the T11b name-preserving
 # rogue-AFTR variant, and the TS1-TS3 supplementary CGNAT weaknesses. Driven
-# explicitly (not "seq 1 15") so every id — including T9b and the TS set — is
+# explicitly (not "seq 1 15") so every id — including T11b and the TS set — is
 # captured and the ids stay in lockstep with attack_lib.sh's paper-scheme handlers.
-for ID in T1 T2 T3 T4 T5 T6 T7 T8 T9 T9b T10 T11 T12 TS1 TS2 TS3; do
+for ID in T1 T2 T3 T4 T7 T8 T9 T10 T11 T11b T12 T5 T6 TS1 TS2 TS3; do
   lab_restore                       # clean baseline BEFORE each attack (no overlap)
   say "running $ID ..."
   outdir=$(dx bash /testbed/scripts/run_attack_live.sh "$ID" 2>&1 | grep -oE 'pcaps/runs/[0-9TZ]+_'"$ID" | head -1)
@@ -223,11 +223,11 @@ defcap SAVI aftr eth-isp "ip6 src $VB4 and ip6 dst $AFTR and ip6 proto 4" \
 defcap ESP_AEAD b4-1 eth-isp "ip6 proto 4 or esp" \
   "nse client1 sh -c \"for i in 1 2 3 4 5; do curl -s -o /dev/null --max-time 3 http://$SRV/; done >/dev/null 2>&1\""
 
-# SNMP_USM (T10): mgmt-plane SNMP — v2c SET accepted vs USM-only (v2c dropped)
+# SNMP_USM (T12): mgmt-plane SNMP — v2c SET accepted vs USM-only (v2c dropped)
 defcap SNMP_USM aftr eth-mgmt "udp port 161" \
   "nse mgmt sh -c \"timeout 6 python3 $T/infra/snmp_attack.py set --target 10.99.0.1 --oid alarmConnectNumber --value 2147483647 >/dev/null 2>&1\""
 
-# PCP_OWNERSHIP (T6): PCP THIRD_PARTY naming a different subscriber — accepted vs NOT_AUTHORIZED
+# PCP_OWNERSHIP (T8): PCP THIRD_PARTY naming a different subscriber — accepted vs NOT_AUTHORIZED
 defcap PCP_OWNERSHIP aftr eth-isp "udp port 5351" \
   "nse client1 sh -c \"timeout 6 python3 $T/infra/pcp_attack.py thirdparty --proxy-ip $GW1 --target-internal 10.0.2.100 >/dev/null 2>&1\""
 

@@ -1,24 +1,22 @@
 ================================================================
-  DS-Lite live attack  T10  —  DS-Lite MIB Unauthenticated Access
-  saving to  ./pcaps/runs/20260902T164047Z_T10/
+  DS-Lite live attack  T10  —  Softwire DNS-Discovery Hijack
+  saving to  ./pcaps/runs/20260706T112706Z_T5/
   ground truth (reference) in  ./pcaps/per_attack/T10/
 ================================================================
 
-  [1] Surface: SNMP/MIB OAM plane (DSLITE-MIB, RFC 7870); default community, no USM.
-  [2] Seed: drive both subscribers so the AFTR holds a binding for each.
-  [3] Baseline: dsliteAFTRAlarmPortNumber = 1000 (NOC's per-user NAT-port alarm).
-  [4] Attack (write): a mgmt-reachable host raises the port-usage alarm to Integer32 max so it never fires.
-  [5] Attack (read): walk the DSLITE-MIB tables, disclosing each softwire's tunnel-source identity and external mapping.
-      1-snmp-set (aftr/eth-mgmt)         t10_1-snmp-set.pcap                556 pkts
-      2-mgmt-station (mgmt/eth-mgmt)     t10_2-mgmt-station.pcap            556 pkts
-  [6] Measure: threshold raised, distinct subscribers disclosed, and the RFC range enforced on ConnectNumber.
-      port-usage alarm threshold now = 2147483647 (was 1000) -> NOC blind to port exhaustion
-      distinct softwire tunnel sources disclosed via the MIB = 2  [2001:db8:cafe::b41 2001:db8:cafe::b42 ]
-      ConnectNumber out-of-range SET: tried 2147483647, value stayed 60 (RFC 60..90 enforced)
+  [1] Surface: off-path poisoning of the B4's AFTR-FQDN resolution (RFC 6334).
+      0x20 case-randomisation at the B4 resolver = OFF
+/testbed/scripts/attack_lib.sh: line 32: 260941 Killed                  ip netns exec "$@"
+  [2] Victim B4 resolves the AFTR FQDN (query hangs on the slow upstream = wide window).
+  [3] Attack: OFF-PATH attacker floods forged AAAA (granted port, brute 65536 TXIDs).
+      1-offpath-flood (attacker/eth-isp) T5_1-offpath-flood.pcap           4000 pkts
+      2-b4-resolver (b4-1/eth-isp)       T5_2-b4-resolver.pcap             4000 pkts
+  [4] Measure: what AAAA did the B4 resolver cache for aftr.dslite.example.com?
+      B4 resolver answers aftr.dslite.example.com -> 2001:db8:cafe:0:2829:47ff:feaa:9c56  (attacker = 2001:db8:cafe:0:2829:47ff:feaa:9c56)
 
   --------------------------------------------------------------
-  reference: unauthenticated MIB access raises the per-user port alarm to Integer32 max (never fires) AND discloses >=2 softwire tunnel-source identities; ConnectNumber out-of-range SET rejected per RFC 60..90
-  this run:  PortNumber 1000->2147483647; subscribers disclosed 2; ConnectNumber stayed 60
+  reference: off-path flood poisons the B4 cache: aftr.dslite.example.com -> attacker (2001:db8:cafe:0:2829:47ff:feaa:9c56)
+  this run:  aftr.dslite.example.com resolved to 2001:db8:cafe:0:2829:47ff:feaa:9c56 at the B4 resolver
   verdict:   MATCH   (attack reproduced the stored result)
   --------------------------------------------------------------
-  saved: ./pcaps/runs/20260902T164047Z_T10/  (pcaps + config.txt + RESULT.txt)
+  saved: ./pcaps/runs/20260706T112706Z_T5/  (pcaps + config.txt + RESULT.txt)
