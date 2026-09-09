@@ -41,13 +41,10 @@ MAIN = [
 # The id is the article_defenses.sh toggle name. Kept in sync with the corpus.
 DEFENSES = [
     ("TRABELSI",      "TRABELSI  (closes T1)",        "half-open early eviction; co-resident keeps service"),
-    ("NAT_LOG",       "NAT_LOG  (closes TS1)",         "per-binding attribution log for the shared IPv4"),
     ("SAVI",          "SAVI  (closes T2, T4, T7, T6)", "per-port carrier source binding; drops outer spoof and forged identities"),
     ("ESP_AEAD",      "ESP_AEAD  (closes T3)",        "AES-GCM ESP on the softwire; no cleartext"),
     ("FEISTEL_IPID",  "FEISTEL_IPID  (closes T7)",    "Feistel IP-ID randomization at each B4"),
-    ("PCP_QUOTA",     "PCP_QUOTA  (closes TS2)",       "per-subscriber PCP mapping cap"),
     ("PCP_OWNERSHIP", "PCP_OWNERSHIP  (closes T8, T9)", "THIRD_PARTY/PEER bound to requester prefix"),
-    ("PCP_AUTH",      "PCP_AUTH  (closes TS3)",        "authenticated ANNOUNCE; forged epoch reset ignored"),
     ("DNS_0X20",      "DNS_0X20  (closes T10)",       "0x20 case randomization at the B4 resolver"),
     ("DNS_COOKIES",   "DNS_COOKIES  (closes T10)",    "RFC 7873 DNS cookies at the B4 resolver; forged replies dropped"),
     ("DHCPV6_AUTH",   "DHCPV6_AUTH  (closes T11, T11)", "Ed25519-signed DHCPv6; rogue ADVERTISE rejected"),
@@ -118,13 +115,24 @@ def load_attacks():
 
 def pick(items, title, header="", multi=False, filterable=True):
     """items: list of (token, label, tag). Returns token, list[token] if multi, or None."""
-    from prompt_toolkit import Application
-    from prompt_toolkit.buffer import Buffer
-    from prompt_toolkit.key_binding import KeyBindings
-    from prompt_toolkit.layout import Layout, HSplit, Window
-    from prompt_toolkit.layout.controls import FormattedTextControl, BufferControl
-    from prompt_toolkit.layout.dimension import D
-    from prompt_toolkit.styles import Style
+    try:
+        from prompt_toolkit import Application
+        from prompt_toolkit.buffer import Buffer
+        from prompt_toolkit.key_binding import KeyBindings
+        from prompt_toolkit.layout import Layout, HSplit, Window
+        from prompt_toolkit.layout.controls import FormattedTextControl, BufferControl
+        from prompt_toolkit.layout.dimension import D
+        from prompt_toolkit.styles import Style
+    except ImportError:
+        import sys
+        sys.stderr.write(
+            "\n[ds_menu] The interactive menu needs the 'prompt_toolkit' package "
+            "(pip3 install prompt_toolkit).\n"
+            "          You can run any attack directly without the menu:\n"
+            "            docker exec -it ds-lite-lab bash /testbed/scripts/run_attack_live.sh <Tn>\n"
+            "          and toggle any defense from the host:\n"
+            "            bash testbed/defenses/article_defenses.sh <ID> on|off\n\n")
+        return None
 
     state = {"cur": 0, "checked": set(), "filtered": list(range(len(items)))}
     search = Buffer()

@@ -74,8 +74,7 @@ the AFTR allocated external port **1024** on the shared public IPv4 `192.0.2.1`
 for the client's internal port 8080.
 
 **What this proves:** the PCP control plane works — a subscriber can open an
-inbound port on the shared address. This is the surface TS2 (pool exhaustion),
-T6 (THIRD_PARTY), TS3 (ANNOUNCE), T7 (PEER) abuse.
+inbound port on the shared address. This is the surface T8 (THIRD_PARTY) and T9 (PEER) abuse.
 
 **Recognition rule:** a legit MAP is a `MAP request → MAP response` on UDP 5351
 returning an external `192.0.2.1:<port>` for the *requester's own* internal IP.

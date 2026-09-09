@@ -4,12 +4,10 @@
 # and dispatches by id, so adding/removing/reordering attacks here keeps
 # the interactive menu in sync without editing run.sh's numbering.
 #
-# IDs are the paper's 12-attack scheme (T1-T6), matching the classification
+# IDs are the paper's 12-attack scheme (T1-T12), matching the classification
 # table and the verifier (defenses/verify_defenses.sh). T11 combines the two
 # rogue-AFTR variants (name-substituting + name-preserving) that the paper
-# analyses as one attack. TS1-TS3 are supplementary attacks documented as
-# generic CGNAT weaknesses but not carried into the paper's executed corpus.
-# --- Supplementary: generic CGNAT weaknesses, documented but not in the paper's 12 ---
+# analyses as one attack.
 T1|A1 NAT/CGN surface|NAT Binding-Table Exhaustion|LAN/ISP
 T2|A2 Softwire surface|Softwire Endpoint Spoofing & On-Path MITM|ISP
 T3|A2 Softwire surface|Unencrypted-Tunnel Interception|ISP
@@ -22,6 +20,3 @@ T9|B1 PCP surface|Cross-Subscriber PCP PEER + THIRD_PARTY|LAN
 T10|B2 DNS surface|B4 DNS Cache Poisoning|ISP
 T11|B3 DHCPv6 surface|Rogue AFTR Hijack (name-substituting + name-preserving)|ISP
 T12|C1 SNMP surface|DS-Lite MIB Unauthenticated Access|MGMT
-TS1|A1 NAT/CGN surface|Shared-IPv4 Reputation Poisoning|LAN
-TS2|B1 PCP surface|PCP Port-Exhaustion DoS|LAN
-TS3|B1 PCP surface|PCP ANNOUNCE Spoof (Epoch Reset)|ISP

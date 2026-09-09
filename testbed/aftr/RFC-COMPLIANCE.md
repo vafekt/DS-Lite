@@ -165,7 +165,7 @@ are documented as such.
 | RFC | Status in DS-Lite | Why we don't implement | Documented as |
 |---|---|---|---|
 | **RFC 7039: Source Address Validation Improvement (SAVI)** | **Optional security framework**, not a DS-Lite requirement. RFC 7039 is Informational and is not referenced by RFC 6333, RFC 6334, RFC 6887, or RFC 6888 as required infrastructure. | Not implementing it is what enables T4 (Downstream Softwire Injection) to be demonstrable in the testbed. | T4 in the paper, §V; ALD = Specific |
-| **RFC 7652: PCP Authentication Mechanism** | **Optional extension to PCP**, not part of base PCP (RFC 6887). RFC 7652 §1 itself describes it as an extension a deployment "may choose" for hardened scenarios such as "security infrastructure equipment, such as corporate firewalls." | Not implementing it is what enables the PCP attacks T8 and T9 (plus the supplementary TS2 and TS3) to be demonstrable. | These T-IDs in the paper, §V; ALD = Amplified or Specific |
+| **RFC 7652: PCP Authentication Mechanism** | **Optional extension to PCP**, not part of base PCP (RFC 6887). RFC 7652 §1 itself describes it as an extension a deployment "may choose" for hardened scenarios such as "security infrastructure equipment, such as corporate firewalls." | Not implementing it is what enables the PCP attacks T8 and T9 to be demonstrable. | These T-IDs in the paper, §V; ALD = Amplified or Specific |
 
 Both are *optional security additions*, not core DS-Lite functions. A
 deployment that implemented them would still be RFC 6333 / RFC 6887

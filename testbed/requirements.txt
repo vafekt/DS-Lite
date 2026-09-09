@@ -19,5 +19,8 @@ graphviz>=0.20        # attack-tree DOT rendering
 numpy>=1.21           # numerical support for sensitivity sweeps
 scipy>=1.7            # Spearman correlation, permutation tests, copula draws
 
+# --- Interactive menu (scripts/ds_menu.py, invoked by run.sh) ---
+prompt_toolkit>=3.0   # arrow-key attack/defense picker; run_attack_live.sh works without it
+
 # --- Tests (optional) ---
 pytest>=7.0

@@ -70,44 +70,8 @@ restart_pcp ""; own_run OFF
 restart_pcp "T12_THIRD_PARTY_OWNERSHIP_CHECK=1"; own_run ON
 restart_pcp ""
 
-# ── PCP_QUOTA (TS2 shared-pool exhaustion, cross-sub) ────────────────────────
-echo "PCP_QUOTA"; mk PCP_QUOTA
-quota_run(){ cap aftr eth-isp "$OUT/PCP_QUOTA/$1.pcap" "udp port 5351"; sleep 0.5
-  nse client1 sh -c "timeout 12 python3 $T/infra/pcp_attack.py exhaust --proxy-ip 10.0.1.1 --proto 17 --count 120" >/dev/null 2>&1
-  nse client2 sh -c "timeout 8 python3 $T/infra/pcp_attack.py map --proxy-ip 10.0.2.1 --proto 17 --internal-port 9090 > $OUT/PCP_QUOTA/$1.b4-2-map.txt 2>&1"
-  sleep 1; stopcap; }
-restart_pcp "" 60; quota_run OFF
-restart_pcp "T_PCP_QUOTA=20" 60; quota_run ON
-restart_pcp "" 1024
 
-# ── PCP_AUTH (TS3 forged ANNOUNCE epoch-reset storm) ─────────────────────────
-echo "PCP_AUTH"; mk PCP_AUTH
-auth_run(){ # $1 tag, $2 envstr
-  nse aftr pkill -9 -f pcp_server.py 2>/dev/null; nse b4-1 pkill -9 -f pcp_proxy.py 2>/dev/null; nse b4-2 pkill -9 -f pcp_proxy.py 2>/dev/null; sleep 0.6
-  dx ip netns exec aftr env PCP_POOL_SIZE=1024 $2 python3 /testbed/aftr/pcp_server.py >/dev/null 2>&1 &
-  dx ip netns exec b4-1 sh -c "$2 python3 /testbed/b4/pcp_proxy.py --lan-ip 10.0.1.1 --b4-ip6 $VB4 --aftr-ip6 $AFTR --passthrough-third-party > /tmp/proxy9.log 2>&1" &
-  dx ip netns exec b4-2 env $2 python3 /testbed/b4/pcp_proxy.py --lan-ip 10.0.2.1 --b4-ip6 $B42 --aftr-ip6 $AFTR --passthrough-third-party >/dev/null 2>&1 &
-  sleep 2
-  cap b4-1 eth-isp "$OUT/PCP_AUTH/$1.pcap" "udp port 5351 or udp port 5350"; sleep 0.5
-  nse client1 sh -c "timeout 8 python3 $T/infra/pcp_attack.py exhaust --proxy-ip $GW1 --count 30" >/dev/null 2>&1
-  sleep 0.5; nse attacker sh -c "timeout 6 python3 $T/infra/pcp_attack.py announce --interface eth-isp --aftr-ip6 $AFTR --count 8" >/dev/null 2>&1; sleep 3
-  stopcap
-  dxsh "echo -n 'renewal storms sent: ' > $OUT/PCP_AUTH/$1.storms.txt; grep -c 'renewal storm sent' /tmp/proxy9.log 2>/dev/null >> $OUT/PCP_AUTH/$1.storms.txt || true"; }
-auth_run OFF ""
-auth_run ON  "T_PCP_AUTH=1"
-restart_pcp ""
 
-# ── NAT_LOG (TS1 shared-IP attribution) ──────────────────────────────────────
-echo "NAT_LOG"; mk NAT_LOG
-LOG=/var/log/aftr-bindings.log
-# NOTE: truncate (: > LOG), do NOT unlink — the AFTR logger holds the file open,
-# so rm sends new records to a dangling inode and the count reads 0.
-nat_run(){ dxsh ": > $LOG 2>/dev/null || true"
-  nse client1 sh -c "timeout 8 python3 $T/dns/reputation_poisoning.py --mode scan --target $SRV --count 200" >/dev/null 2>&1; sleep 1.5
-  dxsh "if [ -s $LOG ]; then cp $LOG $OUT/NAT_LOG/$1.attribution.log; wc -l < $LOG | tr -dc 0-9 > $OUT/NAT_LOG/$1.count.txt; else echo '(no attribution log produced)' > $OUT/NAT_LOG/$1.attribution.log; printf 0 > "$OUT/NAT_LOG/$1.count.txt"; fi"; }
-bash "$AP" NAT_LOG off >/dev/null 2>&1; nat_run OFF
-bash "$AP" NAT_LOG on  >/dev/null 2>&1; sleep 0.5; nat_run ON
-bash "$AP" NAT_LOG off >/dev/null 2>&1; dxsh ": > $LOG 2>/dev/null || true"
 
 # ── SNMP_USM (T12 alarm write) ──────────────────────────────────────────────
 echo "SNMP_USM"; mk SNMP_USM

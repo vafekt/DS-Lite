@@ -9,7 +9,7 @@
 # (192.0.2.1), so the two APS levels coincide in measurement. This script:
 #   1. measures each subscriber's egress public IPv4 in the default 1-address
 #      mode (both share 192.0.2.1 -> a per-address abuse consequence such as
-#      TS1 reputation blocklisting would hit both: Shared-IPv4 cohort = 2);
+#      shared-IP reputation blocklisting would hit both: Shared-IPv4 cohort = 2);
 #   2. reconfigures the AFTR with a second public address and partitions the
 #      subscribers (B4-1 -> 192.0.2.1, B4-2 -> 192.0.2.2), then re-measures:
 #      the two subscribers now egress on different addresses, so the

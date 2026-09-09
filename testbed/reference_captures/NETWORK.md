@@ -20,7 +20,7 @@ refers to the nodes and addresses defined here.
 | `attacker` | the adversary (created on demand) | – | **`2001:db8:cafe::13a`** | carrier |
 
 The **shared public IPv4 `192.0.2.1`** is the CGNAT egress that *all* subscribers
-share — the heart of the shared-fate attacks (TS1). The **AFTR FQDN**
+share — the heart of the shared-fate attacks. The **AFTR FQDN**
 `aftr.dslite.example.com` is what the B4 resolves (DHCPv6 option 64 → DNS) to
 find its AFTR.
 
@@ -72,7 +72,7 @@ tells you *exactly* what happened to the packet, so it matters:
 | What you see | What it means | Why it happens |
 |---|---|---|
 | `SYN` → `SYN-ACK` (`[S]` → `[S.]`) | **Success.** Port open and reachable. | The server accepted the connection. Normal traffic. |
-| `SYN` → `RST` (`[S]` → `[R.]` / `[R]`) | **Actively refused.** The host is reachable but nothing is listening on that port. | The server's TCP stack got the SYN, found no listener, and *replied* with a reset. A RST is a deliberate "go away" — proof the host received your packet. (Seen in TS1's port **scan**: the scanner hits closed ports, the server RSTs each.) |
+| `SYN` → `RST` (`[S]` → `[R.]` / `[R]`) | **Actively refused.** The host is reachable but nothing is listening on that port. | The server's TCP stack got the SYN, found no listener, and *replied* with a reset. A RST is a deliberate "go away" — proof the host received your packet. (Seen in a shared-IP port **scan**: the scanner hits closed ports, the server RSTs each.) |
 | `SYN`, then the **same** `SYN` again ~1s/2s/4s later, **no reply at all** | **Silently dropped (blackhole).** The packet was discarded somewhere in the path with no notification. | Nobody answers, so the client's kernel cannot tell "lost" from "slow" and **retransmits the identical SYN** (same source port, same seq) on an exponential timer (RTO ≈ 1s, 2s, 4s). Wireshark labels the repeats `[TCP Retransmission]`. This is what a **drop** looks like — there is no RST because the dropper stays silent. |
 
 So:
@@ -83,7 +83,7 @@ So:
 - A lone `SYN` with no follow-up is the *start* of that same drop story; if the
   capture runs long enough you will see the retransmits.
 
-In this testbed the **denial-of-service impacts (T1 NAT-full, TS1 blocklist) show
+In this testbed the **denial-of-service impacts (T1 NAT-full, shared-IP blocklist) show
 up as the third row** — retransmitted SYNs with no answer — because the victim's
 packets are silently dropped. A `RST` is *not* a DoS symptom; it is a normal
 "port closed" answer and appears in the **scan** traffic, not the impact.

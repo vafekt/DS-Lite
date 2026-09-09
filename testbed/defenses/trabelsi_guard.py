@@ -3,7 +3,7 @@
 # Z. Trabelsi et al., "Improved Session Table Architecture for Denial of
 # Stateful Firewall Attacks" (IEEE Access, 2018).
 #
-# The T1/TS2 attack floods the AFTR with half-open (UNREPLIED) sessions to
+# The T1 attack floods the AFTR with half-open (UNREPLIED) sessions to
 # exhaust the stateful NAT/conntrack table, denying legitimate subscribers.
 #
 # Trabelsi's mechanism (faithfully reproduced here):

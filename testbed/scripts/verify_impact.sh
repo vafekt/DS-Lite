@@ -111,27 +111,6 @@ else V="NEEDS INVESTIGATION — before c1=$b1 after c1=$a1 c2=$a2 ct=$ct"; fi
 write_impact T1 "client1=$b1 client2=$b2" "conntrack exhausted to $ct" "client1=$a1 client2=$a2" "$V"
 lab_restore
 
-# ───────────────────────── TS2 — PCP pool exhaustion ─────────────────────────
-hdr "TS2  PCP exhaustion — a co-subscriber's legit MAP is refused (NO_RESOURCES)"
-restart_pcp(){ nse aftr pkill -9 -f pcp_server.py 2>/dev/null
-  nse b4-1 pkill -9 -f pcp_proxy.py 2>/dev/null; nse b4-2 pkill -9 -f pcp_proxy.py 2>/dev/null; sleep 0.5
-  dx ip netns exec aftr env PCP_POOL_SIZE=$1 python3 /testbed/aftr/pcp_server.py >/dev/null 2>&1 &
-  dx ip netns exec b4-1 python3 /testbed/b4/pcp_proxy.py --lan-ip 10.0.1.1 --b4-ip6 $VB4 --aftr-ip6 $AFTR --passthrough-third-party >/dev/null 2>&1 &
-  dx ip netns exec b4-2 python3 /testbed/b4/pcp_proxy.py --lan-ip 10.0.2.1 --b4-ip6 $B42 --aftr-ip6 $AFTR --passthrough-third-party >/dev/null 2>&1 &
-  sleep 2; }
-restart_pcp 400
-bm=$(nse client2 sh -c "timeout 6 python3 $T/infra/pcp_attack.py map --proxy-ip $GW2 --proto 17 --internal-port 9091 2>&1" | grep -qiE 'Mapping created' && echo SUCCESS || echo REFUSED)
-ev "BEFORE: co-subscriber (b4-2) PCP MAP = $bm (should be SUCCESS)"
-cap aftr eth-isp "udp port 5351" "$REF/TS2/attack_pcp.pcap" 12
-nse client1 sh -c "timeout 8 python3 $T/infra/pcp_attack.py exhaust --proxy-ip $GW1 --proto 17 --count 600 >/dev/null 2>&1"
-am=$(nse client2 sh -c "timeout 6 python3 $T/infra/pcp_attack.py map --proxy-ip $GW2 --proto 17 --internal-port 9092 2>&1" | grep -qiE 'Mapping created' && echo SUCCESS || echo REFUSED)
-pull "$REF/TS2/attack_pcp.pcap" "$REF/TS2/attack_pcp.pcap"
-ev "ATTACK: b4-1 flooded 600 MAP requests, draining the shared pool (pcap: udp/5351)"
-ev "AFTER:  co-subscriber (b4-2) PCP MAP = $am (should now be REFUSED)"
-if [ "$bm" = SUCCESS ] && [ "$am" = REFUSED ]; then V="IMPACT CONFIRMED — pool drained; a co-subscriber on another B4 can no longer get a mapping"
-else V="NEEDS INVESTIGATION — before=$bm after=$am"; fi
-write_impact TS2 "co-sub MAP $bm" "600 MAP flood drained the pool" "co-sub MAP $am" "$V"
-restart_pcp 1024; lab_restore
 
 # ───────────────────────── T10 — DNS hijack (off-path) ─────────────────────────
 hdr "T10  DNS hijack — the B4 now resolves the AFTR FQDN to the ATTACKER"
@@ -199,4 +178,4 @@ write_impact T11 "AFTR-Name=$bname" "rogue DHCPv6 Option-64 race" "AFTR-Name=$an
 lab_restore
 
 hdr "DONE — impact evidence under testbed/reference_captures/impact/"
-for t in T1 TS2 T10 T12 T11; do printf '  %-4s %s\n' "$t" "$(grep VERDICT "$REF/$t/IMPACT.txt" 2>/dev/null | sed 's/VERDICT: //')"; done
+for t in T1 T10 T12 T11; do printf '  %-4s %s\n' "$t" "$(grep VERDICT "$REF/$t/IMPACT.txt" 2>/dev/null | sed 's/VERDICT: //')"; done

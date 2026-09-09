@@ -1,7 +1,6 @@
 # SAVI — per-port source binding (softwire outer-source spoof)
 
-Tree defence leaf **"SAVI per-port source binding"** — defends **T1, T2, T4, T5,
-TS3** (every attack that forges a softwire **outer source**).
+Tree defence leaf **"SAVI per-port source binding"** — defends **T2, T4, T6, T7** (every attack that forges a softwire **outer source**).
 
 ## Mechanism
 Source Address Validation Improvement (SAVI, RFC 7039) binds each carrier access

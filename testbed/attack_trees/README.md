@@ -24,14 +24,11 @@ blue root is the attacker goal.
 | Tree | Attack |
 |---|---|
 | T1  | NAT Binding-Table Exhaustion (per-B4 cap; phased flood->hold siege) |
-| TS1  | Shared-IPv4 Reputation Poisoning |
 | T2  | Softwire Endpoint Spoofing & On-Path MITM |
 | T3  | Unencrypted-Tunnel Interception |
 | T4  | Downstream Softwire Injection (inbound dual of T2) |
 | T7  | Softwire Reassembly Poisoning |
-| TS2  | PCP Port-Exhaustion DoS |
 | T8  | Unauthorized THIRD_PARTY Forwarding |
-| TS3  | PCP ANNOUNCE Spoof (Epoch Reset) |
 | T9 | Cross-Subscriber PCP PEER + THIRD_PARTY |
 | T10 | Softwire DNS-Discovery Hijack |
 | T11 | Rogue AFTR Substitution |

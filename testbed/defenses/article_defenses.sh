@@ -238,7 +238,7 @@ esp_aead() {
   fi
 }
 
-# ── TRABELSI (T1/TS2): two-structure session table + early eviction (IEEE Access'18) ─
+# ── TRABELSI (T1): two-structure session table + early eviction (IEEE Access'18) ─
 #    Proactively collapses the half-open (invalid) conntrack timeout so a state-
 #    exhaustion flood of UNREPLIED entries ages out in seconds and cannot fill
 #    the shared NAT table; ESTABLISHED flows keep their normal timeout.
@@ -292,57 +292,6 @@ dns_cookies() {
   echo "DNS_COOKIES $1 (RFC 7873 DNS Cookies at the B4 resolver: mode=$v)"
 }
 
-# ═══════════════════════════════════════════════════════════════════════════
-# RFC-GROUNDED defenses (no deployable research-article mechanism exists for the
-# attack; the canonical control is the RFC). Kept honest + distinct from the
-# article-grounded ones above.
-# ═══════════════════════════════════════════════════════════════════════════
-
-# ── PCP_QUOTA (TS2): per-subscriber PCP mapping quota (RFC 6887 §16.5 / 6888 REQ-4) ─
-pcp_quota() {
-  dx ip netns exec aftr pkill -9 -f pcp_server.py 2>/dev/null
-  _kill_proxy() { dx ip netns exec "$1" pkill -9 -f pcp_proxy.py 2>/dev/null; }
-  for_each_b4 _kill_proxy; sleep 0.5
-  local q=""; [ "$1" = on ] && q="T_PCP_QUOTA=${PCP_QUOTA_N:-50}"
-  dxd ip netns exec aftr env PCP_POOL_SIZE="${PCP_POOL_SIZE:-1024}" $q python3 /testbed/aftr/pcp_server.py
-  _start_proxy() { dxd ip netns exec "$1" python3 /testbed/b4/pcp_proxy.py \
-      --lan-ip "$2" --b4-ip6 "$3" --aftr-ip6 "$AFTR_IP6" --passthrough-third-party; }
-  for_each_b4 _start_proxy; sleep 2
-  echo "PCP_QUOTA $1 (per-subscriber mapping cap; one B4 cannot drain the shared pool)"
-}
-
-# ── PCP_AUTH (TS3): authenticated ANNOUNCE confirmation (RFC 7652) ────────────
-#    On a suspected epoch reset the B4 proxy confirms via an integrity-protected
-#    unicast ANNOUNCE to the AFTR before renewing; a forged multicast ANNOUNCE is
-#    not confirmed by the real server -> no renewal storm.
-pcp_auth() {
-  dx ip netns exec aftr pkill -9 -f pcp_server.py 2>/dev/null
-  _kill_proxy() { dx ip netns exec "$1" pkill -9 -f pcp_proxy.py 2>/dev/null; }
-  for_each_b4 _kill_proxy; sleep 0.5
-  local a=""; [ "$1" = on ] && a="T_PCP_AUTH=1"
-  dxd ip netns exec aftr env PCP_POOL_SIZE="${PCP_POOL_SIZE:-1024}" $a python3 /testbed/aftr/pcp_server.py
-  _start_proxy() { dxd ip netns exec "$1" env $a python3 /testbed/b4/pcp_proxy.py \
-      --lan-ip "$2" --b4-ip6 "$3" --aftr-ip6 "$AFTR_IP6" --passthrough-third-party; }
-  for_each_b4 _start_proxy; sleep 2
-  echo "PCP_AUTH $1 (RFC 7652 authenticated ANNOUNCE confirmation; forged epoch reset ignored)"
-}
-
-# ── NAT_LOG (TS1): per-binding attribution logging (RFC 6888 REQ-9 / RFC 6302) ─
-#    Shared-IPv4 reputation poisoning cannot be prevented (shared-fate), but each
-#    NAT binding is logged (inner subscriber IP <-> shared public IP:port + time)
-#    so abuse on the shared address is attributable + actionable.
-nat_log() {
-  local LOG="${NAT_LOG_FILE:-/var/log/aftr-bindings.log}"
-  dx pkill -9 -f 'conntrack -E' 2>/dev/null
-  if [ "$1" = on ]; then
-    dx sh -c "touch $LOG"
-    dxd ip netns exec aftr sh -c \
-      "conntrack -E -e NEW -o timestamp,extended 2>/dev/null | grep --line-buffered 'dst=${PUBLIC_POOL}.' >> $LOG"
-    echo "NAT_LOG on (per-binding attribution: shared-IP abuse traceable to the subscriber)"
-  else
-    echo "NAT_LOG off (no attribution logging)"
-  fi
-}
 
 # ── DECAP_BIND (softwire open-relay + RFC 6324 amplification loop) ───────────
 #    Novel decapsulation-time inner binding at the AFTR. At the softwire ingress
@@ -427,8 +376,5 @@ case "$DEF" in
   DNS_COOKIES)   dns_cookies   "$STATE" ;;
   TRABELSI)      trabelsi      "$STATE" ;;
   ESP_AEAD)      esp_aead      "$STATE" ;;
-  PCP_QUOTA)     pcp_quota     "$STATE" ;;   # TS2  (RFC 6887)
-  PCP_AUTH)      pcp_auth      "$STATE" ;;   # TS3  (RFC 7652)
-  NAT_LOG)       nat_log       "$STATE" ;;   # TS1  (RFC 6888)
   *) echo "unknown defense: $DEF" >&2; exit 2 ;;
 esac

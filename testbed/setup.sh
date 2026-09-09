@@ -718,7 +718,7 @@ srv.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 srv.serve_forever()
 ' >/dev/null 2>&1 &
 
-# TS1 echo service – always started so port_prediction.py works without manual setup.
+# echo service – always started so port_prediction.py works without manual setup.
 # Listens on TCP/9999 and UDP/9999; echoes back "PORT <peer_port>" to the caller.
 ip netns exec server socat \
     TCP-LISTEN:9999,fork,reuseaddr \
@@ -728,7 +728,7 @@ ip netns exec server socat \
     UDP-RECVFROM:9999,fork,reuseaddr \
     SYSTEM:'echo PORT $SOCAT_PEERPORT' \
     >/dev/null 2>&1 &
-echo "  TS1 echo service running on server  TCP+UDP/9999"
+echo "  echo service running on server  TCP+UDP/9999"
 
 # Long-lived TCP connection-sink on port 6666 — accepts and HOLDS every
 # connection in ONE process (no fork-per-connection). The T1 SIEGE phase opens
@@ -959,7 +959,7 @@ ip netns exec attacker ip link set eth-isp address 2a:29:47:aa:9c:56   # pinned 
             ip netns exec attacker ip -6 addr add 2001:db8:cafe::13a/64 dev eth-isp 2>/dev/null || true
             # Hub mode: set bridge ageing_time=0 so all unicast is flooded to
             # every port (attacker sees all B4↔AFTR softwire traffic). Required
-            # for TS2 (unencrypted tunnel traffic interception) to work.
+            # for T3 (unencrypted tunnel traffic interception) to work.
             ip link set br-isp type bridge ageing_time 0
             bridge link set dev atk-br learning off flood on 2>/dev/null || true
             ;;

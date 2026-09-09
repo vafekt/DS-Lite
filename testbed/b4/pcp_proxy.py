@@ -41,7 +41,7 @@ OPT_AUTH        = 10   # testbed PCP authentication (shared-key HMAC tag)
 # response) reports an epoch that has gone BACKWARDS, the server lost state and
 # the client MUST re-create all its mappings. The B4 proxy is the PCP client to
 # the AFTR, so it implements this here: it remembers the MAP requests it relayed
-# and, on an epoch reset, re-sends them (the renewal storm TS3 induces).
+# and, on an epoch reset, re-sends them (the renewal storm an epoch reset induces).
 _state_lock = threading.Lock()
 _last_epoch = None
 _relayed_maps = {}     # key -> rewritten MAP request bytes (to renew)
@@ -313,7 +313,7 @@ def _announce_listener(b4_ip6: str, aftr_ip6: str):
         print(f"[epoch] ANNOUNCE epoch={e} (prev={prev}) from {addr[0]}",
               flush=True)
         if prev is not None and e < prev:
-            # RFC 7652 defence (TS3): an UNSOLICITED multicast ANNOUNCE is not
+            # RFC 7652 defence: an UNSOLICITED multicast ANNOUNCE is not
             # trusted. When PCP auth is enabled, do NOT renew on the raw
             # ANNOUNCE — first CONFIRM the reset with an integrity-protected
             # unicast ANNOUNCE request to the AFTR. A forged ANNOUNCE (the
@@ -361,7 +361,7 @@ def main():
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    # Absorb PCP flood bursts (TS2). SO_RCVBUFFORCE (33) bypasses rmem_max for CAP_NET_ADMIN.
+    # Absorb PCP flood bursts. SO_RCVBUFFORCE (33) bypasses rmem_max for CAP_NET_ADMIN.
     SO_RCVBUFFORCE = 33
     for opt in (SO_RCVBUFFORCE, socket.SO_RCVBUF):
         try:
@@ -377,7 +377,7 @@ def main():
           f"  aftr={args.aftr_ip6}")
 
     # RFC 6887 §8.5 — background listener for unsolicited multicast ANNOUNCE,
-    # so a (spoofed) epoch reset triggers a real mapping-renewal storm (TS3).
+    # so a (spoofed) epoch reset triggers a real mapping-renewal storm.
     threading.Thread(
         target=_announce_listener,
         args=(args.b4_ip6, args.aftr_ip6),

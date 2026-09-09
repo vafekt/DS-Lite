@@ -470,7 +470,7 @@ def run_sniff(args):
 #   * any payload the attacker pushes (here an HTTP request that doubles as the
 #     abuse pattern) is logged by the operator's per-binding attribution
 #     (RFC 6333 11) against the INNOCENT victim -- T2 frames a specific
-#     subscriber, where TS1 only taints the whole shared pool.
+#     subscriber, where shared-IP reputation abuse only taints the whole shared pool.
 def run_impersonate(args):
     """T2-impersonate: open a real bidirectional TCP session AS the victim B4,
     then push attacker payload over it (attributed to the victim)."""

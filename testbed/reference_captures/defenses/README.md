@@ -17,13 +17,10 @@ packets/logs that show the difference. A defence is only listed as verified when
 | Family (dir) | Tree defence leaf | Attacks | OFF (attack succeeds) | ON (blocked) |
 |---|---|---|---|---|
 | [`TRABELSI`](TRABELSI/) | Two-structure session table / early eviction | T1 | victim cut off (`client1=000`) | victim served (`client1=200`) |
-| [`NAT_LOG`](NAT_LOG/) | Per-subscriber attribution log | TS1 | abuse not attributable (0 records) | abuse attributed to the subscriber (200 records) |
 | [`SAVI`](SAVI/) | Per-port source-address validation | T2, T4, T5 | forged-source traffic reaches the provider | forged-source traffic dropped |
 | [`ESP_AEAD`](ESP_AEAD/) | Authenticated encryption on the softwire | T3 | 20 plaintext request markers readable | 0 (ciphertext only) |
 | [`FEISTEL_IPID`](FEISTEL_IPID/) | Unpredictable packet identifiers | T5 (partial) | next identifier predictable (2000/2000) | prediction defeated (0 hits) |
-| [`PCP_QUOTA`](PCP_QUOTA/) | Per-subscriber port-mapping limit | TS2 | co-subscriber request refused | co-subscriber request served |
 | [`PCP_OWNERSHIP`](PCP_OWNERSHIP/) | Ownership check on port requests | T6, T7 | 5 cross-subscriber forwardings installed | 0 (refused) |
-| [`PCP_AUTH`](PCP_AUTH/) | Authenticated control messages | TS3 | renewal storm triggered | no storm |
 | [`DNS_0X20`](DNS_0X20/) | Query case randomization | T8 | resolver poisoned to attacker | poisoning fails |
 | [`DHCPV6_AUTH`](DHCPV6_AUTH/) | Signed provisioning messages | T9, T9 | provider name = `aftr-evil.attacker.example` | provider name = `aftr.dslite.example.com` |
 | [`SNMP_USM`](SNMP_USM/) | Authenticated management access | T10, T11 | default-password write succeeds | write rejected |

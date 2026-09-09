@@ -117,9 +117,9 @@ _PCP_AUTH_REQUIRED = os.environ.get("T_PCP_AUTH", "0") == "1"
 _PCP_AUTH_KEY = os.environ.get("PCP_AUTH_KEY", "ds-lite-pcp-shared-key-2026").encode()
 _AUTH_TAG_LEN = 16
 
-# ── Per-subscriber PCP mapping quota (TS2, env-gated) ────────────────
+# ── Per-subscriber PCP mapping quota (env-gated) ────────────────
 # A LAN attacker reaches the AFTR through its own B4 proxy, which authenticates
-# it, so PCP auth alone does not stop on-LAN pool exhaustion (TS2). When
+# it, so PCP auth alone does not stop on-LAN pool exhaustion. When
 # T_PCP_QUOTA=N the AFTR caps the number of concurrent mappings per requesting
 # B4 (RFC 6887 §16.5 / RFC 6888 REQ-4), so one subscriber cannot drain the shared
 # pool and starve co-subscribers behind other B4s.
@@ -222,7 +222,7 @@ def _nft_add(ext_ip: str, ext_port: int, proto: int,
 
 # ── Batched nft writer ────────────────────────────────────────────────
 # Per-request fork+exec of `nft` is the dominant cost in MAP handling and
-# limits exhaustion attacks (TS2) to ~100 mappings per second. We coalesce
+# limits exhaustion attacks to ~100 mappings per second. We coalesce
 # pending adds and flush them in a single `nft -f -` invocation every 50ms,
 # bringing throughput to thousands per second so the demo can actually
 # exhaust the pool inside a trial window.
@@ -463,7 +463,7 @@ def _handle_map(client_addr6: str, lifetime: int,
                                int_port, ext_port, _v4mapped(ext_ip))
             return _resp_hdr(OP_MAP, SUCCESS, new_lt) + pld
 
-        # Per-subscriber quota (TS2): cap concurrent mappings per requesting B4
+        # Per-subscriber quota: cap concurrent mappings per requesting B4
         # so one subscriber cannot exhaust the shared pool.
         if _PCP_QUOTA > 0:
             in_use = sum(1 for m in _mappings.values() if m.get("b4") == client_addr6)
@@ -741,7 +741,7 @@ def main():
 
     sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    # Absorb TS2 exhaustion bursts. SO_RCVBUFFORCE (33) bypasses net.core.rmem_max
+    # Absorb exhaustion bursts. SO_RCVBUFFORCE (33) bypasses net.core.rmem_max
     # for CAP_NET_ADMIN processes — the AFTR namespace runs root inside a
     # privileged container, so this is permitted and avoids needing to retune
     # the host-side sysctl.

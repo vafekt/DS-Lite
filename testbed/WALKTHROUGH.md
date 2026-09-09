@@ -180,20 +180,18 @@ capture in `reference_captures/attacks/Tn/`.
 | ID | Name | Surface | What it does | Impact (measured) |
 |----|------|---------|--------------|-------------------|
 | **T1** | NAT Binding-Table Exhaustion | CGNAT | floods half-open sessions to fill the shared NAT table | victim client1 200→**000**, co-subscriber stays up |
-| **TS1** | Shared-IPv4 Reputation Poisoning | CGNAT | one subscriber emits abuse that egresses as the shared IPv4 | all abuse sourced from `192.0.2.1` — collective blame |
 | **T2** | Tunnel-Endpoint Spoofing | softwire | forges the victim B4 as the outer IPv6 source | AFTR accepts spoofed softwire packets as the victim |
 | **T3** | Unencrypted-Tunnel Interception | softwire | passively reads the cleartext 4-in-6 inner traffic | victim's inner HTTP recovered in cleartext |
 | **T4** | Downstream Softwire Injection | softwire | forges AFTR→B4 packets carrying a spoofed inner source | forged inner IPv4 reaches the victim LAN |
-| **T7** | Softwire Reassembly Poisoning | fragment | injects offset-0 inner-IPv4 fragments sharing the victim's reassembly tuple (predictable IP-ID) | victim's fragmented flow dropped (~67% loss) |
-| **TS2** | PCP Port-Exhaustion DoS | PCP | floods MAP requests to drain a per-subscriber pool | a co-subscriber's legit MAP is refused |
+| **T5** | Unauthenticated Softwire Decapsulation | softwire | an unprovisioned carrier host sends 4-in-6 to the AFTR (RFC 6333 authenticates no B4) | IPv4 relayed to the Internet, laundered as the shared public IPv4 |
+| **T6** | Softwire Identity Multiplication | CGNAT | many forged softwire identities, each pinned to a port, drain the shared pool | both co-residents 200→**000** (shared port pool exhausted) |
+| **T7** | Softwire Reassembly Poisoning | fragment | injects offset-0 inner-IPv4 fragments sharing the victim's reassembly tuple (predictable IP-ID) | victim's fragmented flow dropped (high loss) |
 | **T8** | Unauthorized THIRD_PARTY Forwarding | PCP | MAP with THIRD_PARTY naming a *different* subscriber | AFTR installs a DNAT pointing at a victim it doesn't own |
-| **TS3** | PCP ANNOUNCE Spoof (Epoch Reset) | PCP | forges a multicast ANNOUNCE with epoch=0 | one packet provokes a MAP-renewal storm |
-| **T9** | Cross-Subscriber PCP PEER Enumeration | PCP | PEER (wildcard) to read another subscriber's external ports | leaked external port == victim's real port |
-| **T10** | Softwire DNS-Discovery Hijack | DNS | **off-path** poisoning of the B4's AFTR-FQDN resolution (SADDNS/Kaminsky model: granted port + TXID brute in a wide window) | B4 caches `aftr… → attacker`, would rebuild the softwire to the attacker |
-| **T11** | Rogue AFTR Substitution | DHCPv6 | rogue DHCPv6 hands a forged AFTR-Name (option 64) | B4 adopts the attacker's AFTR name |
-| **T11** | Transparent AFTR Hijack | DHCPv6 | keeps the legit name but rebinds it to the attacker | softwire rebuilt to the attacker, name unchanged |
-| **T12** | SNMP Alarm-Table Write | SNMP/MIB | SNMP SET raises an alarm threshold to its max | alarm can never fire (write succeeds: value→2147483647) |
-| **T5** | SNMP MIB Information Disclosure | SNMP/MIB | SNMP walk reads the DSLITE-MIB | discloses multiple subscribers' private NAT 5-tuples |
+| **T9** | Cross-Subscriber PCP PEER + THIRD_PARTY | PCP | PEER (wildcard) to read another subscriber's external ports | leaked external port == victim's real port |
+| **T10** | B4 DNS Cache Poisoning | DNS | **off-path** poisoning of the B4's AFTR-FQDN resolution (SADDNS/Kaminsky model: granted port + TXID brute in a wide window) | B4 caches `aftr… → attacker`, rebuilding the softwire to the attacker |
+| **T11** | Rogue AFTR Substitution | DHCPv6 | rogue DHCPv6 hands a forged AFTR-Name (option 64) | B4 adopts the attacker's AFTR name; softwire rebuilt to the attacker |
+| **T11b** | Transparent AFTR Hijack | DHCPv6 | keeps the legit name but rebinds it via a rogue resolver | softwire rebuilt to the attacker, name unchanged |
+| **T12** | DS-Lite MIB Unauthenticated Access | SNMP/MIB | default community: SET raises an alarm threshold to its max, and a walk reads the binding table | alarm blinded (value→2147483647) and co-subscriber NAT bindings disclosed |
 
 ### How to run any attack
 
@@ -218,20 +216,18 @@ The frozen reference for comparison stays in `reference_captures/attacks/Tn/`.
 | ID | Command (run on host) | Tunable knobs (default \| alt) |
 |----|------------------------|--------------------------------|
 | T1 | `… T1` | `intensity=fast`\|`medium`, `target=198.51.100.2` |
-| TS1 | `… TS1` | `count=150`\|`300`, `target=198.51.100.2` |
-| T2 | `… T2` | `count=8`\|`16`, `target=198.51.100.2` |
+| T2 | `… T2` | `duration=15`\|`25` |
 | T3 | `… T3` | `requests=6`\|`12`, `target=198.51.100.2` |
-| T4 | `… T4` | `count=15`\|`30`, `spoof=203.0.113.66` |
-| T7 | `… T7` | `band=60`\|`40`, `target=198.51.100.2` |
-| TS2 | `… TS2` | `count=600`\|`1200` |
+| T4 | `… T4` | `count=120`\|`30`, `spoof=203.0.113.66` |
+| T5 | `… T5` | `count=8`\|`20`, `isrc=10.66.66.66` |
+| T6 | `… T6` | `dport=80` |
+| T7 | `… T7` | `band=64`\|`48`, `target=198.51.100.2` |
 | T8 | `… T8` | `victim=10.0.2.100` |
-| TS3 | `… TS3` | `count=10` |
 | T9 | `… T9` | `trials=2`\|`3`, `flows=3` |
 | T10 | `… T10` | `rounds=2`\|`4` |
 | T11 | `… T11` | `fqdn=aftr-evil.attacker.example` |
-| T11 | `… T11` | `fqdn=aftr.dslite.example.com` |
-| T12 | `… T12` | `value=4294967295` |
-| T5 | `… T5` | (none) |
+| T11b | `… T11b` | `fqdn=aftr.dslite.example.com` |
+| T12 | `… T12` | `value=2147483647` |
 
 Example with a knob: `… T1 intensity=medium`.
 
@@ -256,11 +252,8 @@ article** (or the canonical RFC where no deployable article exists). They are
 | **SAVI** | T2, T4, T7 | Chen/Liu, *SAVI access network* | per-port source-IP↔port binding on the carrier bridge; drop spoofed sources | spoofed reaching AFTR **14 → 0** |
 | **FEISTEL_IPID** | T7 | Gilad & Herzberg, *ACM TISSEC* 2013 §8.3 | rewrite inner-IPv4 IP-ID with a keyed Feistel permutation (unpredictable) at the B4 (NFQUEUE) | sequential-prediction hits **2000 → 0** |
 | **PCP_OWNERSHIP** | T8, T9 | Rytilahti & Holz, *NDSS* 2020 | PCP server rejects MAP/PEER/THIRD_PARTY outside the requester's prefix | cross-sub DNAT **5 → 0** |
-| **PCP_QUOTA** | TS2 | RFC 6887 §16.5 / 6888 REQ-4 | per-subscriber mapping cap | co-subscriber MAP **REFUSED → OK** |
-| **PCP_AUTH** | TS3 | RFC 7652 | confirm a suspected epoch reset via an authenticated unicast ANNOUNCE before renewing | renewal storms **6 → 0** |
-| **NAT_LOG** | TS1 | RFC 6888 REQ-9 / 6302 | per-binding attribution logging (shared IP:port ↔ subscriber) | attribution records **0 → 200** |
-| **SNMP_USM** | T12, T5 | *Under New Management*, WOOT 2012 | SNMPv3 USM authNoPriv (HMAC) + pinned engineID; drop v1/v2c | attacker SET=2147483647 → **dropped**, OAM reads 60 |
-| **DHCPV6_AUTH** | T11, T11 | Albalawi & Aljuhani, *Sådhanå* 2020 | Ed25519-signed DHCPv6 (SA option + replay field); B4 verifies before adopting option 64 | B4 adopts **evil → legit** |
+| **SNMP_USM** | T12 | *Under New Management*, WOOT 2012 | SNMPv3 USM authNoPriv (HMAC) + pinned engineID; drop v1/v2c | attacker SET=2147483647 → **dropped**, OAM reads 60 |
+| **DHCPV6_AUTH** | T11, T11b | Albalawi & Aljuhani, *Sådhanå* 2020 | Ed25519-signed DHCPv6 (SA option + replay field); B4 verifies before adopting option 64 | B4 adopts **evil → legit** |
 | **DNS_0X20** | T10 | Dagon et al., *ACM CCS* 2008 | DNS-0x20: randomise query-name case; accept only a reply echoing it | cache **poisoned → not poisoned** |
 
 ### How to implement (apply / remove) any defence
@@ -284,16 +277,13 @@ defence at once, use `verify_all.sh` below.)
 | Defence ID | Defends | Apply | Remove |
 |---|---|---|---|
 | `TRABELSI` | T1 | `… TRABELSI on` | `… TRABELSI off` |
-| `NAT_LOG` | TS1 | `… NAT_LOG on` | `… NAT_LOG off` |
 | `SAVI` | T2, T4, T7 | `… SAVI on` | `… SAVI off` |
 | `ESP_AEAD` | T3 | `… ESP_AEAD on` | `… ESP_AEAD off` |
 | `FEISTEL_IPID` | T7 | `… FEISTEL_IPID on` | `… FEISTEL_IPID off` |
-| `PCP_QUOTA` | TS2 | `… PCP_QUOTA on` | `… PCP_QUOTA off` |
 | `PCP_OWNERSHIP` | T8, T9 | `… PCP_OWNERSHIP on` | `… PCP_OWNERSHIP off` |
-| `PCP_AUTH` | TS3 | `… PCP_AUTH on` | `… PCP_AUTH off` |
 | `DNS_0X20` | T10 | `… DNS_0X20 on` | `… DNS_0X20 off` |
-| `DHCPV6_AUTH` | T11, T11 | `… DHCPV6_AUTH on` | `… DHCPV6_AUTH off` |
-| `SNMP_USM` | T12, T5 | `… SNMP_USM on` | `… SNMP_USM off` |
+| `DHCPV6_AUTH` | T11, T11b | `… DHCPV6_AUTH on` | `… DHCPV6_AUTH off` |
+| `SNMP_USM` | T12 | `… SNMP_USM on` | `… SNMP_USM off` |
 
 `…` = `bash testbed/defenses/article_defenses.sh`. Example end-to-end check:
 ```sh

@@ -79,10 +79,6 @@ The 12 attacks span the data, control, and management planes of the DS-Lite stac
 | T11 | Rogue AFTR discovery hijack | Control: DHCPv6 |
 | T12 | DS-Lite MIB unauthenticated access | Management: SNMP |
 
-Three supplementary carrier-grade-NAT tools ship alongside the corpus, documented
-but outside the paper's executed set: `TS1` shared-IPv4 reputation poisoning,
-`TS2` PCP port-exhaustion, and `TS3` PCP ANNOUNCE (epoch) spoofing.
-
 ## Running one attack directly
 
 You do not need the menu. To run a single attack in one narrated terminal:

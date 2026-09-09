@@ -40,7 +40,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libnfnetlink-dev \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install --break-system-packages graphviz==0.21
+RUN pip3 install --break-system-packages graphviz==0.21 prompt_toolkit
 # NetfilterQueue: in-path IP-ID rewriting for the T5 Feistel defence
 # (Gilad-Herzberg 2013 §8.3, testbed/defenses/feistel_b4.py)
 RUN pip3 install --break-system-packages NetfilterQueue
