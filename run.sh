@@ -505,7 +505,7 @@ if [ -n "$ATTACKER_PLACEMENT" ]; then
 else
     printf "  %s%3s)  %-15s (%s)%s\n" "$C_DIM" "11" "Attacker" "place one first" "$C_RST"
 fi
-_dev_row "12" "Mgmt-Station"   "mgmt, 10.99.0.10 - SNMP attacker for T8/T9"
+_dev_row "12" "Mgmt-Station"   "mgmt, 10.99.0.10 - SNMP attacker for T12"
 echo "  all)  All of the above"
 echo "    0)  No terminals"
 echo ""
@@ -969,9 +969,9 @@ show_attack_menu() {
 # ── Defenses submenu: lets a user toggle each verified defense on/off so the
 #    attack -> defend -> re-attack loop works from the menu, no shell needed.
 #    Each row names the attack(s) the control closes, so the mapping is obvious.
-DEF_IDS=(TRABELSI NAT_LOG SAVI ESP_AEAD FEISTEL_IPID PCP_QUOTA PCP_OWNERSHIP PCP_AUTH DNS_0X20 DHCPV6_AUTH SNMP_USM)
-DEF_CLOSES=("T1" "TS1" "T2,T4,T5,T12" "T3" "T5" "TS2" "T6,T7" "TS3" "T8" "T9" "T10")
-DEF_NAME=("Half-open early eviction" "Per-binding attribution log" "SAVI source binding" "AEAD ESP on softwire" "Feistel IP-ID randomization" "Per-subscriber PCP quota" "PCP ownership binding" "Authenticated PCP ANNOUNCE" "DNS-0x20 randomization" "Ed25519-signed DHCPv6" "SNMPv3 USM + engineID pin")
+DEF_IDS=(TRABELSI SAVI ESP_AEAD FEISTEL_IPID PCP_OWNERSHIP DNS_0X20 DNS_COOKIES DHCPV6_AUTH AFTR_PIN SNMP_USM DECAP_BIND)
+DEF_CLOSES=("T1" "T2,T4,T6,T7" "T3" "T7" "T8,T9" "T10" "T10" "T11,T11b" "T11,T11b" "T12" "T5")
+DEF_NAME=("Half-open early eviction" "SAVI source binding" "AEAD ESP on softwire" "Feistel IP-ID randomization" "PCP ownership binding" "DNS-0x20 randomization" "DNS Cookies (RFC 7873)" "Ed25519-signed DHCPv6" "AFTR-PIN name+resolver pin" "SNMPv3 USM + engineID pin" "DECAP-BIND provisioning check")
 defense_menu() {
     local DEFSH="$(pwd)/testbed/defenses/article_defenses.sh"
     if [ ! -f "$DEFSH" ]; then echo "  (defense script not found: $DEFSH)"; return; fi
@@ -1020,18 +1020,18 @@ defense_menu() {
 
 # ── reset_aftr_state: clear cross-attack residue before each attack ──
 # Several attacks leave persistent state that breaks later attacks:
-#   * T11 (PCP port-exhaust) makes pcp_server install forward-chain DROP
+#   * T5 (PCP port-exhaust) makes pcp_server install forward-chain DROP
 #     rules (comment "PCP-EXHAUST") that block ALL b4 -> eth-wan data flows.
-#   * TS2/T6/T7 push entries into chain ip nat pcp_dnat that persist.
+#   * T8/T9 (PCP) push entries into chain ip nat pcp_dnat that persist.
 #   * Any flood leaves conntrack entries and per_b4_connlimit meter counts.
-#   * T7 leaves a poisoned dnsmasq cache; T9/T10 leave the cached
+#   * T9 leaves a poisoned dnsmasq cache; T11/T12 leave the cached
 #     AFTR-Name in /var/run/ds-lite-aftr-name.
-# Running, e.g., T11 then T1 would make T1 silently fail (every packet
+# Running, e.g., T5 then T1 would make T1 silently fail (every packet
 # dropped by the leftover PCP-EXHAUST rule), so this runs before each attack.
 reset_aftr_state() {
     local dx="docker exec $CONTAINER_NAME"
     # (a0) re-assert the static softwire-local B4 addresses. A prior DHCPv6
-    #      hijack (T9/T9) flushes eth-isp and drops ::b41/::b42, after which
+    #      hijack (T11/T11) flushes eth-isp and drops ::b41/::b42, after which
     #      the B4 tunnel cannot source its outer packets and the subscriber's
     #      whole data path is dead. Re-adding here heals the lab before the next
     #      attack so a leftover hijack never silently breaks unrelated runs.
@@ -1054,10 +1054,10 @@ reset_aftr_state() {
     # `docker exec -d` runs the daemon detached so it survives this function.
     # IMPORTANT: the B4 proxies MUST be restarted with --passthrough-third-party,
     # exactly as setup.sh launches them. Without it the proxy strips/ignores the
-    # client-supplied THIRD_PARTY option, so T6/T7 PEER requests are not
+    # client-supplied THIRD_PARTY option, so T8/T9 PEER requests are not
     # forwarded to the AFTR and silently find nothing (the proxy log stays empty).
     # PCP_POOL_SIZE must match setup.sh (env PCP_POOL_SIZE=1024). Without it the
-    # server defaults to the full 1024-65534 range, so T11 port-exhaustion can
+    # server defaults to the full 1024-65534 range, so T5 port-exhaustion can
     # never deplete the pool in a trial window and silently looks DEFENDED.
     docker exec -d "$CONTAINER_NAME" ip netns exec aftr env PCP_POOL_SIZE="${PCP_POOL_SIZE:-1024}" python3 /testbed/aftr/pcp_server.py >/dev/null 2>&1
     docker exec -d "$CONTAINER_NAME" ip netns exec b4-1 python3 /testbed/b4/pcp_proxy.py \
@@ -1071,10 +1071,10 @@ reset_aftr_state() {
     for ns in client1 client2 server b4-1 b4-2; do
         $dx ip netns exec "$ns" pkill -9 -f 'ncat|curl|dig|nslookup' >/dev/null 2>&1
     done
-    # Victim-fixture processes (T5 ping flood, T7 http.server + PCP refresh) live
+    # Victim-fixture processes (T7 ping flood, T9 http.server + PCP refresh) live
     # only in subscriber namespaces. Scope this to client1/client2 — the `server`
     # ns runs a legitimate single-threaded python http.server (its -c script also
-    # matches "http.server"), and killing it would break T3/T8.
+    # matches "http.server"), and killing it would break T3/T10.
     for ns in client1 client2; do
         $dx ip netns exec "$ns" pkill -9 -f 'python3 -m http.server|ping -s' >/dev/null 2>&1
     done
@@ -1082,20 +1082,20 @@ reset_aftr_state() {
     #      surviving flood re-saturates the per_b4_connlimit meter and makes
     #      the next attack falsely look DEFENDED. The pattern deliberately
     #      excludes the infra daemons pcp_server.py / pcp_proxy.py.
-    $dx pkill -9 -f 'nat_exhaustion|nat_hold|fragment_attack|tunnel_spoof|t5_softwire_inject|dns_cache_poison|reputation_poisoning|pcp_attack\.py|snmp_attack|dhcpv6_hijack|t10_peer_crosssub' >/dev/null 2>&1
+    $dx pkill -9 -f 'nat_exhaustion|nat_hold|fragment_attack|tunnel_spoof|t4_softwire_inject|dns_cache_poison|pcp_attack\.py|snmp_attack|dhcpv6_hijack|t9_peer_crosssub' >/dev/null 2>&1
     # (f) the per_b4_connlimit dynamic meter counts live conntrack entries
     #     (`ct count over 2000`); it has no standalone name to flush, and
     #     `nft delete meter` is a syntax error on this build. Flushing
     #     conntrack in (d) drops the entries, so the meter drains on its own.
-    # (f2) remove the stateless ISP ACL that the TS2/T6 fragment tools install on
+    # (f2) remove the stateless ISP ACL that the T7 fragment tool installs on
     #      the AFTR to demonstrate the bypass. That table drops every
     #      encapsulated TCP SYN (inner proto 6, SYN flag), so if the attack is
     #      interrupted before its own teardown runs (e.g. Ctrl+C, timeout) it
     #      leaves ALL subscriber TCP through the softwire black-holed while ICMP
     #      and UDP still work. Deleting it here restores the data plane.
     $dx ip netns exec aftr nft delete table ip6 stateless_fw >/dev/null 2>&1
-    # (g) flush B4 dnsmasq cache (clears T7 cache poison); (h) clear T9/T10
-    #     AFTR-Name; (h2) clear T7's NDP hijack. T7 --hijack-upstream installs
+    # (g) flush B4 dnsmasq cache (clears T9 cache poison); (h) clear T11/T12
+    #     AFTR-Name; (h2) clear T9's NDP hijack. T9 --hijack-upstream installs
     #     a PERMANENT neighbour entry on the victim B4 that maps the upstream
     #     resolver (and gateway/AFTR) to the attacker MAC. `ip neigh flush` does
     #     NOT remove PERMANENT entries, so without an explicit delete the victim
@@ -1107,7 +1107,7 @@ reset_aftr_state() {
         # Restore the AFTR-name cache to its legitimate post-boot value (NOT
         # delete it): the dhclient exit hook only rebuilds the tunnel when a
         # PRIOR name is present to compare against, so wiping the file makes the
-        # next renewal look like first boot and the T9/T10 hijack silently
+        # next renewal look like first boot and the T11/T12 hijack silently
         # no-ops. Writing the legit name back puts the B4 in clean post-boot
         # state so AFTR-hijack attacks are reproducible after a reset.
         $dx ip netns exec "$b4" bash -c 'pkill -HUP dnsmasq 2>/dev/null;
@@ -1116,7 +1116,7 @@ reset_aftr_state() {
                 ip -6 neigh del "$a" dev eth-isp 2>/dev/null || true
             done; true' >/dev/null 2>&1
     done
-    # (i) restore each B4 softwire to the legit AFTR. T9/T10 repoint the
+    # (i) restore each B4 softwire to the legit AFTR. T11/T12 repoint the
     #     tunnel to the attacker (and change the B4's tunnel local), so just
     #     clearing the cached name leaves the data plane broken for the next
     #     attack — the AFTR only decapsulates the canonical (local,remote) pair.
